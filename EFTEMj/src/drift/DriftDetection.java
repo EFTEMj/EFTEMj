@@ -29,7 +29,6 @@ package drift;
 import gui.ExtendedWaitForUserDialog;
 import ij.IJ;
 import ij.ImagePlus;
-import ij.gui.MultiLineLabel;
 import ij.gui.Toolbar;
 import ij.gui.YesNoCancelDialog;
 import ij.plugin.filter.ExtendedPlugInFilter;
@@ -47,6 +46,16 @@ public class DriftDetection implements ExtendedPlugInFilter {
     private static final int CANCEL = 0;
     private int flags = DOES_32 | NO_CHANGES | FINAL_PROCESSING;
 
+    /**
+     * This is the {@link ImagePlus} that has been selected when starting the plugin. No changes will be done to this
+     * {@link ImagePlus}.
+     */
+    private ImagePlus initialImp;
+    /**
+     * This is the index (one-based) of the slice that is used as template.
+     */
+    private int templateIndex;
+
     /*
      * (non-Javadoc)
      * 
@@ -56,8 +65,9 @@ public class DriftDetection implements ExtendedPlugInFilter {
     public int setup(String arg, ImagePlus imp) {
 	if (arg == "final") {
 	    // TODO implement final processing
-	    return DONE;
+	    return NO_CHANGES | DONE;
 	}
+	initialImp = imp;
 	return flags;
     }
 
@@ -82,13 +92,22 @@ public class DriftDetection implements ExtendedPlugInFilter {
     public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
 	if (imp.getStackSize() <= 1) {
 	    // TODO implement stack creation
-	    return DONE;
+	    canceled();
+	    return NO_CHANGES | DONE;
 	}
 	// TODO copy the input stack
 	switch (showModeDialog(command)) {
 	case AUTOMATIC:
 	    IJ.showStatus("Automatic drift detection has been selected.");
-	    showRoiDialog(command);
+	    // Show the dialog again until the user cancels it or places a ROI.
+	    do {
+		templateIndex = showRoiDialog(command);
+	    } while (templateIndex != CANCEL & imp.getRoi() == null);
+	    if (templateIndex == CANCEL) {
+		canceled();
+		return NO_CHANGES | DONE;
+	    }
+	    IJ.showMessage("The slice " + templateIndex + " has ben selected as template.");
 	    // TODO implement automatic drift detection
 	    break;
 	case MANUAL:
@@ -96,10 +115,14 @@ public class DriftDetection implements ExtendedPlugInFilter {
 	    // TODO implement manual drift detection
 	    break;
 	default:
-	    IJ.showStatus("Drift detection has been canceled.");
+	    canceled();
 	    return NO_CHANGES | DONE;
 	}
 	return flags;
+    }
+
+    private void canceled() {
+	IJ.showStatus("Drift detection has been canceled.");
     }
 
     /*
@@ -141,8 +164,11 @@ public class DriftDetection implements ExtendedPlugInFilter {
 	ExtendedWaitForUserDialog dialog = new ExtendedWaitForUserDialog(
 		title + " - set ROI",
 		"Set a ROI to define the template.\nThe ROI should contain a structure visable at all images of the stack.",
-		new MultiLineLabel("Test:\nIt works!"));
+		null);
 	dialog.show();
+	if (!dialog.escPressed())
+	    return initialImp.getSlice();
 	return CANCEL;
     }
+
 }

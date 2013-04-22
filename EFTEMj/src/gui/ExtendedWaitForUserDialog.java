@@ -28,8 +28,14 @@ package gui;
 
 import java.awt.Button;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
+import java.awt.event.ContainerEvent;
+import java.awt.event.ContainerListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+
 import ij.gui.MultiLineLabel;
 import ij.gui.WaitForUserDialog;
 
@@ -37,11 +43,17 @@ import ij.gui.WaitForUserDialog;
  * This is an extended version of {@link WaitForUserDialog}. I need to insert a new {@link Component} between the
  * {@link MultiLineLabel} and the Ok {@link Button}. The functionality of {@link WaitForUserDialog} is preserved.
  * 
+ * I implement {@link ContainerListener} to add the possibility to close the dialog by pressing [Esc]. I found this
+ * method at http://www.devx.com/tips/Tip/13547 (22.04.2013).
+ * 
  * @author Michael Epping <michael.epping@uni-muenster.de>
  * 
  */
 @SuppressWarnings("serial")
-public class ExtendedWaitForUserDialog extends WaitForUserDialog {
+public class ExtendedWaitForUserDialog extends WaitForUserDialog implements ContainerListener {
+
+    private static String hint = "\n \nPress [Esc] to abort.";
+    private boolean escPressed = false;
 
     /**
      * The constructor modifies the dialog to show an additional component.
@@ -54,7 +66,10 @@ public class ExtendedWaitForUserDialog extends WaitForUserDialog {
      *            {@link ExtendedWaitForUserDialog}.
      */
     public ExtendedWaitForUserDialog(String title, String text, Component container) {
-	super(title, text);
+	super(title, text + hint);
+	addKeyAndContainerListenerRecursively(this);
+	if (container == null)
+	    return;
 	GridBagConstraints c = new GridBagConstraints();
 	// The ok-button has to be removed in order to place the new component at gridy = 2.
 	Component obj = getComponent(1);
@@ -70,5 +85,102 @@ public class ExtendedWaitForUserDialog extends WaitForUserDialog {
 	c.anchor = GridBagConstraints.EAST;
 	add(obj, c);
 	pack();
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see ij.gui.WaitForUserDialog#escPressed()
+     */
+    public boolean escPressed() {
+	return super.escPressed() | escPressed;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see java.awt.event.ContainerListener#componentAdded(java.awt.event.ContainerEvent)
+     */
+    @Override
+    public void componentAdded(ContainerEvent e) {
+	addKeyAndContainerListenerRecursively(e.getChild());
+    }
+
+    /**
+     * This method adds a {@link KeyListener} to all added components. This is done recursively.
+     * 
+     * @param c
+     *            The {@link Component} that is added.
+     */
+    private void addKeyAndContainerListenerRecursively(Component c) {
+	c.addKeyListener(this);
+	if (c instanceof Container) {
+	    Container cont = (Container) c;
+	    cont.addContainerListener(this);
+	    Component[] children = cont.getComponents();
+	    for (int i = 0; i < children.length; i++) {
+		addKeyAndContainerListenerRecursively(children[i]);
+	    }
+	}
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see java.awt.event.ContainerListener#componentRemoved(java.awt.event.ContainerEvent)
+     */
+    @Override
+    public void componentRemoved(ContainerEvent e) {
+	removeKeyAndContainerListenerRecursively(e.getChild());
+    }
+
+    /**
+     * This method removes the {@link KeyListener} from all removed components. This is done recursively.
+     * 
+     * @param c
+     *            The {@link Component} that is removed.
+     */
+    private void removeKeyAndContainerListenerRecursively(Component c) {
+	c.removeKeyListener(this);
+	if (c instanceof Container) {
+	    Container cont = (Container) c;
+	    cont.removeContainerListener(this);
+	    Component[] children = cont.getComponents();
+	    for (int i = 0; i < children.length; i++) {
+		removeKeyAndContainerListenerRecursively(children[i]);
+	    }
+	}
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see ij.gui.WaitForUserDialog#keyPressed(java.awt.event.KeyEvent)
+     */
+    @Override
+    public void keyPressed(KeyEvent e) {
+	int code = e.getKeyCode();
+	if (code == KeyEvent.VK_ESCAPE) {
+	    escPressed = true;
+	    close();
+	}
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see ij.gui.WaitForUserDialog#keyReleased(java.awt.event.KeyEvent)
+     */
+    @Override
+    public void keyReleased(KeyEvent e) {
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see ij.gui.WaitForUserDialog#keyTyped(java.awt.event.KeyEvent)
+     */
+    @Override
+    public void keyTyped(KeyEvent e) {
     }
 }
