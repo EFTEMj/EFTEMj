@@ -26,9 +26,11 @@
  */
 package drift;
 
+import gui.ExtendedWaitForUserDialog;
 import ij.IJ;
 import ij.ImagePlus;
-import ij.gui.WaitForUserDialog;
+import ij.gui.MultiLineLabel;
+import ij.gui.Toolbar;
 import ij.gui.YesNoCancelDialog;
 import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
@@ -135,8 +137,11 @@ public class DriftDetection implements ExtendedPlugInFilter {
      * @return the selected slice of the stack
      */
     private int showRoiDialog(String title) {
-	WaitForUserDialog dialog = new WaitForUserDialog(title + " - set ROI",
-		"Set a ROI to define the template.\nThe ROI should contain a structure visable at all images of the stack.");
+	IJ.setTool(Toolbar.RECTANGLE);
+	ExtendedWaitForUserDialog dialog = new ExtendedWaitForUserDialog(
+		title + " - set ROI",
+		"Set a ROI to define the template.\nThe ROI should contain a structure visable at all images of the stack.",
+		new MultiLineLabel("Test:\nIt works!"));
 	dialog.show();
 	return CANCEL;
     }
