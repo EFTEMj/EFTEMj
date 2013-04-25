@@ -108,11 +108,6 @@ public class DriftDetection implements ExtendedPlugInFilter {
      * automatic mode.
      */
     private Rectangle roi;
-    /**
-     * Instances of {@link NormCrossCorrelation} that are used to calculate the normalised cross-correlation
-     * coefficients. The size of this array is the size of the initial stack minus one.
-     */
-    private NormCrossCorrelation[] ccArray;
 
     /*
      * (non-Javadoc)
@@ -136,11 +131,15 @@ public class DriftDetection implements ExtendedPlugInFilter {
      */
     @Override
     public void run(ImageProcessor ip) {
-	prepareCC();
-	for (NormCrossCorrelation cc : ccArray) {
-	    cc.startCalculation();
-	    // TODO implement findMax()
-	    cc.getCrossCorrelationMap().show();
+	NormCrossCorrelation[] ccArray = prepareCC();
+	Point[] driftArray = new Point[ccArray.length];
+	for (int i = 0; i < ccArray.length; i++) {
+	    if (ccArray[i] != null) {
+		ccArray[i].startCalculation();
+		driftArray[i] = NormCrossCorrelation.findMax(ccArray[i].getCrossCorrelationMap());
+	    } else {
+		driftArray[i] = new Point(0, 0);
+	    }
 	}
     }
 
@@ -195,8 +194,8 @@ public class DriftDetection implements ExtendedPlugInFilter {
      * For each image except the reference image an instance of {@link NormCrossCorrelation} is created. The input
      * images are copied and cropped before committed to {@link NormCrossCorrelation}.
      */
-    private void prepareCC() {
-	ccArray = new NormCrossCorrelation[stack.getStackSize() - 1];
+    private NormCrossCorrelation[] prepareCC() {
+	NormCrossCorrelation[] ccArray = new NormCrossCorrelation[stack.getStackSize()];
 	roi.x = roi.x - deltaX;
 	roi.y = roi.y - deltaY;
 	roi.width = roi.width + 2 * deltaX;
@@ -205,17 +204,18 @@ public class DriftDetection implements ExtendedPlugInFilter {
 	reference.copyBits(stack.getStack().getProcessor(referenceIndex), 0, 0, Blitter.COPY);
 	reference.setRoi(roi);
 	reference = (FloatProcessor) reference.crop();
-	int index = 0;
-	for (int i = 1; i <= stack.getStackSize(); i++) {
+	for (int i = 0; i < stack.getStackSize(); i++) {
 	    if (i != referenceIndex) {
 		FloatProcessor fp = new FloatProcessor(stack.getWidth(), stack.getHeight());
-		fp.copyBits(stack.getStack().getProcessor(i), 0, 0, Blitter.COPY);
+		fp.copyBits(stack.getStack().getProcessor(i + 1), 0, 0, Blitter.COPY);
 		fp.setRoi(roi);
 		fp = (FloatProcessor) fp.crop();
-		ccArray[index] = new NormCrossCorrelation(reference, fp, deltaX, deltaY);
-		index++;
+		ccArray[i] = new NormCrossCorrelation(reference, fp, deltaX, deltaY);
+	    } else {
+		ccArray[i] = null;
 	    }
 	}
+	return ccArray;
     }
 
     /**
