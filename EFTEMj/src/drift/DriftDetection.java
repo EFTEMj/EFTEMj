@@ -141,6 +141,9 @@ public class DriftDetection implements ExtendedPlugInFilter {
 		driftArray[i] = new Point(0, 0);
 	    }
 	}
+	// TODO Add the possibility to deactivate the shift optimisation.
+	ImagePlus correctedStack = OptimisedStackShifter.shiftImages(stack, driftArray, true);
+	correctedStack.show();
     }
 
     /*
@@ -205,7 +208,7 @@ public class DriftDetection implements ExtendedPlugInFilter {
 	reference.setRoi(roi);
 	reference = (FloatProcessor) reference.crop();
 	for (int i = 0; i < stack.getStackSize(); i++) {
-	    if (i != referenceIndex) {
+	    if (i != referenceIndex - 1) {
 		FloatProcessor fp = new FloatProcessor(stack.getWidth(), stack.getHeight());
 		fp.copyBits(stack.getStack().getProcessor(i + 1), 0, 0, Blitter.COPY);
 		fp.setRoi(roi);
