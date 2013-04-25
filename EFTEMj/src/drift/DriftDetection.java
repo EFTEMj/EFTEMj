@@ -26,35 +26,93 @@
  */
 package drift;
 
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Scrollbar;
+
+import javax.naming.InitialContext;
+
 import gui.ExtendedWaitForUserDialog;
 import ij.IJ;
 import ij.ImagePlus;
+import ij.ImageStack;
+import ij.gui.GenericDialog;
+import ij.gui.Roi;
 import ij.gui.Toolbar;
 import ij.gui.YesNoCancelDialog;
 import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
+import ij.process.Blitter;
+import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 
 /**
+ * This plugin can measure the drift between all images of a stack. The output is the drift of all other images compared
+ * to the selected reference image. Two modes are available - an automatic and a manual one.
+ * <p />
+ * The automatic mode calculates the normalised cross-correlation coefficients for all possible shifts (can be limited
+ * for faster processing) to determine the drift.
+ * <p />
+ * The manual method uses overlay techniques to help the user determining the drift manually.
+ * 
  * @author Michael Epping <michael.epping@uni-muenster.de>
  * 
  */
 public class DriftDetection implements ExtendedPlugInFilter {
 
-    private static final int AUTOMATIC = 1;
-    private static final int MANUAL = 2;
-    private static final int CANCEL = 0;
-    private int flags = DOES_32 | NO_CHANGES | FINAL_PROCESSING;
-
+    /**
+     * The automatic mode will be used.
+     */
+    private final int AUTOMATIC = 2;
+    /**
+     * The manual mode will be used.
+     */
+    private final int MANUAL = 4;
+    /**
+     * The plugin will be aborted.
+     */
+    private final int CANCEL = 0;
+    /**
+     * The plugin will continue with the next step.
+     */
+    private final int OK = 1;
+    /**
+     * <code>DOES_32 | NO_CHANGES | FINAL_PROCESSING</code>
+     */
+    private final int FLAGS = DOES_32 | NO_CHANGES | FINAL_PROCESSING;
     /**
      * This is the {@link ImagePlus} that has been selected when starting the plugin. No changes will be done to this
      * {@link ImagePlus}.
      */
     private ImagePlus initialImp;
     /**
-     * This is the index (one-based) of the slice that is used as template.
+     * An {@link ImagePlus} that contains an {@link ImageStack}. If the initial {@link ImagePlus} is a stack then this
+     * is the same {@link ImagePlus}. A new stack will be created if the {@link InitialContext} {@link ImagePlus} is no
+     * stack.
      */
-    private int templateIndex;
+    private ImagePlus stack;
+    /**
+     * This is the index (one-based) of the slice that is used as reference image.
+     */
+    private int referenceIndex;
+    /**
+     * The maximum image shift in x-direction that will be tested by the automatic drift detection
+     */
+    private int deltaX;
+    /**
+     * The maximum image shift in y-direction that will be tested by the automatic drift detection
+     */
+    private int deltaY;
+    /**
+     * A copy of the {@link Roi}s bounding {@link Rectangle}, that has been placed during the preparation of the
+     * automatic mode.
+     */
+    private Rectangle roi;
+    /**
+     * Instances of {@link NormCrossCorrelation} that are used to calculate the normalised cross-correlation
+     * coefficients. The size of this array is the size of the initial stack minus one.
+     */
+    private NormCrossCorrelation[] ccArray;
 
     /*
      * (non-Javadoc)
@@ -67,8 +125,8 @@ public class DriftDetection implements ExtendedPlugInFilter {
 	    // TODO implement final processing
 	    return NO_CHANGES | DONE;
 	}
-	initialImp = imp;
-	return flags;
+	// No setup is done here. See showDialog() for the setup procedure.
+	return FLAGS;
     }
 
     /*
@@ -78,8 +136,12 @@ public class DriftDetection implements ExtendedPlugInFilter {
      */
     @Override
     public void run(ImageProcessor ip) {
-	// TODO Auto-generated method stub
-
+	prepareCC();
+	for (NormCrossCorrelation cc : ccArray) {
+	    cc.startCalculation();
+	    // TODO implement findMax()
+	    cc.getCrossCorrelationMap().show();
+	}
     }
 
     /*
@@ -90,37 +152,75 @@ public class DriftDetection implements ExtendedPlugInFilter {
      */
     @Override
     public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
+	// Check if imp is a stack.
+	initialImp = imp;
 	if (imp.getStackSize() <= 1) {
 	    // TODO implement stack creation
 	    canceled();
 	    return NO_CHANGES | DONE;
+	} else {
+	    stack = imp;
 	}
-	// TODO copy the input stack
+	// Select automatic or manual mode.
 	switch (showModeDialog(command)) {
 	case AUTOMATIC:
 	    IJ.showStatus("Automatic drift detection has been selected.");
-	    // Show the dialog again until the user cancels it or places a ROI.
+	    // Show the ROI dialog again until the user cancels it or places a ROI.
 	    do {
-		templateIndex = showRoiDialog(command);
-	    } while (templateIndex != CANCEL & imp.getRoi() == null);
-	    if (templateIndex == CANCEL) {
+		referenceIndex = showRoiDialog(command);
+	    } while (referenceIndex != CANCEL & imp.getRoi() == null);
+	    if (referenceIndex == CANCEL) {
 		canceled();
 		return NO_CHANGES | DONE;
 	    }
-	    IJ.showMessage("The slice " + templateIndex + " has ben selected as template.");
-	    // TODO implement automatic drift detection
+	    roi = (Rectangle) imp.getRoi().getBounds().clone();
+	    if (showParameterDialog(command) == CANCEL) {
+		canceled();
+		return NO_CHANGES | DONE;
+	    }
 	    break;
 	case MANUAL:
 	    IJ.showStatus("Manual drift detection has been selected.");
+	    // TODO copy the input stack
 	    // TODO implement manual drift detection
 	    break;
 	default:
 	    canceled();
 	    return NO_CHANGES | DONE;
 	}
-	return flags;
+	return FLAGS;
     }
 
+    /**
+     * For each image except the reference image an instance of {@link NormCrossCorrelation} is created. The input
+     * images are copied and cropped before committed to {@link NormCrossCorrelation}.
+     */
+    private void prepareCC() {
+	ccArray = new NormCrossCorrelation[stack.getStackSize() - 1];
+	roi.x = roi.x - deltaX;
+	roi.y = roi.y - deltaY;
+	roi.width = roi.width + 2 * deltaX;
+	roi.height = roi.height + 2 * deltaY;
+	FloatProcessor reference = new FloatProcessor(stack.getWidth(), stack.getHeight());
+	reference.copyBits(stack.getStack().getProcessor(referenceIndex), 0, 0, Blitter.COPY);
+	reference.setRoi(roi);
+	reference = (FloatProcessor) reference.crop();
+	int index = 0;
+	for (int i = 1; i <= stack.getStackSize(); i++) {
+	    if (i != referenceIndex) {
+		FloatProcessor fp = new FloatProcessor(stack.getWidth(), stack.getHeight());
+		fp.copyBits(stack.getStack().getProcessor(i), 0, 0, Blitter.COPY);
+		fp.setRoi(roi);
+		fp = (FloatProcessor) fp.crop();
+		ccArray[index] = new NormCrossCorrelation(reference, fp, deltaX, deltaY);
+		index++;
+	    }
+	}
+    }
+
+    /**
+     * Cancel the plugin and show a status message.
+     */
     private void canceled() {
 	IJ.showStatus("Drift detection has been canceled.");
     }
@@ -154,16 +254,17 @@ public class DriftDetection implements ExtendedPlugInFilter {
     }
 
     /**
-     * A dialog that requests the user to set a ROI. This ROI is used to create a template for the cross-correlation.
+     * A dialog that requests the user to set a ROI. This ROI is used to create a reference image for the
+     * cross-correlation.
      * 
      * @param title
-     * @return the selected slice of the stack
+     * @return the selected slice of the stack or CANCEL
      */
     private int showRoiDialog(String title) {
 	IJ.setTool(Toolbar.RECTANGLE);
 	ExtendedWaitForUserDialog dialog = new ExtendedWaitForUserDialog(
 		title + " - set ROI",
-		"Set a ROI to define the template.\nThe ROI should contain a structure visable at all images of the stack.",
+		"Set a ROI to define the reference image.\nThe ROI should contain a structure visable at all images of the stack.",
 		null);
 	dialog.show();
 	if (!dialog.escPressed())
@@ -171,4 +272,59 @@ public class DriftDetection implements ExtendedPlugInFilter {
 	return CANCEL;
     }
 
+    /**
+     * This dialog is used to setup the parameter for the automatic drift detection.
+     * 
+     * @param title
+     * @return OK or CANCEL
+     */
+    private int showParameterDialog(String title) {
+	GenericDialog gd = new GenericDialog(title + " - set parameters", IJ.getInstance());
+	// The ROI defines the maximum of delta
+	Point maxDelta = getRoiBorderDist();
+	int maxDeltaX = maxDelta.x;
+	int maxDeltaY = maxDelta.y;
+	// maxValue is a multiple of 10, except when maxDelta is smaller than 10.
+	gd.addSlider("delta x", 0, Math.min(Math.max(maxDeltaX / 10 * 10, 10), maxDeltaX),
+		Math.min(Math.max(maxDeltaX / 10 * 10, 10), maxDeltaX) / 2);
+	gd.addSlider("delta y", 0, Math.min(Math.max(maxDeltaY / 10 * 10, 10), maxDeltaY),
+		Math.min(Math.max(maxDeltaY / 10 * 10, 10), maxDeltaY) / 2);
+	String[] stackLabels = new String[stack.getStackSize()];
+	for (int i = 0; i < stack.getStackSize(); i++) {
+	    stackLabels[i] = String.format("%s/%s (%s)", i + 1, stack.getStackSize(), stack.getStack()
+		    .getShortSliceLabel(i + 1));
+	}
+	gd.addChoice("reference image", stackLabels, stackLabels[referenceIndex - 1]);
+	gd.showDialog();
+	if (gd.wasCanceled()) {
+	    return CANCEL;
+	}
+	Scrollbar slider = (Scrollbar) gd.getSliders().get(0);
+	deltaX = slider.getValue();
+	slider = (Scrollbar) gd.getSliders().get(1);
+	deltaY = slider.getValue();
+	// Choice starts with 0; stack starts with 1
+	referenceIndex = gd.getNextChoiceIndex() + 1;
+	return OK;
+
+    }
+
+    /**
+     * @return the distance between the {@link Roi} and the nearest image border
+     */
+    private Point getRoiBorderDist() {
+	Point dist = new Point(stack.getWidth(), stack.getHeight());
+	Rectangle roi = stack.getRoi().getBounds();
+	if (roi.x < dist.x)
+	    dist.x = roi.x;
+	if (roi.y < dist.y)
+	    dist.y = roi.y;
+	int spacingRight = stack.getWidth() - roi.x - roi.width;
+	if (spacingRight < dist.x)
+	    dist.x = spacingRight;
+	int spacingBot = stack.getHeight() - roi.y - roi.height;
+	if (spacingBot < dist.y)
+	    dist.y = spacingBot;
+	return dist;
+    }
 }
