@@ -157,7 +157,7 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	    ImagePlus correctedStack = OptimisedStackShifter.shiftImages(stack, driftArray, true, optimiseShift,
 		    createNew);
 	    if (correctedStack.isVisible() == true) {
-		correctedStack.updateAndRepaintWindow();	
+		correctedStack.updateAndRepaintWindow();
 	    } else {
 		correctedStack.show();
 	    }
@@ -266,9 +266,9 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
     private int showModeDialog(String title) {
 	YesNoCancelDialog dialog = new YesNoCancelDialog(IJ.getInstance(), title + " - detection mode",
 		"Use automatic drift detection?\nTo start manual mode select no.");
-	if (dialog.yesPressed()) {
+	if (dialog.yesPressed() == true) {
 	    return AUTOMATIC;
-	} else if (dialog.cancelPressed()) {
+	} else if (dialog.cancelPressed() == true) {
 	    return CANCEL;
 	}
 	return MANUAL;
@@ -288,7 +288,7 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 		"Set a ROI to define the reference image.\nThe ROI should contain a structure visable at all images of the stack.",
 		null);
 	dialog.show();
-	if (!dialog.escPressed())
+	if (dialog.escPressed() == false)
 	    return initialImp.getSlice();
 	return CANCEL;
     }
@@ -316,12 +316,14 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 		    .getShortSliceLabel(i + 1));
 	}
 	gd.addChoice("Select reference image", stackLabels, stackLabels[referenceIndex - 1]);
+	// begin - CheckboxGroup
 	String[] labels = { "Perform image shift", "Optimise image shift", "Create a new image" };
 	boolean[] defaults = { true, true, true };
 	String[] headings = { "Shift images" };
 	gd.addCheckboxGroup(3, 1, labels, defaults, headings);
+	// end - checkboxGroup
 	gd.showDialog();
-	if (gd.wasCanceled()) {
+	if (gd.wasCanceled() == true) {
 	    return CANCEL;
 	}
 	Scrollbar slider = (Scrollbar) gd.getSliders().get(0);
@@ -330,11 +332,12 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	deltaY = slider.getValue();
 	// Choice starts with 0; stack starts with 1
 	referenceIndex = gd.getNextChoiceIndex() + 1;
+	// begin - CheckboxGroup
 	performShift = gd.getNextBoolean();
 	optimiseShift = gd.getNextBoolean();
 	createNew = gd.getNextBoolean();
+	// end - checkboxGroup
 	return OK;
-
     }
 
     /**

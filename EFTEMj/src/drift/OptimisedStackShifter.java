@@ -61,6 +61,7 @@ public class OptimisedStackShifter {
     public static ImagePlus shiftImages(ImagePlus initialStack, Point[] shift, boolean optimise, boolean createNew) {
 	ImagePlus correctedStack;
 	if (createNew == true) {
+	    // you have to delete the roi otherwise only the roi is duplicated
 	    initialStack.deleteRoi();
 	    correctedStack = new Duplicator().run(initialStack);
 	    initialStack.restoreRoi();
@@ -106,8 +107,8 @@ public class OptimisedStackShifter {
     }
 
     /**
-     * Before translating the images the centroid of the shift values is calculated. The centroid is used to reduce to
-     * maximum drift to one direction.
+     * The centroid of the shift values is calculated. The centroid is used to reduce to maximum drift to one direction.
+     * For example (0/0), (10/10) and (20/20) will result in (-10/-10), (0/0) and (10/10).
      */
     private static Point[] optimizedImageShift(Point[] shift) {
 	IJ.showStatus("Using optimized image sift.");
