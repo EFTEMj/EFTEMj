@@ -163,6 +163,8 @@ public class ExtendedWaitForUserDialog extends WaitForUserDialog implements Cont
 	if (code == KeyEvent.VK_ESCAPE) {
 	    escPressed = true;
 	    close();
+	} else if (code == KeyEvent.VK_ENTER) {
+	    close();
 	}
     }
 
