@@ -44,14 +44,25 @@ public class OptimisedStackShifter {
     private static String prefix = "DK-";
 
     /**
-     * All images of an {@link ImagePlus} stack are shifted to correct the given drift.
-     */
-    /**
+     * All images of an {@link ImagePlus} stack are shifted by the given shift values.
+     * 
+     * @param initialStack
+     *            {@link ImagePlus} containing a stack to be shifted
+     * @param shift
+     *            array of {@link Point}s that represent the shift of each image
      * @param optimise
-     * @return
+     *            true to optimise the given shift values
+     * @param createNew
+     *            true to create a new {@link ImagePlus} and keep the initial one untouched
+     * @return a new {@link ImagePlus} that contains the shifted images
      */
-    public static ImagePlus shiftImages(ImagePlus initialStack, Point[] shift, boolean optimise) {
-	ImagePlus correctedStack = (ImagePlus) initialStack.clone();
+    public static ImagePlus shiftImages(ImagePlus initialStack, Point[] shift, boolean optimise, boolean createNew) {
+	ImagePlus correctedStack;
+	if (createNew == true) {
+	    correctedStack = (ImagePlus) initialStack.clone();
+	} else {
+	    correctedStack = initialStack;
+	}
 	correctedStack.setTitle(prefix.concat(initialStack.getTitle()));
 	if (optimise == true) {
 	    shift = optimizedImageShift(shift);
@@ -63,13 +74,30 @@ public class OptimisedStackShifter {
 	return correctedStack;
     }
 
-    public static ImagePlus shiftImages(ImagePlus initialStack, Point[] shift, boolean invert, boolean optimise) {
+    /**
+     * All images of an {@link ImagePlus} stack are shifted by the given shift values. This method should be used if
+     * drift values instead of shift values are committed.
+     * 
+     * @param initialStack
+     *            {@link ImagePlus} containing a stack to be shifted
+     * @param shift
+     *            array of {@link Point}s that represent the shift of each image
+     * @param invert
+     *            true to invert all shift values
+     * @param optimise
+     *            true to optimise the given shift values
+     * @param createNew
+     *            true to create a new {@link ImagePlus} and keep the initial one untouched
+     * @return a new {@link ImagePlus} that contains the shifted images
+     */
+    public static ImagePlus shiftImages(ImagePlus initialStack, Point[] shift, boolean invert, boolean optimise,
+	    boolean createNew) {
 	if (invert == true) {
 	    for (int i = 0; i < shift.length; i++) {
 		shift[i] = new Point(-shift[i].x, -shift[i].y);
 	    }
 	}
-	return shiftImages(initialStack, shift, optimise);
+	return shiftImages(initialStack, shift, optimise, createNew);
     }
 
     /**

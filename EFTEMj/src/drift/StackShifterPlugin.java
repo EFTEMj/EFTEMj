@@ -91,10 +91,7 @@ public class StackShifterPlugin implements ExtendedPlugInFilter {
      */
     @Override
     public void run(ImageProcessor ip) {
-	if (createNew == true) {
-	    ImagePlus newImp = (ImagePlus) initialImp.clone();
-	    OptimisedStackShifter.shiftImages(newImp, shift, optimise);
-	}
+	OptimisedStackShifter.shiftImages(initialImp, shift, optimise, createNew);
     }
 
     /*
@@ -125,11 +122,12 @@ public class StackShifterPlugin implements ExtendedPlugInFilter {
 
     private int showParameterDialog(String title) {
 	GenericDialog gd = new GenericDialog(title, IJ.getInstance());
-
+	// TODO implement the dialog
 	gd.showDialog();
 	if (gd.wasCanceled() == true) {
 	    return CANCEL;
 	}
+	// TODO implement getNext methods
 	return OK;
     }
 
