@@ -58,7 +58,7 @@ import ij.process.ImageProcessor;
  * @author Michael Epping <michael.epping@uni-muenster.de>
  * 
  */
-public class DriftDetection implements ExtendedPlugInFilter {
+public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 
     /**
      * The automatic mode will be used.
