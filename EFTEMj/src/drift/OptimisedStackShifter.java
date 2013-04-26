@@ -44,37 +44,67 @@ public class OptimisedStackShifter {
     private static String prefix = "DK-";
 
     /**
-     * All images of an {@link ImagePlus} stack are shifted to correct the given drift.
-     */
-    /**
+     * All images of an {@link ImagePlus} stack are shifted by the given shift values.
+     * 
+     * @param initialStack
+     *            {@link ImagePlus} containing a stack to be shifted
+     * @param shift
+     *            array of {@link Point}s that represent the shift of each image
      * @param optimise
-     * @return
+     *            true to optimise the given shift values
+     * @param createNew
+     *            true to create a new {@link ImagePlus} and keep the initial one untouched
+     * @return a new {@link ImagePlus} that contains the shifted images
      */
-    public static ImagePlus shiftImages(ImagePlus initialStack, Point[] drift, boolean optimise) {
-	ImagePlus correctedStack = (ImagePlus) initialStack.clone();
-	correctedStack.setTitle(prefix.concat(initialStack.getTitle()));
-	Point[] shift = new Point[initialStack.getStackSize()];
-	for (int i = 0; i < drift.length; i++) {
-	    // shift = -drift
-	    shift[i] = new Point(-drift[i].x, -drift[i].y);
-	    // Skip the translation if the shift will be optimised.
-	    if (optimise == false) {
-		correctedStack.getStack().getProcessor(i + 1).translate(shift[i].x, shift[i].y);
-		correctedStack.getStack().setSliceLabel(initialStack.getStack().getSliceLabel(i + 1), i + 1);
-	    }
+    public static ImagePlus shiftImages(ImagePlus initialStack, Point[] shift, boolean optimise, boolean createNew) {
+	ImagePlus correctedStack;
+	if (createNew == true) {
+	    correctedStack = (ImagePlus) initialStack.clone();
+	} else {
+	    correctedStack = initialStack;
 	}
-	// The for-loop has to be finished before calling the optimisation.
+	correctedStack.setTitle(prefix.concat(initialStack.getTitle()));
 	if (optimise == true) {
-	    optimizedImageShift(correctedStack, shift);
+	    shift = optimizedImageShift(shift);
+	}
+	for (int i = 0; i < shift.length; i++) {
+	    correctedStack.getStack().getProcessor(i + 1).translate(shift[i].x, shift[i].y);
+	    correctedStack.getStack().setSliceLabel(initialStack.getStack().getSliceLabel(i + 1), i + 1);
 	}
 	return correctedStack;
+    }
+
+    /**
+     * All images of an {@link ImagePlus} stack are shifted by the given shift values. This method should be used if
+     * drift values instead of shift values are committed.
+     * 
+     * @param initialStack
+     *            {@link ImagePlus} containing a stack to be shifted
+     * @param shift
+     *            array of {@link Point}s that represent the shift of each image
+     * @param invert
+     *            true to invert all shift values
+     * @param optimise
+     *            true to optimise the given shift values
+     * @param createNew
+     *            true to create a new {@link ImagePlus} and keep the initial one untouched
+     * @return a new {@link ImagePlus} that contains the shifted images
+     */
+    public static ImagePlus shiftImages(ImagePlus initialStack, Point[] shift, boolean invert, boolean optimise,
+	    boolean createNew) {
+	if (invert == true) {
+	    for (int i = 0; i < shift.length; i++) {
+		shift[i] = new Point(-shift[i].x, -shift[i].y);
+	    }
+	}
+	return shiftImages(initialStack, shift, optimise, createNew);
     }
 
     /**
      * Before translating the images the centroid of the shift values is calculated. The centroid is used to reduce to
      * maximum drift to one direction.
      */
-    private static void optimizedImageShift(ImagePlus stack, Point[] shift) {
+    private static Point[] optimizedImageShift(Point[] shift) {
 	IJ.showStatus("Using optimized image sift.");
 	int minX = 0;
 	int maxX = 0;
@@ -100,9 +130,7 @@ public class OptimisedStackShifter {
 	int optimalY = Math.round((maxY - minY) / 2) + minY;
 	for (int i = 0; i < shift.length; i++) {
 	    shift[i] = new Point(shift[i].x - optimalX, shift[i].y - optimalY);
-	    stack.getStack().getProcessor(i + 1).translate(shift[i].x, shift[i].y);
-	    stack.getStack().setSliceLabel(stack.getStack().getSliceLabel(i + 1), i + 1);
 	}
+	return shift;
     }
-
 }

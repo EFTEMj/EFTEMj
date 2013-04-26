@@ -142,7 +142,7 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	    }
 	}
 	// TODO Add the possibility to deactivate the shift optimisation.
-	ImagePlus correctedStack = OptimisedStackShifter.shiftImages(stack, driftArray, true);
+	ImagePlus correctedStack = OptimisedStackShifter.shiftImages(stack, driftArray, true, true, true);
 	correctedStack.show();
     }
 
