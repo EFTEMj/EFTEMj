@@ -50,31 +50,33 @@ public class OptimisedStackShifter {
      * @param optimise
      * @return
      */
-    public static ImagePlus shiftImages(ImagePlus initialStack, Point[] drift, boolean optimise) {
+    public static ImagePlus shiftImages(ImagePlus initialStack, Point[] shift, boolean optimise) {
 	ImagePlus correctedStack = (ImagePlus) initialStack.clone();
 	correctedStack.setTitle(prefix.concat(initialStack.getTitle()));
-	Point[] shift = new Point[initialStack.getStackSize()];
-	for (int i = 0; i < drift.length; i++) {
-	    // shift = -drift
-	    shift[i] = new Point(-drift[i].x, -drift[i].y);
-	    // Skip the translation if the shift will be optimised.
-	    if (optimise == false) {
-		correctedStack.getStack().getProcessor(i + 1).translate(shift[i].x, shift[i].y);
-		correctedStack.getStack().setSliceLabel(initialStack.getStack().getSliceLabel(i + 1), i + 1);
-	    }
-	}
-	// The for-loop has to be finished before calling the optimisation.
 	if (optimise == true) {
-	    optimizedImageShift(correctedStack, shift);
+	    shift = optimizedImageShift(shift);
+	}
+	for (int i = 0; i < shift.length; i++) {
+	    correctedStack.getStack().getProcessor(i + 1).translate(shift[i].x, shift[i].y);
+	    correctedStack.getStack().setSliceLabel(initialStack.getStack().getSliceLabel(i + 1), i + 1);
 	}
 	return correctedStack;
+    }
+
+    public static ImagePlus shiftImages(ImagePlus initialStack, Point[] shift, boolean invert, boolean optimise) {
+	if (invert == true) {
+	    for (int i = 0; i < shift.length; i++) {
+		shift[i] = new Point(-shift[i].x, -shift[i].y);
+	    }
+	}
+	return shiftImages(initialStack, shift, optimise);
     }
 
     /**
      * Before translating the images the centroid of the shift values is calculated. The centroid is used to reduce to
      * maximum drift to one direction.
      */
-    private static void optimizedImageShift(ImagePlus stack, Point[] shift) {
+    private static Point[] optimizedImageShift(Point[] shift) {
 	IJ.showStatus("Using optimized image sift.");
 	int minX = 0;
 	int maxX = 0;
@@ -100,9 +102,7 @@ public class OptimisedStackShifter {
 	int optimalY = Math.round((maxY - minY) / 2) + minY;
 	for (int i = 0; i < shift.length; i++) {
 	    shift[i] = new Point(shift[i].x - optimalX, shift[i].y - optimalY);
-	    stack.getStack().getProcessor(i + 1).translate(shift[i].x, shift[i].y);
-	    stack.getStack().setSliceLabel(stack.getStack().getSliceLabel(i + 1), i + 1);
 	}
+	return shift;
     }
-
 }
