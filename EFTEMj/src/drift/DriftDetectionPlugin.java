@@ -40,6 +40,7 @@ import ij.gui.GenericDialog;
 import ij.gui.Roi;
 import ij.gui.Toolbar;
 import ij.gui.YesNoCancelDialog;
+import ij.measure.ResultsTable;
 import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
 import ij.process.Blitter;
@@ -120,6 +121,7 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
      * automatic mode.
      */
     private Rectangle roi;
+    private Point[] driftArray;
 
     /*
      * (non-Javadoc)
@@ -129,7 +131,19 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
     @Override
     public int setup(String arg, ImagePlus imp) {
 	if (arg == "final") {
-	    // TODO implement final processing (show detected drift)
+	    // TODO write drift into result before the shift is performed.
+	    ResultsTable result = new ResultsTable();
+	    // int titleId = result.getFreeColumn("image title");
+	    int driftXId = result.getFreeColumn("drift.x");
+	    int driftYId = result.getFreeColumn("drift.y");
+	    result.incrementCounter();
+	    for (int i = 0; i < driftArray.length; i++) {
+		result.addLabel(initialImp.getStack().getShortSliceLabel(i + 1));
+		result.addValue(driftXId, driftArray[i].x);
+		result.addValue(driftYId, driftArray[i].y);
+		result.incrementCounter();
+	    }
+	    result.show("Drift of " + initialImp.getShortTitle());
 	    return NO_CHANGES | DONE;
 	}
 	// No setup is done here. See showDialog() for the setup procedure.
@@ -144,7 +158,7 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
     @Override
     public void run(ImageProcessor ip) {
 	NormCrossCorrelation[] ccArray = prepareCC();
-	Point[] driftArray = new Point[ccArray.length];
+	driftArray = new Point[ccArray.length];
 	for (int i = 0; i < ccArray.length; i++) {
 	    if (ccArray[i] != null) {
 		ccArray[i].startCalculation();

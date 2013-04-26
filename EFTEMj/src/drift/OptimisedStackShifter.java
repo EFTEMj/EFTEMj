@@ -64,6 +64,7 @@ public class OptimisedStackShifter {
 	    initialStack.deleteRoi();
 	    correctedStack = new Duplicator().run(initialStack);
 	    initialStack.restoreRoi();
+	    // TODO Extend Duplicator to perform this task.
 	} else {
 	    correctedStack = initialStack;
 	}
