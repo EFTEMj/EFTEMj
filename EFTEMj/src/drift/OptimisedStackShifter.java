@@ -28,6 +28,8 @@ package drift;
 
 import ij.IJ;
 import ij.ImagePlus;
+import ij.plugin.Duplicator;
+
 import java.awt.Point;
 
 /**
@@ -59,17 +61,20 @@ public class OptimisedStackShifter {
     public static ImagePlus shiftImages(ImagePlus initialStack, Point[] shift, boolean optimise, boolean createNew) {
 	ImagePlus correctedStack;
 	if (createNew == true) {
-	    correctedStack = (ImagePlus) initialStack.clone();
+	    initialStack.deleteRoi();
+	    correctedStack = new Duplicator().run(initialStack);
+	    initialStack.restoreRoi();
 	} else {
 	    correctedStack = initialStack;
 	}
-	correctedStack.setTitle(prefix.concat(initialStack.getTitle()));
+	correctedStack.setTitle(prefix.concat(correctedStack.getTitle()));
 	if (optimise == true) {
 	    shift = optimizedImageShift(shift);
 	}
 	for (int i = 0; i < shift.length; i++) {
 	    correctedStack.getStack().getProcessor(i + 1).translate(shift[i].x, shift[i].y);
-	    correctedStack.getStack().setSliceLabel(initialStack.getStack().getSliceLabel(i + 1), i + 1);
+	    correctedStack.getStack().setSliceLabel(prefix.concat(correctedStack.getStack().getSliceLabel(i + 1)),
+		    i + 1);
 	}
 	return correctedStack;
     }

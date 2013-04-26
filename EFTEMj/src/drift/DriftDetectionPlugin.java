@@ -96,6 +96,18 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
      */
     private int referenceIndex;
     /**
+     * Set this to <code>false</code> for only detecting the drift and not performing the image shift.
+     */
+    private boolean performShift;
+    /**
+     * Defines if the shift values get optimised.
+     */
+    private boolean optimiseShift;
+    /**
+     * Defines if a new {@link ImagePlus} is created that contains the shifted images.
+     */
+    private boolean createNew;
+    /**
      * The maximum image shift in x-direction that will be tested by the automatic drift detection
      */
     private int deltaX;
@@ -117,7 +129,7 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
     @Override
     public int setup(String arg, ImagePlus imp) {
 	if (arg == "final") {
-	    // TODO implement final processing
+	    // TODO implement final processing (show detected drift)
 	    return NO_CHANGES | DONE;
 	}
 	// No setup is done here. See showDialog() for the setup procedure.
@@ -141,9 +153,15 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 		driftArray[i] = new Point(0, 0);
 	    }
 	}
-	// TODO Add the possibility to deactivate the shift optimisation.
-	ImagePlus correctedStack = OptimisedStackShifter.shiftImages(stack, driftArray, true, true, true);
-	correctedStack.show();
+	if (performShift == true) {
+	    ImagePlus correctedStack = OptimisedStackShifter.shiftImages(stack, driftArray, true, optimiseShift,
+		    createNew);
+	    if (correctedStack.isVisible() == true) {
+		correctedStack.updateAndRepaintWindow();	
+	    } else {
+		correctedStack.show();
+	    }
+	}
     }
 
     /*
@@ -288,16 +306,20 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	int maxDeltaX = maxDelta.x;
 	int maxDeltaY = maxDelta.y;
 	// maxValue is a multiple of 10, except when maxDelta is smaller than 10.
-	gd.addSlider("delta x", 0, Math.min(Math.max(maxDeltaX / 10 * 10, 10), maxDeltaX),
+	gd.addSlider("Set delta x", 0, Math.min(Math.max(maxDeltaX / 10 * 10, 10), maxDeltaX),
 		Math.min(Math.max(maxDeltaX / 10 * 10, 10), maxDeltaX) / 2);
-	gd.addSlider("delta y", 0, Math.min(Math.max(maxDeltaY / 10 * 10, 10), maxDeltaY),
+	gd.addSlider("Set delta y", 0, Math.min(Math.max(maxDeltaY / 10 * 10, 10), maxDeltaY),
 		Math.min(Math.max(maxDeltaY / 10 * 10, 10), maxDeltaY) / 2);
 	String[] stackLabels = new String[stack.getStackSize()];
 	for (int i = 0; i < stack.getStackSize(); i++) {
 	    stackLabels[i] = String.format("%s/%s (%s)", i + 1, stack.getStackSize(), stack.getStack()
 		    .getShortSliceLabel(i + 1));
 	}
-	gd.addChoice("reference image", stackLabels, stackLabels[referenceIndex - 1]);
+	gd.addChoice("Select reference image", stackLabels, stackLabels[referenceIndex - 1]);
+	String[] labels = { "Perform image shift", "Optimise image shift", "Create a new image" };
+	boolean[] defaults = { true, true, true };
+	String[] headings = { "Shift images" };
+	gd.addCheckboxGroup(3, 1, labels, defaults, headings);
 	gd.showDialog();
 	if (gd.wasCanceled()) {
 	    return CANCEL;
@@ -308,6 +330,9 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	deltaY = slider.getValue();
 	// Choice starts with 0; stack starts with 1
 	referenceIndex = gd.getNextChoiceIndex() + 1;
+	performShift = gd.getNextBoolean();
+	optimiseShift = gd.getNextBoolean();
+	createNew = gd.getNextBoolean();
 	return OK;
 
     }
