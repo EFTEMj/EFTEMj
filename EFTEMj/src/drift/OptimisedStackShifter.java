@@ -51,7 +51,8 @@ public class OptimisedStackShifter {
      * @param initialStack
      *            {@link ImagePlus} containing a stack to be shifted
      * @param shift
-     *            array of {@link Point}s that represent the shift of each image
+     *            array of {@link Point}s that represent the shift of each image. This array will be modified if
+     *            optimise is set <code>true</code>
      * @param optimise
      *            true to optimise the given shift values
      * @param createNew
@@ -87,7 +88,8 @@ public class OptimisedStackShifter {
      * @param initialStack
      *            {@link ImagePlus} containing a stack to be shifted
      * @param shift
-     *            array of {@link Point}s that represent the shift of each image
+     *            array of {@link Point}s that represent the shift of each image. This array will be modified if
+     *            optimise or invert are set <code>true</code>
      * @param invert
      *            true to invert all shift values
      * @param optimise

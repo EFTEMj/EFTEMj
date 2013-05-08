@@ -30,6 +30,7 @@ import java.awt.Point;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import ij.IJ;
 import ij.ImagePlus;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
@@ -86,6 +87,15 @@ public class NormCrossCorrelation {
      * Necessary if the coefficient is not used.
      */
     private double squareSumT;
+    /**
+     * This field indicates the progress. A static method is used to increase the value by 1. It is necessary to use
+     * volatile because different {@link Thread}s call the related method.
+     */
+    private static volatile int progress;
+    /**
+     * Number of steps until the drift detection is finished.
+     */
+    private static int progressSteps;
 
     /**
      * Creates an instance of {@link NormCrossCorrelation} and prepares the calculation of the normalised
@@ -142,6 +152,7 @@ public class NormCrossCorrelation {
 	if (NormCrossCorrelation.debug == true) {
 	    System.out.println("normCrossCorrelationMap: " + mapHeight);
 	}
+	progressSteps = mapHeight;
     }
 
     /**
@@ -261,6 +272,26 @@ public class NormCrossCorrelation {
     }
 
     /**
+     * {@link NormCrossCorrelationTask} will use this method to update the process.
+     */
+    private static void updateProgress() {
+	progress++;
+	IJ.showProgress(progress, progressSteps);
+    }
+
+    /**
+     * You only need this method if more than one instance of {@link NormCrossCorrelation} is used. The constructor will
+     * set the right number of steps if only one instance is used. Call this method after creating all instances.
+     * 
+     * @param steps
+     *            for N instances of {@link NormCrossCorrelation} this is <code>N * (2 * shiftY + 1)</code>
+     */
+    public static void setProgressSteps(int steps) {
+	progressSteps = steps;
+	progress = 0;
+    }
+
+    /**
      * Each {@link NormCrossCorrelationTask} calculates a row of the resulting normalized cross-correlation
      * (coefficient) map. It implements {@link Runnable} to allow a parallel execution.
      */
@@ -292,26 +323,22 @@ public class NormCrossCorrelation {
 
 	@Override
 	public void run() {
-
 	    if (useCoefficient == true) {
 		calculateCoefficient();
 	    } else {
 		calculateCorrelation();
 	    }
+	    NormCrossCorrelation.updateProgress();
 	}
 
 	private void calculateCorrelation() {
-	    double valueI;
-	    double valueT;
-	    double squareSumI;
-	    double covariance;
 	    for (r = 0; r < result.length; r++) {
-		covariance = 0;
-		squareSumI = 0;
+		double squareSumI = 0;
+		double covariance = 0;
 		for (int j = 0; j < reference.getHeight(); j++) {
 		    for (int i = 0; i < reference.getWidth(); i++) {
-			valueI = image.getf(r + i, s + j);
-			valueT = reference.getf(i, j);
+			double valueI = image.getf(r + i, s + j);
+			double valueT = reference.getf(i, j);
 			covariance += valueI * valueT;
 			squareSumI += Math.pow(valueI, 2);
 		    }

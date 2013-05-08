@@ -29,9 +29,8 @@ package drift;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Scrollbar;
-
+import java.util.Arrays;
 import javax.naming.InitialContext;
-
 import gui.ExtendedWaitForUserDialog;
 import ij.IJ;
 import ij.ImagePlus;
@@ -121,7 +120,14 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
      * automatic mode.
      */
     private Rectangle roi;
+    /**
+     * An array to store the detected drift.
+     */
     private Point[] driftArray;
+    /**
+     * An array to store the processed shift.
+     */
+    private Point[] shiftArray;
 
     /*
      * (non-Javadoc)
@@ -131,17 +137,18 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
     @Override
     public int setup(String arg, ImagePlus imp) {
 	if (arg == "final") {
-	    // TODO write drift into result before the shift is performed.
 	    ResultsTable result = new ResultsTable();
-	    // int titleId = result.getFreeColumn("image title");
-	    int driftXId = result.getFreeColumn("drift.x");
-	    int driftYId = result.getFreeColumn("drift.y");
-	    result.incrementCounter();
+	    // only integer values are used
+	    result.setPrecision(0);
 	    for (int i = 0; i < driftArray.length; i++) {
-		result.addLabel(initialImp.getStack().getShortSliceLabel(i + 1));
-		result.addValue(driftXId, driftArray[i].x);
-		result.addValue(driftYId, driftArray[i].y);
 		result.incrementCounter();
+		result.addLabel(initialImp.getStack().getShortSliceLabel(i + 1));
+		result.addValue("drift.x", driftArray[i].x);
+		result.addValue("drift.y", driftArray[i].y);
+		if (performShift == true) {
+		    result.addValue("shift.x", shiftArray[i].x);
+		    result.addValue("shift.y", shiftArray[i].y);
+		}
 	    }
 	    result.show("Drift of " + initialImp.getShortTitle());
 	    return NO_CHANGES | DONE;
@@ -167,11 +174,13 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 		driftArray[i] = new Point(0, 0);
 	    }
 	}
+	// OptimisedStackShifter will modify the Array
+	shiftArray = Arrays.copyOf(driftArray, driftArray.length);
 	if (performShift == true) {
-	    ImagePlus correctedStack = OptimisedStackShifter.shiftImages(stack, driftArray, true, optimiseShift,
+	    ImagePlus correctedStack = OptimisedStackShifter.shiftImages(stack, shiftArray, true, optimiseShift,
 		    createNew);
 	    if (correctedStack.isVisible() == true) {
-		correctedStack.updateAndRepaintWindow();	
+		correctedStack.updateAndRepaintWindow();
 	    } else {
 		correctedStack.show();
 	    }
@@ -250,6 +259,8 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 		ccArray[i] = null;
 	    }
 	}
+	// this is the count of subtasks
+	NormCrossCorrelation.setProgressSteps((ccArray.length - 1) * (deltaY * 2 + 1));
 	return ccArray;
     }
 
