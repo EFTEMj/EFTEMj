@@ -294,6 +294,7 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	gd.addMessage("Select mode of drift detection.");
 	gd.setOKLabel("Automatic");
 	gd.setCancelLabel("Manual");
+	// TODO write the description
 	String help = "<html><h3>Automatic mode</h3>" + "<p>description</p>" + "<h3>Manual mode</h3>"
 		+ "<p>description</p></html>";
 	gd.addHelp(help);

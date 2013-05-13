@@ -26,8 +26,11 @@
  */
 package drift;
 
+import java.awt.FlowLayout;
+import java.awt.Label;
+import java.awt.Panel;
 import java.awt.Point;
-
+import java.awt.TextField;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
@@ -91,7 +94,8 @@ public class StackShifterPlugin implements ExtendedPlugInFilter {
      */
     @Override
     public void run(ImageProcessor ip) {
-	OptimisedStackShifter.shiftImages(initialImp, shift, optimise, createNew);
+	ImagePlus correctedImp = OptimisedStackShifter.shiftImages(initialImp, shift, optimise, createNew);
+	correctedImp.show();
     }
 
     /*
@@ -103,7 +107,10 @@ public class StackShifterPlugin implements ExtendedPlugInFilter {
     @Override
     public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
 	initialImp = imp;
-	showParameterDialog(command);
+	if (showParameterDialog(command) == CANCEL) {
+	    canceled();
+	    return NO_CHANGES | DONE;
+	}
 	if (createNew == true) {
 	    return FLAGS | NO_CHANGES;
 	}
@@ -120,15 +127,64 @@ public class StackShifterPlugin implements ExtendedPlugInFilter {
 	// This method is not used.
     }
 
+    /***
+     * This dialog is used to setup the parameter for the stack shift.
+     * 
+     * @param title
+     * @return OK or CANCEL
+     */
     private int showParameterDialog(String title) {
 	GenericDialog gd = new GenericDialog(title, IJ.getInstance());
-	// TODO implement the dialog
+	// create 2 numeric fields for each slice of the stack.
+	int defaultValue = 0;
+	int digits = 0;
+	// TODO read shift values from a CSV-file
+	TextField[] xFields = new TextField[initialImp.getStackSize()];
+	TextField[] yFields = new TextField[initialImp.getStackSize()];
+	for (int i = 0; i < initialImp.getStackSize(); i++) {
+	    gd.addMessage(initialImp.getStack().getShortSliceLabel(i + 1));
+	    Panel cont = new Panel(new FlowLayout());
+	    cont.add(new Label("x:"));
+	    TextField tf1 = new TextField(IJ.d2s(defaultValue, digits));
+	    tf1.addActionListener(gd);
+	    tf1.addTextListener(gd);
+	    tf1.addFocusListener(gd);
+	    tf1.addKeyListener(gd);
+	    xFields[i] = tf1;
+	    cont.add(tf1);
+	    cont.add(new Label("y:"));
+	    TextField tf2 = new TextField(IJ.d2s(defaultValue, digits));
+	    tf2.addActionListener(gd);
+	    tf2.addTextListener(gd);
+	    tf2.addFocusListener(gd);
+	    tf2.addKeyListener(gd);
+	    cont.add(tf2);
+	    yFields[i] = tf2;
+	    gd.addPanel(cont);
+	}
+	String[] labels = { "Optimise image shift", "Create a new image" };
+	boolean[] defaults = { true, true };
+	gd.addCheckboxGroup(2, 1, labels, defaults);
+	// TODO write the description
+	String help = "<html><h3>Stack Shifter</h3><p>description</p></html>";
+	gd.addHelp(help);
 	gd.showDialog();
 	if (gd.wasCanceled() == true) {
 	    return CANCEL;
 	}
-	// TODO implement getNext methods
+	shift = new Point[initialImp.getStackSize()];
+	for (int i = 0; i < initialImp.getStackSize(); i++) {
+	    shift[i] = new Point(new Integer(xFields[i].getText()), new Integer(yFields[i].getText()));
+	}
+	optimise = gd.getNextBoolean();
+	createNew = gd.getNextBoolean();
 	return OK;
     }
 
+    /**
+     * Cancel the plugin and show a status message.
+     */
+    private void canceled() {
+	IJ.showStatus("Stack shift has been canceled.");
+    }
 }
