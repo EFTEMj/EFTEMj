@@ -31,6 +31,7 @@ import java.awt.Rectangle;
 import java.awt.Scrollbar;
 import java.util.Arrays;
 import javax.naming.InitialContext;
+import tools.ExtendedStackToImage;
 import gui.ExtendedWaitForUserDialog;
 import ij.IJ;
 import ij.ImagePlus;
@@ -38,7 +39,6 @@ import ij.ImageStack;
 import ij.gui.GenericDialog;
 import ij.gui.Roi;
 import ij.gui.Toolbar;
-import ij.gui.YesNoCancelDialog;
 import ij.measure.ResultsTable;
 import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
@@ -80,11 +80,6 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
      * <code>DOES_32 | NO_CHANGES | FINAL_PROCESSING</code>
      */
     private final int FLAGS = DOES_32 | NO_CHANGES | FINAL_PROCESSING;
-    /**
-     * This is the {@link ImagePlus} that has been selected when starting the plugin. No changes will be done to this
-     * {@link ImagePlus}.
-     */
-    private ImagePlus initialImp;
     /**
      * An {@link ImagePlus} that contains an {@link ImageStack}. If the initial {@link ImagePlus} is a stack then this
      * is the same {@link ImagePlus}. A new stack will be created if the {@link InitialContext} {@link ImagePlus} is no
@@ -142,7 +137,7 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	    result.setPrecision(0);
 	    for (int i = 0; i < driftArray.length; i++) {
 		result.incrementCounter();
-		result.addLabel(initialImp.getStack().getShortSliceLabel(i + 1));
+		result.addLabel(stack.getStack().getShortSliceLabel(i + 1));
 		result.addValue("drift.x", driftArray[i].x);
 		result.addValue("drift.y", driftArray[i].y);
 		if (performShift == true) {
@@ -150,7 +145,7 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 		    result.addValue("shift.y", shiftArray[i].y);
 		}
 	    }
-	    result.show("Drift of " + initialImp.getShortTitle());
+	    result.show("Drift of " + stack.getShortTitle());
 	    return NO_CHANGES | DONE;
 	}
 	// No setup is done here. See showDialog() for the setup procedure.
@@ -196,14 +191,17 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
     @Override
     public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
 	// Check if imp is a stack.
-	initialImp = imp;
 	if (imp.getStackSize() <= 1) {
-	    // TODO implement stack creation
-	    canceled();
-	    return NO_CHANGES | DONE;
-	} else {
-	    stack = imp;
+	    // ExtendedStackToImage is a plugin
+	    new ExtendedStackToImage().convertImagesToStack();
+	    if (IJ.getImage().getStackSize() <= 1) {
+		canceled();
+		return NO_CHANGES | DONE;
+	    } else {
+		imp = IJ.getImage();
+	    }
 	}
+	stack = imp;
 	// Select automatic or manual mode.
 	switch (showModeDialog(command)) {
 	case AUTOMATIC:
@@ -224,8 +222,11 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	    break;
 	case MANUAL:
 	    IJ.showStatus("Manual drift detection has been selected.");
+	    IJ.showMessage("Manual mode is not available", "The manual mode has not yet been implemented.\n"
+		    + "Check if a newer version of EFTEMj includes this feature.");
 	    // TODO copy the input stack
 	    // TODO implement manual drift detection
+	    canceled();
 	    break;
 	default:
 	    canceled();
@@ -282,21 +283,27 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
     }
 
     /**
-     * The user is asked to select the drift detection mode. A {@link YesNoCancelDialog} is used for this purpose. If
-     * Yes is selected the automatic mode is used. No means the manual mode is used.
+     * The user is asked to select the drift detection mode. A {@link GenericDialog} is used for this purpose. The
+     * Buttons <code>Ok</code> and <code>Cancel</code> are labelled <code>Automatic</code> and <code>Manual</code>.
      * 
      * @param title
      * @return the selected mode for drift detection
      */
     private int showModeDialog(String title) {
-	YesNoCancelDialog dialog = new YesNoCancelDialog(IJ.getInstance(), title + " - detection mode",
-		"Use automatic drift detection?\nTo start manual mode select no.");
-	if (dialog.yesPressed()) {
+	GenericDialog gd = new GenericDialog(title + " - detection mode", IJ.getInstance());
+	gd.addMessage("Select mode of drift detection.");
+	gd.setOKLabel("Automatic");
+	gd.setCancelLabel("Manual");
+	String help = "<html><h3>Automatic mode</h3>" + "<p>description</p>" + "<h3>Manual mode</h3>"
+		+ "<p>description</p></html>";
+	gd.addHelp(help);
+	gd.showDialog();
+	if (gd.wasOKed()) {
 	    return AUTOMATIC;
-	} else if (dialog.cancelPressed()) {
-	    return CANCEL;
+	} else if (gd.wasCanceled()) {
+	    return MANUAL;
 	}
-	return MANUAL;
+	return CANCEL;
     }
 
     /**
@@ -314,7 +321,7 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 		null);
 	dialog.show();
 	if (!dialog.escPressed())
-	    return initialImp.getSlice();
+	    return stack.getSlice();
 	return CANCEL;
     }
 

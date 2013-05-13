@@ -65,11 +65,10 @@ public class OptimisedStackShifter {
 	    initialStack.deleteRoi();
 	    correctedStack = new Duplicator().run(initialStack);
 	    initialStack.restoreRoi();
-	    // TODO Extend Duplicator to perform this task.
 	} else {
 	    correctedStack = initialStack;
 	}
-	correctedStack.setTitle(prefix.concat(correctedStack.getTitle()));
+	correctedStack.setTitle(prefix.concat(initialStack.getTitle()));
 	if (optimise == true) {
 	    shift = optimizedImageShift(shift);
 	}
