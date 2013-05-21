@@ -26,53 +26,127 @@
  */
 package tools;
 
+import ij.IJ;
 import ij.gui.GenericDialog;
-
+import java.awt.FileDialog;
+import java.awt.TextArea;
+import java.util.Calendar;
+import java.util.Locale;
 import java.util.Vector;
 
 /**
+ * A small tool to collect log messages. A {@link GenericDialog} is used to display all messages and the user can decide
+ * to save them as a txt-file.
+ * 
  * @author Michael Epping <michael.epping@uni-muenster.de>
  * 
  */
 public class EFTEMjLogTool {
 
+    /**
+     * If true <code> System.out.println()</code> is used.
+     */
     private static final boolean DEBUG = true;
-    private static Vector<String> messages;
+    /**
+     * Collect all messages that have been committed to all instances of {@link EFTEMjLogTool}.
+     */
+    private static Vector<String> globalMessages;
+    /**
+     * Collect all messages that have been committed to this instance of {@link EFTEMjLogTool}.
+     */
+    private Vector<String> localMessages;
+    /**
+     * A {@link String} to identify the instance of {@link EFTEMjLogTool}. This string will be added to the
+     * {@link GenericDialog} and to the name of the txt-file.
+     */
+    private String process;
 
-    public static void println(String text) {
+    /**
+     * 
+     * 
+     * @param process
+     *            A {@link String} to identify the instance of {@link EFTEMjLogTool}. This string will be added to the
+     *            {@link GenericDialog} and to the name of the txt-file.
+     */
+    public EFTEMjLogTool(String process) {
+	this.process = process;
+    }
+
+    /**
+     * Adds a new message to the local and the global log.
+     * 
+     * @param text
+     */
+    public void println(String text) {
 	if (DEBUG) {
 	    System.out.println(text);
 	}
-	if (messages == null) {
-	    messages = new Vector<String>();
+	if (localMessages == null) {
+	    localMessages = new Vector<String>();
 	}
-	messages.add(text);
+	if (globalMessages == null) {
+	    globalMessages = new Vector<String>();
+	}
+	localMessages.add(text);
+	globalMessages.add(process + ": " + text);
     }
 
-    public static void clearMessageBuffer() {
-	messages = new Vector<String>();
+    /**
+     * Clears the local log.
+     */
+    public void clearMessageBuffer() {
+	localMessages = new Vector<String>();
     }
 
-    public static void showDialog() {
-	if (messages == null || messages.size() == 0) {
+    /**
+     * Clears the global log.
+     */
+    public static void clearGlobalMessageBuffer() {
+	globalMessages = new Vector<String>();
+    }
+
+    /**
+     * Shows a {@link GenericDialog} that displays all local log entries at a {@link TextArea}.<br />
+     * The log can be saved as a txt-file.
+     */
+    public void showLogDialog() {
+	if (localMessages == null || localMessages.size() == 0) {
 	    return;
 	}
-	GenericDialog gd = new GenericDialog("");
+	GenericDialog gd = new GenericDialog("EFTEMj - LogViewer", IJ.getInstance());
+	gd.addMessage("Log of " + process);
+	gd.addMessage("The log is displayed at an editable TextArea." + "\n" + "You can edit the log befor saving.");
 	int maxLengt = 0;
 	String text = "";
-	for (int i = 0; i < messages.size(); i++) {
-	    if (messages.get(i).length() > maxLengt) {
-		maxLengt = messages.get(i).length();
+	for (int i = 0; i < localMessages.size(); i++) {
+	    if (localMessages.get(i).length() > maxLengt) {
+		maxLengt = localMessages.get(i).length();
 	    }
-	    text += messages.get(i) + System.lineSeparator();
+	    text += localMessages.get(i) + System.lineSeparator();
 	}
-	gd.addTextAreas(text, null, messages.size() + 1, maxLengt + 5);
+	gd.addTextAreas(text, null, localMessages.size() + 1, maxLengt + 5);
+	gd.setOKLabel("Save Log...");
+	gd.setCancelLabel("Close");
 	gd.setResizable(false);
-	gd.setModal(false);
 	gd.showDialog();
-	if (gd.wasCanceled()) {
-	    return;
+	if (gd.wasOKed()) {
+	    FileDialog fDialog = new FileDialog(gd, "Save log...", FileDialog.SAVE);
+	    fDialog.setMultipleMode(false);
+	    fDialog.setDirectory(IJ.getDirectory("image"));
+	    // adds date and time to the file name
+	    Calendar cal = Calendar.getInstance();
+	    String fileName = String.format(Locale.ENGLISH, "%tF-%tR", cal, cal) + "_EFTEMj-LogFile";
+	    // remove the ':' that is not allowed as at a file name
+	    int pos = fileName.indexOf(":");
+	    fileName = fileName.substring(0, pos) + fileName.substring(pos + 1);
+	    fDialog.setFile(fileName + ".txt");
+	    fDialog.setVisible(true);
+	    if (fDialog.getFile() != null) {
+		String path = fDialog.getDirectory() + System.getProperty("file.separator") + fDialog.getFile();
+		IJ.saveString(text, path);
+	    }
 	}
-	return;
     }
+    
+    // TODO Implement a Plugin that will display the global log.
 }

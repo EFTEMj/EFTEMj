@@ -114,6 +114,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     private double oldMax;
     private double oldMin;
     private int mode;
+    private EFTEMjLogTool logTool;
 
     /*
      * (non-Javadoc)
@@ -196,7 +197,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	ImagePlus composite = rgbMerge.mergeHyperstacks(images, true);
 	composite.setTitle(input.getTitle());
 	composite.show();
-	EFTEMjLogTool.showDialog();
+	logTool.showLogDialog();
     }
 
     /**
@@ -299,7 +300,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      */
     private void optimizeMaxCount() {
 	int maxCountOld = maxCount;
-	EFTEMjLogTool.println(String.format("maxCount Startwert: %d", maxCountOld));
+	logTool.println(String.format("maxCount Startwert: %d", maxCountOld));
 	long[] variances = new long[2 * maxCount];
 	variances[0] = Long.MAX_VALUE;
 	// Process
@@ -325,15 +326,15 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	    IJ.showProgress(++progress, finalIndex);
 	}
 	for (int i = 1; i < variances.length; i++) {
-	    EFTEMjLogTool.println(String.format("maxCount = %d: %d", i, variances[i]));
+	    logTool.println(String.format("maxCount = %d: %d", i, variances[i]));
 	}
 
 	// Update maxCount
 	maxCount = findMinimumPosition(variances);
 	if (maxCount != maxCountOld) {
-	    EFTEMjLogTool.println(String.format("Setze maxCount auf %d.", maxCount));
+	    logTool.println(String.format("Setze maxCount auf %d.", maxCount));
 	} else {
-	    EFTEMjLogTool.println("maxCount wurde nicht verändert.");
+	    logTool.println("maxCount wurde nicht verändert.");
 	}
     }
 
@@ -549,6 +550,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      */
     @Override
     public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
+	logTool = new EFTEMjLogTool(command);
 	input = imp;
 	switch (showModeDialog(command)) {
 	case AUTOMATIC:
