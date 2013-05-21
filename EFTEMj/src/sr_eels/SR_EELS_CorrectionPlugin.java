@@ -31,10 +31,15 @@ import tools.EFTEMjLogTool;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
+import ij.gui.Line;
+import ij.gui.Roi;
+import ij.gui.Toolbar;
+import ij.gui.WaitForUserDialog;
 import ij.plugin.RGBStackMerge;
 import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
 import ij.plugin.filter.RankFilters;
+import ij.plugin.frame.RoiManager;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 
@@ -69,14 +74,6 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      */
     private ImagePlus input;
     /**
-     * The width of the spectrum image.
-     */
-    private int width;
-    /**
-     * The height of the spectrum image.
-     */
-    private int height;
-    /**
      * The radius of the kernel used for the median filter. Select "Process > Filters > Show Circular Masks..." at
      * ImageJ to see all possible kernels.
      */
@@ -110,6 +107,13 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      * Determines if the image has to be rotated before and after processing.
      */
     private boolean rotate;
+    private Line leftLine;
+    private Line rightLine;
+    private int[] leftBorder;
+    private int[] rightBorder;
+    private double oldMax;
+    private double oldMin;
+    private int mode;
 
     /*
      * (non-Javadoc)
@@ -132,8 +136,19 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     @Override
     public void run(ImageProcessor ip) {
 	// TODO Implement the rotation.
-	width = input.getWidth();
-	height = input.getHeight();
+	switch (mode) {
+	case AUTOMATIC:
+	    runAutomaticDetection();
+	    break;
+	case MANUAL:
+	    runManualDetection();
+	    break;
+	default:
+	    break;
+	}
+    }
+
+    private void runAutomaticDetection() {
 	if (optimizeParameters == true) {
 	    optimizeMaxCount();
 	}
@@ -141,15 +156,15 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	FloatProcessor input_filtered = (FloatProcessor) input.getProcessor().duplicate();
 	applyMedianFilter(input_filtered);
 
-	FloatProcessor input_borderDetection = new FloatProcessor(width, height);
+	FloatProcessor input_borderDetection = new FloatProcessor(input.getHeight(), input.getHeight());
 	applyBorderDetectionFilter(input_filtered, input_borderDetection);
 
-	int[] leftBorderPosition = new int[height];
-	int[] rightBorderPosition = new int[height];
+	int[] leftBorderPosition = new int[input.getHeight()];
+	int[] rightBorderPosition = new int[input.getHeight()];
 	detectBorder(input_borderDetection, leftBorderPosition, rightBorderPosition);
 
-	int[] linearFitLeft = new int[height];
-	int[] linearFitRight = new int[height];
+	int[] linearFitLeft = new int[input.getHeight()];
+	int[] linearFitRight = new int[input.getHeight()];
 	linearFitLeft = applyLinearFit(leftBorderPosition);
 	linearFitRight = applyLinearFit(rightBorderPosition);
 
@@ -192,10 +207,10 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      * @return A new {@link FloatProcessor}
      */
     private FloatProcessor paintBorders(int[] leftBorder, int[] rightBorder) {
-	FloatProcessor result = new FloatProcessor(width, height);
+	FloatProcessor result = new FloatProcessor(input.getWidth(), input.getHeight());
 	result.setValue(0);
 	result.fill();
-	for (int y = 0; y < height; y++) {
+	for (int y = 0; y < input.getHeight(); y++) {
 	    result.setf(leftBorder[y], y, 255);
 	    result.setf(rightBorder[y], y, 255);
 	}
@@ -212,10 +227,10 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     private int[] applyLinearFit(int[] input) {
 	int[] result = new int[input.length];
 	if (linearFitIntervals == 1) {
-	    linearFit(input, result, 0, height - 1);
+	    linearFit(input, result, 0, this.input.getHeight() - 1);
 	} else {
-	    int intervalWidth = (int) Math.floor(1.0 * height / linearFitIntervals);
-	    int remainder = height % linearFitIntervals;
+	    int intervalWidth = (int) Math.floor(1.0 * this.input.getHeight() / linearFitIntervals);
+	    int remainder = this.input.getHeight() % linearFitIntervals;
 	    int start = 0;
 	    int end;
 	    for (int i = 1; i <= linearFitIntervals; i++) {
@@ -253,7 +268,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	float sumX = 0;
 	float sumY = 0;
 	for (int i = start; i <= end; i++) {
-	    if (input[i] != 0 & input[i] != width) {
+	    if (input[i] != 0 & input[i] != this.input.getWidth()) {
 		sumX += i;
 		sumY += input[i];
 		count++;
@@ -297,10 +312,10 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	applyMedianFilter(input_filtered);
 
 	for (maxCount = 1; maxCount < variances.length; maxCount++) {
-	    FloatProcessor input_borderDetection = new FloatProcessor(width, height);
+	    FloatProcessor input_borderDetection = new FloatProcessor(input.getWidth(), input.getHeight());
 	    applyBorderDetectionFilter(input_filtered, input_borderDetection);
-	    int[] leftBorderPosition = new int[height];
-	    int[] rightBorderPosition = new int[height];
+	    int[] leftBorderPosition = new int[input.getHeight()];
+	    int[] rightBorderPosition = new int[input.getHeight()];
 	    detectBorder(input_borderDetection, leftBorderPosition, rightBorderPosition);
 	    int[] leftBorderFit = applyLinearFit(leftBorderPosition);
 	    int[] rightBorderFit = applyLinearFit(rightBorderPosition);
@@ -381,17 +396,17 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      */
     private void applyBorderDetectionFilter(FloatProcessor input, FloatProcessor result) {
 	float value;
-	for (int y = 0; y < height; y++) {
+	for (int y = 0; y < input.getHeight(); y++) {
 	    // left border: (-1;y) = (0;y)
 	    value = Math.abs(input.getf(1, y) - input.getf(0, y));
 	    result.setf(0, y, value);
-	    for (int x = 1; x < width - 1; x++) {
+	    for (int x = 1; x < input.getWidth() - 1; x++) {
 		value = Math.abs(input.getf(x + 1, y) - input.getf(x - 1, y));
 		result.setf(x, y, value);
 	    }
 	    // right border: (width;y) = (width-1;y)
-	    value = Math.abs(input.getf(width - 1, y) - input.getf(width - 2, y));
-	    result.setf(width - 1, y, value);
+	    value = Math.abs(input.getf(input.getWidth() - 1, y) - input.getf(input.getWidth() - 2, y));
+	    result.setf(input.getWidth() - 1, y, value);
 	}
     }
 
@@ -419,7 +434,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	// a temporary array used for sorting the content of "maxValues"
 	float[] temp = new float[countStart];
 
-	for (int y = 0; y < height; y++) {
+	for (int y = 0; y < input.getHeight(); y++) {
 	    // the following code is processed at each line of the image
 	    count = countStart;
 	    limit = input.getf(0, y);
@@ -427,7 +442,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	    Arrays.fill(maxValues, 0);
 	    maxValues[0] = input.getf(0, y);
 	    count--;
-	    for (int x = 1; x < width; x++) {
+	    for (int x = 1; x < input.getWidth(); x++) {
 		// 1. check if this pixel is a local maximum
 		if (isMaximum(input, x, y)) {
 		    // 2. check if there are empty places at maxPos
@@ -504,14 +519,14 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	// all neighbouring pixels are stored at an array
 	float[] neighbor = new float[2 * localMaxRadius + 1];
 	for (int i = -localMaxRadius; i <= localMaxRadius; i++) {
-	    if (x + i >= 0 & x + i < width) {
+	    if (x + i >= 0 & x + i < input.getWidth()) {
 		neighbor[i + localMaxRadius] = input.getf(x + i, y);
 	    } else {
 		if (x + 1 < 0) {
 		    neighbor[i + localMaxRadius] = input.getf(0, y);
 		} else {
-		    if (x + 1 >= width) {
-			neighbor[i + localMaxRadius] = input.getf(width - 1, y);
+		    if (x + 1 >= input.getWidth()) {
+			neighbor[i + localMaxRadius] = input.getf(input.getWidth() - 1, y);
 		    }
 		}
 	    }
@@ -542,13 +557,11 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 		canceled();
 		return NO_CHANGES | DONE;
 	    }
+	    mode = AUTOMATIC;
 	    break;
 	case MANUAL:
 	    IJ.showStatus("Manual SR-EELS correction has been selected.");
-	    IJ.showMessage("Manual mode is not available", "The manual mode has not yet been implemented.\n"
-		    + "Check if a newer version of EFTEMj includes this feature.");
-	    // TODO implement manual SR-EELS correction
-	    canceled();
+	    mode = MANUAL;
 	    break;
 	default:
 	    canceled();
@@ -558,7 +571,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     }
 
     /**
-     * The user is asked to select the SR-EELS correctionn mode. A {@link GenericDialog} is used for this purpose. The
+     * The user is asked to select the SR-EELS correction mode. A {@link GenericDialog} is used for this purpose. The
      * Buttons <code>Ok</code> and <code>Cancel</code> are labelled <code>Automatic</code> and <code>Manual</code>.
      * 
      * @param title
@@ -599,6 +612,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	gd.addNumericField("Linear fit steps:", linearFitIntervals, 0, 2, null);
 	gd.addCheckbox("Show unprocessed border", true);
 	gd.addCheckbox("Use maxCount optimization", false);
+	// TODO write the description
 	String help = "<html><h3>Parameter</h3><p>description</p></html>";
 	gd.addHelp(help);
 	gd.showDialog();
@@ -646,5 +660,70 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      */
     private void canceled() {
 	IJ.showStatus("Drift detection has been canceled.");
+    }
+
+    private void runManualDetection() {
+	oldMax = input.getDisplayRangeMax();
+	oldMin = input.getDisplayRangeMin();
+	String oldTool = IJ.getToolName();
+
+	input.setDisplayRange(0, 10);
+	input.updateAndDraw();
+	IJ.setTool(Toolbar.LINE);
+	new RoiManager().setVisible(true);
+	WaitForUserDialog waitDLG = new WaitForUserDialog("1. line at the left" + System.getProperty("line.separator")
+		+ "2. line at the right" + System.getProperty("line.separator")
+		+ "Press OK when you have added both lines to the RoiManager");
+	waitDLG.show();
+	Roi[] rois = RoiManager.getInstance().getRoisAsArray();
+	if (rois.length == 2) {
+	    if (rois[0].isLine() & rois[1].isLine()) {
+		leftLine = (Line) rois[0];
+		rightLine = (Line) rois[1];
+		System.out.println(leftLine.toString());
+		System.out.println(leftLine.x1 + "; " + leftLine.x2 + "; " + leftLine.y1 + "; " + leftLine.y2);
+		System.out.println(rightLine.toString());
+		System.out.println(rightLine.x1 + "; " + rightLine.x2 + "; " + rightLine.y1 + "; " + rightLine.y2);
+		leftBorder = lineToArray(leftLine);
+		rightBorder = lineToArray(rightLine);
+		FloatProcessor input_borders;
+		input_borders = paintBorders(leftBorder, rightBorder);
+		ImagePlus ipBorders = new ImagePlus("Borders", input_borders);
+		// ImageJ can combine 32-bit greyscale images to an RGB image. A stack with the size 7 is used to handle
+		// the 32-bit images and ImageJ shows a RGB image. If you open the saved file with Digital Micrograph
+		// it's a regular 32-bit stack.
+		ImagePlus[] images = new ImagePlus[7];
+		// index 0 = red
+		images[0] = ipBorders;
+		resetDisplayLimits();
+		images[3] = input;
+		// This class creates the RGB image.
+		RGBStackMerge rgbMerge = new RGBStackMerge();
+		ImagePlus composite = rgbMerge.mergeHyperstacks(images, true);
+		composite.setTitle(input.getTitle());
+		composite.show();
+		if (RoiManager.getInstance() != null)
+		    RoiManager.getInstance().close();
+	    }
+	}
+	resetDisplayLimits();
+	IJ.setTool(oldTool);
+    }
+
+    private void resetDisplayLimits() {
+	input.setDisplayRange(oldMin, oldMax);
+	input.updateAndDraw();
+    }
+
+    private int[] lineToArray(Line line) {
+	int[] border = new int[input.getHeight()];
+	double slope = (line.y2d - line.y1d) / (line.x2d - line.x1d);
+	System.out.println(String.format("slope: %s", slope));
+	double intercept = -line.x1d * slope + line.y1d;
+	System.out.println(String.format("intercept: %s", intercept));
+	for (int y = 0; y < border.length; y++) {
+	    border[y] = (int) Math.round((y - intercept) / slope);
+	}
+	return border;
     }
 }
