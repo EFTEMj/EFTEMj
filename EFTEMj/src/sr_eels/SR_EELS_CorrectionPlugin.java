@@ -28,13 +28,13 @@ package sr_eels;
 
 import java.util.Arrays;
 import tools.EFTEMjLogTool;
+import gui.ExtendedWaitForUserDialog;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
 import ij.gui.Line;
 import ij.gui.Roi;
 import ij.gui.Toolbar;
-import ij.gui.WaitForUserDialog;
 import ij.plugin.RGBStackMerge;
 import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
@@ -42,8 +42,20 @@ import ij.plugin.filter.RankFilters;
 import ij.plugin.frame.RoiManager;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
+import ij.process.ImageStatistics;
 
 /**
+ * This plugin is used to correct SR-EELS data that shows a geometric aberration. This aberration is visible in SR-EELS
+ * data recorded with a Zeiss in-column Omega filter. Using a Gatan post-column filter the aberration may be corrected
+ * by the filter itself.
+ * 
+ * The correction consists of two steps. The first is to identify the inclined border of the spectrum. An automatic and
+ * a manual method are available. The second step is to process the SR-EELS data to correct the aberration. The plugin
+ * {@link SR_EELS_CorrectionOnlyPlugin} will perform this step.
+ * 
+ * For faster processing the energy loss direction has to be the y-axis. Images with the energy loss direction at the
+ * x-axis will be rotated during processing.
+ * 
  * @author Michael Epping <michael.epping@uni-muenster.de>
  * 
  */
@@ -70,9 +82,15 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      */
     private final int FLAGS = DOES_32 | NO_CHANGES | FINAL_PROCESSING;
     /**
-     * The uncorrected spectrum image. No changes will be done to this {@link ImagePlus}.
+     * The uncorrected spectrum image. No changes will be done to this {@link ImagePlus}, except a rotation by 90° that
+     * ill be undone at the end.
      */
     private ImagePlus input;
+    /**
+     * An {@link ImagePlus} (this is a composite image) containing a copy of the uncorrected SR-EELS data and 1(2)
+     * channels that show(s) the spectrum border (unprocessed and/or optional a linear fit).
+     */
+    private ImagePlus result;
     /**
      * The radius of the kernel used for the median filter. Select "Process > Filters > Show Circular Masks..." at
      * ImageJ to see all possible kernels.
@@ -111,10 +129,9 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     private Line rightLine;
     private int[] leftBorder;
     private int[] rightBorder;
-    private double oldMax;
-    private double oldMin;
     private int mode;
     private EFTEMjLogTool logTool;
+    private String command;
 
     /*
      * (non-Javadoc)
@@ -123,8 +140,11 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      */
     @Override
     public int setup(String arg, ImagePlus imp) {
-	if (arg == "final") {
-	    // TODO Implement final processing. Remove steps from run() and place them here.
+	if (arg == "final" & result != null) {
+	    SR_EELS_CorrectionOnlyPlugin postProcessor = new SR_EELS_CorrectionOnlyPlugin();
+	    if (postProcessor.showDialog(result, command, null) != DONE) {
+		postProcessor.getCorrectedData().show();
+	    }
 	}
 	return FLAGS;
     }
@@ -197,6 +217,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	ImagePlus composite = rgbMerge.mergeHyperstacks(images, true);
 	composite.setTitle(input.getTitle());
 	composite.show();
+	result = composite;
 	logTool.showLogDialog();
     }
 
@@ -212,6 +233,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	result.setValue(0);
 	result.fill();
 	for (int y = 0; y < input.getHeight(); y++) {
+	    // TODO Check for values outside the image boundaries.
 	    result.setf(leftBorder[y], y, 255);
 	    result.setf(rightBorder[y], y, 255);
 	}
@@ -550,6 +572,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      */
     @Override
     public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
+	this.command = command;
 	logTool = new EFTEMjLogTool(command);
 	input = imp;
 	switch (showModeDialog(command)) {
@@ -665,19 +688,35 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     }
 
     private void runManualDetection() {
-	oldMax = input.getDisplayRangeMax();
-	oldMin = input.getDisplayRangeMin();
+	// Store some settings for resetting them later on.
+	double oldMax = input.getDisplayRangeMax();
+	double oldMin = input.getDisplayRangeMin();
 	String oldTool = IJ.getToolName();
-
-	input.setDisplayRange(0, 10);
+	// Set a display limit that enhances the visibility of the spectrum border.
+	int[] histogram = input.getStatistics(ImageStatistics.MIN_MAX, 256, 0.0, Math.pow(2, 16)).histogram;
+	int limit = 0;
+	int sum = 0;
+	while (sum < 0.01 * input.getWidth() * input.getHeight()) {
+	    sum += histogram[limit];
+	    limit++;
+	}
+	input.setDisplayRange(0, Math.pow(2, 16) / 256 * limit);
 	input.updateAndDraw();
+	// Wait for the user to place two lines as ROIs.
 	IJ.setTool(Toolbar.LINE);
-	new RoiManager().setVisible(true);
-	WaitForUserDialog waitDLG = new WaitForUserDialog("1. line at the left" + System.getProperty("line.separator")
-		+ "2. line at the right" + System.getProperty("line.separator")
-		+ "Press OK when you have added both lines to the RoiManager");
+	RoiManager roiManager = new RoiManager();
+	roiManager.runCommand("show all with labels");
+	roiManager.setVisible(true);
+	// TODO Replace WaitForUserDialog by ExtendedWaitForUserDialog to add some controls (e.g. Zoom).
+	ExtendedWaitForUserDialog waitDLG = new ExtendedWaitForUserDialog(command + " - manual mode",
+		"Place two lines at the border of the spectrum\n" + "1. line at the left side\n"
+			+ "2. line at the right side\n" + "Press OK when you have added both lines to the RoiManager",
+		null);
 	waitDLG.show();
-	Roi[] rois = RoiManager.getInstance().getRoisAsArray();
+	// The user has pressed Ok.
+	Roi[] rois = roiManager.getRoisAsArray();
+	roiManager.runCommand("show none");
+	roiManager.close();
 	if (rois.length == 2) {
 	    if (rois[0].isLine() & rois[1].isLine()) {
 		leftLine = (Line) rois[0];
@@ -691,32 +730,39 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 		FloatProcessor input_borders;
 		input_borders = paintBorders(leftBorder, rightBorder);
 		ImagePlus ipBorders = new ImagePlus("Borders", input_borders);
-		// ImageJ can combine 32-bit greyscale images to an RGB image. A stack with the size 7 is used to handle
-		// the 32-bit images and ImageJ shows a RGB image. If you open the saved file with Digital Micrograph
-		// it's a regular 32-bit stack.
+		// A composite image can contain up to 7 channels.
 		ImagePlus[] images = new ImagePlus[7];
 		// index 0 = red
 		images[0] = ipBorders;
-		resetDisplayLimits();
+		// index 1 = green
+		// index 2 = blue
+		// index 3 = grey
 		images[3] = input;
+		// It is easier to reset the display limits before creating the composite images.
+		input.setDisplayRange(oldMin, oldMax);
 		// This class creates the RGB image.
 		RGBStackMerge rgbMerge = new RGBStackMerge();
 		ImagePlus composite = rgbMerge.mergeHyperstacks(images, true);
 		composite.setTitle(input.getTitle());
 		composite.show();
-		if (RoiManager.getInstance() != null)
-		    RoiManager.getInstance().close();
+		result = composite;
 	    }
 	}
-	resetDisplayLimits();
+	// Reset some settings.
+	input.setDisplayRange(oldMin, oldMax);
+	input.updateAndDraw();
 	IJ.setTool(oldTool);
     }
 
-    private void resetDisplayLimits() {
-	input.setDisplayRange(oldMin, oldMax);
-	input.updateAndDraw();
-    }
-
+    /**
+     * This method calculates slope and intercept of the given line. Both values are used to fill the array. The index
+     * of the array is the y-axis of the input image. The array is filled by evaluating the equation
+     * <code>f(y) = Math.round((y - intercept) / slope)</code>.
+     * 
+     * @param line
+     *            A line object.
+     * @return An array representing the line.
+     */
     private int[] lineToArray(Line line) {
 	int[] border = new int[input.getHeight()];
 	double slope = (line.y2d - line.y1d) / (line.x2d - line.x1d);

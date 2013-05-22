@@ -26,7 +26,6 @@
  */
 package sr_eels;
 
-import java.awt.Rectangle;
 import java.util.Arrays;
 import ij.IJ;
 import ij.ImagePlus;
@@ -37,33 +36,55 @@ import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 
 /**
+ * This plugin is used to correct SR-EELS data that shows a geometric aberration. This aberration is visible in SR-EELS
+ * data recorded with a Zeiss in-column Omega filter. Using a Gatan post-column filter the aberration may be corrected
+ * by the filter itself.
+ * 
+ * The correction consists of two steps. The first is to identify the inclined border of the spectrum.
+ * {@link SR_EELS_CorrectionPlugin} performs the first step. The second step is to process the SR-EELS data to correct
+ * the aberration. {@link SR_EELS_CorrectionPlugin} will run {@link SR_EELS_CorrectionOnlyPlugin} subsequently, but it
+ * is possible to use {@link SR_EELS_CorrectionOnlyPlugin} to run the correction only. It is necessary to run
+ * {@link SR_EELS_CorrectionOnlyPlugin} on a composite image that contains the spectrum border as a separate channel.
+ * 
+ * For faster processing the energy loss direction has to be the y-axis. Images with the energy loss direction at the
+ * x-axis will be rotated during processing.
+ * 
  * @author Michael Epping <michael.epping@uni-muenster.de>
  * 
  */
 public class SR_EELS_CorrectionOnlyPlugin implements ExtendedPlugInFilter {
 
     /**
+     * <code>DOES_32 | NO_CHANGES | FINAL_PROCESSING</code>
+     */
+    private final int FLAGS = STACK_REQUIRED | DOES_32 | NO_CHANGES | FINAL_PROCESSING;
+    /**
+     * The plugin will be aborted.
+     */
+    private final int CANCEL = 0;
+    /**
+     * The plugin will continue with the next step.
+     */
+    private final int OK = 1;
+    /**
      * The stack created by {@link Border_Detection}. No changes will be done to this {@link ImagePlus}.
      */
-    private ImagePlus ipInput;
+    private ImagePlus input;
     /**
-     * The width of the spectrum image.
+     * An {@link ImagePlus} containing the corrected data.
      */
-    private int width;
-    /**
-     * The height of the spectrum image.
-     */
-    private int height;
+    private ImagePlus result;
     /**
      * A user defined value for the new spectrum width that disables the auto detection if not 0.
      */
     private int optionalSpecWidth = 0;
-
     /**
      * If the input contains processed borders (linear fit) and unprocessed borders this {@link Boolean} is used to
      * select one.
      */
     private boolean useUnprocessedBorders = false;
+    // TODO Implement rotating the image.
+    private boolean rotate;
 
     /*
      * (non-Javadoc)
@@ -72,7 +93,11 @@ public class SR_EELS_CorrectionOnlyPlugin implements ExtendedPlugInFilter {
      */
     @Override
     public int setup(String arg, ImagePlus imp) {
-	return DOES_32;
+	if (arg == "final") {
+	    result.show();
+	    // TODO Show a log dialog and write some log messages.
+	}
+	return FLAGS;
     }
 
     /*
@@ -82,53 +107,7 @@ public class SR_EELS_CorrectionOnlyPlugin implements ExtendedPlugInFilter {
      */
     @Override
     public void run(ImageProcessor ip) {
-	width = ipInput.getWidth();
-	height = ipInput.getHeight();
-	// By default the first image of the stack shows the borders
-	FloatProcessor input_borders = (FloatProcessor) ipInput.getStack().getProcessor(1);
-	// If the first image of the stack shows a processed border, the second
-	// image shows the unprocessed border
-	if (useUnprocessedBorders) {
-	    input_borders = (FloatProcessor) ipInput.getStack().getProcessor(2);
-	}
-	FloatProcessor input = null;
-	// You have to check if the stack contains 2 or 3 images to get the
-	// input image
-	if (ipInput.getStackSize() == 2) {
-	    input = (FloatProcessor) ipInput.getStack().getProcessor(2);
-	} else {
-	    if (ipInput.getStackSize() == 3) {
-		input = (FloatProcessor) ipInput.getStack().getProcessor(3);
-	    } else {
-		IJ.showMessage("<html><p>the selected image/stack is not suitable for the correction.</p></html>");
-		return;
-	    }
-	}
-	// If a ROI is placed the image i cropped to the selection
-	if (ipInput.getRoi() != null) {
-	    Rectangle roi = ipInput.getRoi().getBounds();
-	    input_borders.setRoi(roi.x, roi.y, roi.width, roi.height);
-	    input_borders = (FloatProcessor) input_borders.crop();
-	    input.setRoi(roi.x, roi.y, roi.width, roi.height);
-	    input = (FloatProcessor) input.crop();
-	    width = input.getWidth();
-	    height = input.getHeight();
-	}
-	// read position of borders from the image
-	int[] leftBorderPosition = new int[height];
-	int[] rightBorderPosition = new int[height];
-	readBorderPositions(input_borders, leftBorderPosition, rightBorderPosition);
-	// find the optimal spectrum width
-	int specWidth;
-	if (optionalSpecWidth == 0) {
-	    int minimumWidth = findMinimumWidth(leftBorderPosition, rightBorderPosition);
-	    specWidth = minimumWidth;
-	} else {
-	    specWidth = optionalSpecWidth;
-	}
-	FloatProcessor result = correctSpec(specWidth, input, leftBorderPosition, rightBorderPosition);
-	ImagePlus ipResult = new ImagePlus("Corrected Spectrum", result);
-	ipResult.show();
+	correctData();
     }
 
     /*
@@ -139,27 +118,121 @@ public class SR_EELS_CorrectionOnlyPlugin implements ExtendedPlugInFilter {
      */
     @Override
     public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
-
 	if (imp.getStackSize() != 2 & imp.getStackSize() != 3) {
 	    IJ.error("Wrong Image", "The stack has not a size of 2 or 3.\n" + "Image 1: The detected borders.\n"
-		    + "(Image 2: The unprocessed borders.\n" + "Image 2(3): The original spectrum.");
+		    + "(Image 2: The unprocessed borders.)\n" + "Image 2(3): The original SR-EELS data.");
 	    return DONE;
 	}
-	ipInput = imp;
-	GenericDialog gd = new GenericDialog("Spectrum correction");
+	input = imp;
+	if (showParameterDialog(command) == OK) {
+	    return FLAGS;
+	} else {
+	    return DONE;
+	}
+    }
+
+    /**
+     * A {@link GenericDialog} is displayed to setup the correction.
+     * 
+     * @param title
+     *            Prefix of the window title.
+     * @return <code>true</code> for Ok and <code>false</code> for Cancel.
+     */
+    private int showParameterDialog(String title) {
+	GenericDialog gd = new GenericDialog(title + " - set parameters");
 	gd.addNumericField("Predefined spectrum width:", optionalSpecWidth, 0, 4, "pixel");
-	gd.addMessage("(If you choose 0, the width will be set by the programm.)");
-	if (ipInput.getStackSize() == 3) {
+	gd.addMessage("(If you choose 0, the width will be set by the automatically.)");
+	if (input.getStackSize() == 3) {
 	    gd.addCheckbox("Use unprocessed borders", false);
 	}
 	gd.showDialog();
-	if (gd.wasCanceled())
-	    return DONE;
-	optionalSpecWidth = (int) gd.getNextNumber();
-	if (ipInput.getStackSize() == 3) {
-	    useUnprocessedBorders = gd.getNextBoolean();
+	if (gd.wasOKed()) {
+	    optionalSpecWidth = (int) gd.getNextNumber();
+	    if (input.getStackSize() == 3) {
+		useUnprocessedBorders = gd.getNextBoolean();
+	    }
+	    return OK;
 	}
-	return STACK_REQUIRED | DOES_32 | NO_CHANGES;
+	return CANCEL;
+    }
+
+    /**
+     * Call <code>showDialog()</code> first.<br />
+     * Starts the correction of the SR-EELS data.
+     * 
+     * @return The corrected SR-EELS data as an {@link ImagePlus}.
+     */
+    public ImagePlus getCorrectedData() {
+	correctData();
+	return result;
+    }
+
+    /**
+     * This is the correction of the SR-EELS data.
+     */
+    private void correctData() {
+	FloatProcessor input_borders;
+	// By default the first image of the stack shows the borders.
+	// If the first image of the stack shows a processed border, the second image shows the unprocessed border.
+	if (useUnprocessedBorders) {
+	    input_borders = (FloatProcessor) input.getStack().getProcessor(2);
+	} else {
+	    input_borders = (FloatProcessor) input.getStack().getProcessor(1);
+	}
+	FloatProcessor fp_data;
+	// You have to check if the stack contains 2 or 3 images to get the input image.
+	if (input.getStackSize() == 2) {
+	    fp_data = (FloatProcessor) input.getStack().getProcessor(2);
+	} else {
+	    if (input.getStackSize() == 3) {
+		fp_data = (FloatProcessor) input.getStack().getProcessor(3);
+	    } else {
+		IJ.showMessage("<html><p>The selected image/stack is not suitable for the correction.</p></html>");
+		return;
+	    }
+	}
+	// read position of borders from the image
+	int[] leftBorderPositions = new int[input.getHeight()];
+	int[] rightBorderPositions = new int[input.getHeight()];
+	readBorderPositions(input_borders, leftBorderPositions, rightBorderPositions);
+	// find the optimal spectrum width
+	int newSpecWidth;
+	if (optionalSpecWidth == 0) {
+	    int minimumWidth = findMinimumWidth(leftBorderPositions, rightBorderPositions);
+	    newSpecWidth = minimumWidth;
+	} else {
+	    newSpecWidth = optionalSpecWidth;
+	}
+	FloatProcessor fp_result = new FloatProcessor(newSpecWidth, fp_data.getHeight());
+	for (int y = 0; y < fp_data.getHeight(); y++) {
+	    int leftIndex = leftBorderPositions[y];
+	    int rightIndex = rightBorderPositions[y];
+	    int oldWidth = rightIndex - leftIndex;
+	    // TODO Add an intensity correction for round borders.
+	    double sumNewIntensity = 0;
+	    for (int x = 0; x < newSpecWidth; x++) {
+		// a linear scaling is used to calculate the new values
+		float x0 = 1.0f * oldWidth / newSpecWidth * x;
+		float deltaX = (float) (x0 - Math.floor(x0));
+		int xLeft = (int) Math.floor(x0);
+		int xRight = (int) Math.ceil(x0);
+		float valueLeft = fp_data.getf(xLeft + leftIndex, y);
+		float valueRight = fp_data.getf(xRight + leftIndex, y);
+		float newValue = deltaX * (valueRight - valueLeft) + valueLeft;
+		sumNewIntensity += newValue;
+		fp_result.setf(x, y, newValue);
+	    }
+	    // the sum of all intensities in an image line stays the same
+	    double sumIntensity = 0;
+	    for (int x = leftIndex; x < rightIndex; x++) {
+		sumIntensity += fp_data.getf(x, y);
+	    }
+	    // each pixel is normalised to maintain the sum of all intensities in an image line.
+	    for (int x = 0; x < newSpecWidth; x++) {
+		fp_result.setf(x, y, (float) (sumIntensity / sumNewIntensity * fp_result.getf(x, y)));
+	    }
+	}
+	result = new ImagePlus("Corrected Spectrum", fp_result);
     }
 
     /*
@@ -169,65 +242,23 @@ public class SR_EELS_CorrectionOnlyPlugin implements ExtendedPlugInFilter {
      */
     @Override
     public void setNPasses(int nPasses) {
-	// TODO Auto-generated method stub
-
-    }
-
-    /**
-     * The correction creates a new {@link FloatProcessor} with the given width. Each line of the original spectrum is
-     * shrank in width to fit the new value.
-     * 
-     * @param width
-     * @param input
-     * @param left
-     * @param right
-     * @return
-     */
-    private static FloatProcessor correctSpec(int width, FloatProcessor input, int[] left, int[] right) {
-	FloatProcessor result = new FloatProcessor(width, input.getHeight());
-	for (int y = 0; y < input.getHeight(); y++) {
-	    int leftIndex = left[y];
-	    int rightIndex = right[y];
-	    int oldWidth = rightIndex - leftIndex;
-	    double sumNewIntensity = 0;
-	    for (int x = 0; x < width; x++) {
-		// a linear scaling is used to calculate the new values
-		float x0 = 1.0f * oldWidth / width * x;
-		float deltaX = (float) (x0 - Math.floor(x0));
-		int xLeft = (int) Math.floor(x0);
-		int xRight = (int) Math.ceil(x0);
-		float valueLeft = input.getf(xLeft + leftIndex, y);
-		float valueRight = input.getf(xRight + leftIndex, y);
-		float newValue = deltaX * (valueRight - valueLeft) + valueLeft;
-		sumNewIntensity += newValue;
-		result.setf(x, y, newValue);
-	    }
-	    // the sum of all intensities in an image line stays the same
-	    double sumIntensity = 0;
-	    for (int x = leftIndex; x < rightIndex; x++) {
-		sumIntensity += input.getf(x, y);
-	    }
-	    // each pixel is normalized to maintain the sum of all intensities
-	    // in an image line.
-	    for (int x = 0; x < width; x++) {
-		result.setf(x, y, (float) (sumIntensity / sumNewIntensity * result.getf(x, y)));
-	    }
-	}
-	return result;
+	// This method is not used.
     }
 
     /**
      * Finds the minimum distance between the left border and the right border.
      * 
-     * @param leftBorderPosition
-     * @param rightBorderPosition
-     * @return
+     * @param leftBorderPositions
+     *            An array containing the positions of the left border.
+     * @param rightBorderPositions
+     *            An array containing the positions of the right border.
+     * @return The minimum distance between the left border and the right border.
      */
-    private int findMinimumWidth(int[] leftBorderPosition, int[] rightBorderPosition) {
-	int min = width;
-	for (int y = 0; y < height; y++) {
-	    if (rightBorderPosition[y] - leftBorderPosition[y] < min) {
-		min = rightBorderPosition[y] - leftBorderPosition[y];
+    private int findMinimumWidth(int[] leftBorderPositions, int[] rightBorderPositions) {
+	int min = input.getWidth();
+	for (int y = 0; y < input.getHeight(); y++) {
+	    if (rightBorderPositions[y] - leftBorderPositions[y] < min) {
+		min = rightBorderPositions[y] - leftBorderPositions[y];
 	    }
 	}
 	return min;
@@ -236,30 +267,35 @@ public class SR_EELS_CorrectionOnlyPlugin implements ExtendedPlugInFilter {
     /**
      * Fills the 2 arrays with the position of the left and the right border.
      * 
-     * @param input_borders
+     * @param fp_borders
      *            A black (0) image with 2 values >0 in each line.
-     * @param leftBorderPosition
-     * @param rightBorderPosition
+     * @param leftBorderPositions
+     *            An array that will containing the positions of the left border.
+     * @param rightBorderPositions
+     *            An array that will containing the positions of the right border.
      */
-    private void readBorderPositions(FloatProcessor input_borders, int[] leftBorderPosition, int[] rightBorderPosition) {
-	// the default positions of the borders are the left and the right
-	// border of the image
-	Arrays.fill(leftBorderPosition, 0);
-	Arrays.fill(rightBorderPosition, width - 1);
-	int count;
-	int x;
-	for (int y = 0; y < height; y++) {
-	    count = 2;
-	    x = 0;
-	    while (count > 0 & x < width) {
-		if (input_borders.getf(x, y) != 0) {
+    private void readBorderPositions(FloatProcessor fp_borders, int[] leftBorderPositions, int[] rightBorderPositions) {
+	if (leftBorderPositions.length != fp_borders.getHeight()) {
+	    leftBorderPositions = new int[fp_borders.getHeight()];
+	}
+	if (rightBorderPositions.length != fp_borders.getHeight()) {
+	    rightBorderPositions = new int[fp_borders.getHeight()];
+	}
+	// the default positions of the borders are the left and the right border of the image
+	Arrays.fill(leftBorderPositions, 0);
+	Arrays.fill(rightBorderPositions, input.getWidth() - 1);
+	for (int y = 0; y < input.getHeight(); y++) {
+	    int count = 2;
+	    int x = 0;
+	    while (count > 0 & x < input.getWidth()) {
+		if (fp_borders.getf(x, y) != 0) {
 		    switch (count) {
 		    case 2:
-			leftBorderPosition[y] = x;
+			leftBorderPositions[y] = x;
 			count--;
 			break;
 		    case 1:
-			rightBorderPosition[y] = x;
+			rightBorderPositions[y] = x;
 			count--;
 			break;
 		    default:
