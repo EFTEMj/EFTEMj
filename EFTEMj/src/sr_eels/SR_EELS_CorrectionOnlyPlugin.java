@@ -32,6 +32,7 @@ import ij.ImagePlus;
 import ij.gui.GenericDialog;
 import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
+import ij.plugin.filter.Transformer;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 
@@ -83,7 +84,9 @@ public class SR_EELS_CorrectionOnlyPlugin implements ExtendedPlugInFilter {
      * select one.
      */
     private boolean useUnprocessedBorders = false;
-    // TODO Implement rotating the image.
+    /**
+     * Determines if the image has to be rotated before and after processing.
+     */
     private boolean rotate;
 
     /*
@@ -107,7 +110,19 @@ public class SR_EELS_CorrectionOnlyPlugin implements ExtendedPlugInFilter {
      */
     @Override
     public void run(ImageProcessor ip) {
+	if (rotate == true) {
+	    Transformer transformer = new Transformer();
+	    transformer.setup("right", input);
+	    transformer.run(input.getProcessor());
+	}
 	correctData();
+	if (rotate == true) {
+	    Transformer transformer = new Transformer();
+	    transformer.setup("left", input);
+	    transformer.run(input.getProcessor());
+	    transformer.setup("left", result);
+	    transformer.run(result.getProcessor());
+	}
     }
 
     /*
@@ -139,7 +154,11 @@ public class SR_EELS_CorrectionOnlyPlugin implements ExtendedPlugInFilter {
      * @return <code>true</code> for Ok and <code>false</code> for Cancel.
      */
     private int showParameterDialog(String title) {
-	GenericDialog gd = new GenericDialog(title + " - set parameters");
+	GenericDialog gd = new GenericDialog(title + " - set correction parameters");
+	String[] items = { "x-axis", "y-axis" };
+	// Try to make a good default selection.
+	String selectedItem = ((input.getWidth() >= input.getHeight()) ? items[0] : items[1]);
+	gd.addChoice("Energy loss on...", items, selectedItem);
 	gd.addNumericField("Predefined spectrum width:", optionalSpecWidth, 0, 4, "pixel");
 	gd.addMessage("(If you choose 0, the width will be set by the automatically.)");
 	if (input.getStackSize() == 3) {
@@ -147,6 +166,17 @@ public class SR_EELS_CorrectionOnlyPlugin implements ExtendedPlugInFilter {
 	}
 	gd.showDialog();
 	if (gd.wasOKed()) {
+	    // for faster processing the energy loss axis has to be the y-axis.
+	    switch (gd.getNextChoice()) {
+	    case "x-axis":
+		rotate = true;
+		break;
+	    case "y-axis":
+		rotate = false;
+		break;
+	    default:
+		break;
+	    }
 	    optionalSpecWidth = (int) gd.getNextNumber();
 	    if (input.getStackSize() == 3) {
 		useUnprocessedBorders = gd.getNextBoolean();

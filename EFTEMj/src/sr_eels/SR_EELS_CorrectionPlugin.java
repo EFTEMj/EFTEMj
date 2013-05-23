@@ -39,6 +39,7 @@ import ij.plugin.RGBStackMerge;
 import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
 import ij.plugin.filter.RankFilters;
+import ij.plugin.filter.Transformer;
 import ij.plugin.frame.RoiManager;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
@@ -82,8 +83,16 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      */
     private final int FLAGS = DOES_32 | NO_CHANGES | FINAL_PROCESSING;
     /**
-     * The uncorrected spectrum image. No changes will be done to this {@link ImagePlus}, except a rotation by 90° that
-     * ill be undone at the end.
+     * The commend that was used t run the plugin. This is used as a prefix for all dialog titles.
+     */
+    private String command;
+    /**
+     * An instance of {@link EFTEMjLogTool}.
+     */
+    private EFTEMjLogTool logTool;
+    /**
+     * The uncorrected spectrum image. No changes will be done to this {@link ImagePlus}, except a temporary rotation by
+     * 90° that will be undone at the end.
      */
     private ImagePlus input;
     /**
@@ -120,7 +129,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      * When this value is true, an iterative process is used to automatically optimize the parameters
      * <code>kernelRadius</code> and <code>maxCount</code>.
      */
-    private boolean optimizeParameters;
+    private boolean optimizeMaxCount;
     /**
      * Determines if the image has to be rotated before and after processing.
      */
@@ -130,8 +139,6 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     private int[] leftBorder;
     private int[] rightBorder;
     private int mode;
-    private EFTEMjLogTool logTool;
-    private String command;
 
     /*
      * (non-Javadoc)
@@ -141,427 +148,13 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     @Override
     public int setup(String arg, ImagePlus imp) {
 	if (arg == "final" & result != null) {
-	    SR_EELS_CorrectionOnlyPlugin postProcessor = new SR_EELS_CorrectionOnlyPlugin();
-	    if (postProcessor.showDialog(result, command, null) != DONE) {
-		postProcessor.getCorrectedData().show();
-	    }
+	    // TODO Edit SR_EELS_CorrectionOnlyPlugin to only match this type of call.
+	    SR_EELS_CorrectionOnlyPlugin correction = new SR_EELS_CorrectionOnlyPlugin();
+	    correction.showDialog(result, command, null);
+	    correction.run(result.getProcessor());
+	    correction.setup("final", result);
 	}
 	return FLAGS;
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see ij.plugin.filter.PlugInFilter#run(ij.process.ImageProcessor)
-     */
-    @Override
-    public void run(ImageProcessor ip) {
-	// TODO Implement the rotation.
-	switch (mode) {
-	case AUTOMATIC:
-	    runAutomaticDetection();
-	    break;
-	case MANUAL:
-	    runManualDetection();
-	    break;
-	default:
-	    break;
-	}
-    }
-
-    private void runAutomaticDetection() {
-	if (optimizeParameters == true) {
-	    optimizeMaxCount();
-	}
-	// The input image is not changed. The program only changes values at a duplicate or at new images.
-	FloatProcessor input_filtered = (FloatProcessor) input.getProcessor().duplicate();
-	applyMedianFilter(input_filtered);
-
-	FloatProcessor input_borderDetection = new FloatProcessor(input.getHeight(), input.getHeight());
-	applyBorderDetectionFilter(input_filtered, input_borderDetection);
-
-	int[] leftBorderPosition = new int[input.getHeight()];
-	int[] rightBorderPosition = new int[input.getHeight()];
-	detectBorder(input_borderDetection, leftBorderPosition, rightBorderPosition);
-
-	int[] linearFitLeft = new int[input.getHeight()];
-	int[] linearFitRight = new int[input.getHeight()];
-	linearFitLeft = applyLinearFit(leftBorderPosition);
-	linearFitRight = applyLinearFit(rightBorderPosition);
-
-	FloatProcessor input_borders;
-	if (useLinearFit) {
-	    input_borders = paintBorders(linearFitLeft, linearFitRight);
-	} else {
-	    input_borders = paintBorders(leftBorderPosition, rightBorderPosition);
-	}
-	ImagePlus ipBorders = new ImagePlus("Borders", input_borders);
-
-	// ImageJ can combine 32-bit greyscale images to an RGB image. A stack
-	// with the size 7 is used to handle the 32-bit images and ImageJ shows
-	// a RGB image. If you open the saved file with Digital Micrograph it's
-	// a regular 32-bit stack.
-	ImagePlus[] images = new ImagePlus[7];
-	// index 0 = red
-	images[0] = ipBorders;
-	if (useLinearFit & showUnprocessedBorder) {
-	    FloatProcessor unprocessedBorders = paintBorders(leftBorderPosition, rightBorderPosition);
-	    ImagePlus ipUnprocessedBorders = new ImagePlus("unprocessed Borders", unprocessedBorders);
-	    // index 1 = green
-	    images[1] = ipUnprocessedBorders;
-	}
-	// index 3 = white
-	images[3] = input;
-	// This class creates the RGB image.
-	RGBStackMerge rgbMerge = new RGBStackMerge();
-	ImagePlus composite = rgbMerge.mergeHyperstacks(images, true);
-	composite.setTitle(input.getTitle());
-	composite.show();
-	result = composite;
-	logTool.showLogDialog();
-    }
-
-    /**
-     * Creates a {@link FloatProcessor} that shows the left and the right borders as white (255) on black (0).
-     * 
-     * @param leftBorder
-     * @param rightBorder
-     * @return A new {@link FloatProcessor}
-     */
-    private FloatProcessor paintBorders(int[] leftBorder, int[] rightBorder) {
-	FloatProcessor result = new FloatProcessor(input.getWidth(), input.getHeight());
-	result.setValue(0);
-	result.fill();
-	for (int y = 0; y < input.getHeight(); y++) {
-	    // TODO Check for values outside the image boundaries.
-	    result.setf(leftBorder[y], y, 255);
-	    result.setf(rightBorder[y], y, 255);
-	}
-	return result;
-    }
-
-    /**
-     * Applies a linear fit to the given array of {@link Integer}s. This method considers the configured number of fit
-     * intervals.
-     * 
-     * @param input
-     * @return A new array of {@link Integer}s that represent a linear fit to the input data.
-     */
-    private int[] applyLinearFit(int[] input) {
-	int[] result = new int[input.length];
-	if (linearFitIntervals == 1) {
-	    linearFit(input, result, 0, this.input.getHeight() - 1);
-	} else {
-	    int intervalWidth = (int) Math.floor(1.0 * this.input.getHeight() / linearFitIntervals);
-	    int remainder = this.input.getHeight() % linearFitIntervals;
-	    int start = 0;
-	    int end;
-	    for (int i = 1; i <= linearFitIntervals; i++) {
-		end = start + intervalWidth - 1;
-		// the reminder is distributed to the first intervals
-		if (remainder > 0) {
-		    end++;
-		}
-		linearFit(input, result, start, end);
-		remainder--;
-		start = end + 1;
-	    }
-
-	}
-	return result;
-    }
-
-    /**
-     * This method calculates a linear fit. This is done at an interval defined by "start" and "end". Both indices are
-     * included.
-     * 
-     * @param input
-     *            is not modified
-     * @param result
-     *            is modified at the given interval
-     * @param start
-     *            (included to the interval)
-     * @param end
-     *            (included to the interval)
-     */
-    private void linearFit(int[] input, int[] result, int start, int end) {
-	float meanX;
-	float meanY;
-	int count = 0;
-	float sumX = 0;
-	float sumY = 0;
-	for (int i = start; i <= end; i++) {
-	    if (input[i] != 0 & input[i] != this.input.getWidth()) {
-		sumX += i;
-		sumY += input[i];
-		count++;
-	    }
-	}
-	meanX = sumX / count;
-	meanY = sumY / count;
-	float sumCovar = 0;
-	float sumX2 = 0;
-	for (int i = start; i <= end; i++) {
-	    if (input[i] != 0) {
-		sumCovar += (i - meanX) * (input[i] - meanY);
-		sumX2 += Math.pow(i - meanX, 2);
-	    }
-	}
-	float m = sumCovar / sumX2;
-	float b = meanY - m * meanX;
-	for (int i = start; i <= end; i++) {
-	    result[i] = Math.round(m * i + b);
-	}
-    }
-
-    /**
-     * This method calculates the optimal value for <code>maxCount</code>. It checks all values between 1 and twice of
-     * the current value of <code>maxCount</code>. The optimisation uses a linear fit of the detected border as a
-     * reference. The value of <code>maxCount</code> that results in the smallest variance between the detected border
-     * and the fit is chosen at the optimised value.
-     */
-    private void optimizeMaxCount() {
-	int maxCountOld = maxCount;
-	logTool.println(String.format("maxCount Startwert: %d", maxCountOld));
-	long[] variances = new long[2 * maxCount];
-	variances[0] = Long.MAX_VALUE;
-	// Process
-	int finalIndex = (variances.length - 1);
-	int progress = 0;
-	IJ.showProgress(0, finalIndex);
-
-	// Median filter
-	FloatProcessor input_filtered = (FloatProcessor) input.getProcessor().duplicate();
-	applyMedianFilter(input_filtered);
-
-	for (maxCount = 1; maxCount < variances.length; maxCount++) {
-	    FloatProcessor input_borderDetection = new FloatProcessor(input.getWidth(), input.getHeight());
-	    applyBorderDetectionFilter(input_filtered, input_borderDetection);
-	    int[] leftBorderPosition = new int[input.getHeight()];
-	    int[] rightBorderPosition = new int[input.getHeight()];
-	    detectBorder(input_borderDetection, leftBorderPosition, rightBorderPosition);
-	    int[] leftBorderFit = applyLinearFit(leftBorderPosition);
-	    int[] rightBorderFit = applyLinearFit(rightBorderPosition);
-	    variances[maxCount] = 0;
-	    variances[maxCount] += calculateVariance(leftBorderPosition, leftBorderFit);
-	    variances[maxCount] += calculateVariance(rightBorderPosition, rightBorderFit);
-	    IJ.showProgress(++progress, finalIndex);
-	}
-	for (int i = 1; i < variances.length; i++) {
-	    logTool.println(String.format("maxCount = %d: %d", i, variances[i]));
-	}
-
-	// Update maxCount
-	maxCount = findMinimumPosition(variances);
-	if (maxCount != maxCountOld) {
-	    logTool.println(String.format("Setze maxCount auf %d.", maxCount));
-	} else {
-	    logTool.println("maxCount wurde nicht verändert.");
-	}
-    }
-
-    /**
-     * Finds the index of first occurrence of the smallest value.
-     * 
-     * @param variances
-     *            An array.
-     * @return The index of the smallest value (1st occurrence).
-     */
-    private int findMinimumPosition(long[] variances) {
-	long min = variances[0];
-	int minPos = 0;
-	for (int i = 0; i < variances.length; i++) {
-	    if (min > variances[i]) {
-		min = variances[i];
-		minPos = i;
-
-	    }
-	}
-	return minPos;
-    }
-
-    /**
-     * Calculates the variance of the given arrays. Both must have the same length.
-     * 
-     * @param values
-     *            1st array with length N.
-     * @param fit
-     *            2nd array with length N.
-     * @return The variance.
-     */
-    private long calculateVariance(int[] values, int[] fit) {
-	long variance = 0;
-	for (int i = 0; i < values.length; i++) {
-	    variance += Math.pow(values[i] - fit[i], 2);
-	}
-	return variance;
-    }
-
-    /**
-     * Creates an instance of {@link RankFilters} and applies a median filter on the given {@link FloatProcessor}. The
-     * radius is defined by the field "kernelRadius".
-     * 
-     * @param ip
-     *            has to be a {@link FloatProcessor}
-     */
-    private void applyMedianFilter(FloatProcessor ip) {
-	RankFilters rf = new RankFilters();
-	rf.rank(ip, kernelRadius, RankFilters.MEDIAN);
-    }
-
-    /**
-     * An edge detection filter that calculates the derivation in x-direction.
-     * 
-     * @param input
-     *            {@link FloatProcessor}
-     * @param result
-     *            {@link FloatProcessor}
-     */
-    private void applyBorderDetectionFilter(FloatProcessor input, FloatProcessor result) {
-	float value;
-	for (int y = 0; y < input.getHeight(); y++) {
-	    // left border: (-1;y) = (0;y)
-	    value = Math.abs(input.getf(1, y) - input.getf(0, y));
-	    result.setf(0, y, value);
-	    for (int x = 1; x < input.getWidth() - 1; x++) {
-		value = Math.abs(input.getf(x + 1, y) - input.getf(x - 1, y));
-		result.setf(x, y, value);
-	    }
-	    // right border: (width;y) = (width-1;y)
-	    value = Math.abs(input.getf(input.getWidth() - 1, y) - input.getf(input.getWidth() - 2, y));
-	    result.setf(input.getWidth() - 1, y, value);
-	}
-    }
-
-    /**
-     * This filter detects the most outer local maximums at each image line. A side condition is that they contain to
-     * the <code>n</code> highest local maximums. <code>n</code> is defined by the filed "maxCount".
-     * 
-     * @param input
-     *            A {@link FloatProcessor} with previously applied edge detection.
-     * @param leftBorderPosition
-     *            An array of {@link Integer}s to save the position of the left border.
-     * @param rightBorderPosition
-     *            An array of {@link Integer}s to save the position of the right border.
-     */
-    private void detectBorder(FloatProcessor input, int[] leftBorderPosition, int[] rightBorderPosition) {
-	int countStart = maxCount;
-	// this variable is used to count the empty places at the arrays
-	// "maxPos" and "maxValues".
-	int count;
-	// this is the smallest value at the array "maxValues"
-	float limit;
-	// the next 2 arrays will be accessed by the same index
-	int[] maxPos = new int[countStart];
-	float[] maxValues = new float[countStart];
-	// a temporary array used for sorting the content of "maxValues"
-	float[] temp = new float[countStart];
-
-	for (int y = 0; y < input.getHeight(); y++) {
-	    // the following code is processed at each line of the image
-	    count = countStart;
-	    limit = input.getf(0, y);
-	    Arrays.fill(maxPos, 0);
-	    Arrays.fill(maxValues, 0);
-	    maxValues[0] = input.getf(0, y);
-	    count--;
-	    for (int x = 1; x < input.getWidth(); x++) {
-		// 1. check if this pixel is a local maximum
-		if (isMaximum(input, x, y)) {
-		    // 2. check if there are empty places at maxPos
-		    if (count > 0) {
-			maxPos[countStart - count] = x;
-			maxValues[countStart - count] = input.getf(x, y);
-			count--;
-			x += localMaxRadius + 1;
-			// when the arrays are filled you have to find the
-			// smallest maximum
-			if (count == 0) {
-			    temp = Arrays.copyOf(maxValues, maxValues.length);
-			    Arrays.sort(temp);
-			    limit = temp[0];
-			}
-		    }
-		    // else part of 2.
-		    else {
-			// 3. check if the local maximum is larger than the
-			// current limit
-			if (input.getf(x, y) > limit) {
-			    // find out the position of the current limit
-			    int index = searchArray(maxValues, limit);
-			    // replace the old limit by the new local maximum
-			    maxPos[index] = x;
-			    maxValues[index] = input.getf(x, y);
-			    // The new local maximum might not be the smallest
-			    temp = Arrays.copyOf(maxValues, maxValues.length);
-			    Arrays.sort(temp);
-			    limit = temp[0];
-			    // skip all pixels that can't be a local maximum
-			    x += localMaxRadius + 1;
-			}
-		    }
-		}
-	    }
-	    // get the most left and the most right position of the largest
-	    // local maximums
-	    Arrays.sort(maxPos);
-	    leftBorderPosition[y] = maxPos[0 + count];
-	    rightBorderPosition[y] = maxPos[maxPos.length - 1];
-	    // continue at next image line
-	}
-    }
-
-    /**
-     * Searches the array for the given value and returns the index.
-     * 
-     * @param array
-     * @param value
-     * @return
-     */
-    private int searchArray(float[] array, float value) {
-	int i;
-	for (i = 0; i < array.length; i++) {
-	    if (array[i] == value) {
-		break;
-	    }
-	}
-	return i;
-    }
-
-    /**
-     * Checks if the pixel is a local maximum. Only the x-direction is considered.
-     * 
-     * @param input
-     * @param x
-     * @param y
-     * @return
-     */
-    private boolean isMaximum(FloatProcessor input, int x, int y) {
-	boolean isMax = true;
-	float testValue = input.getf(x, y);
-	// all neighbouring pixels are stored at an array
-	float[] neighbor = new float[2 * localMaxRadius + 1];
-	for (int i = -localMaxRadius; i <= localMaxRadius; i++) {
-	    if (x + i >= 0 & x + i < input.getWidth()) {
-		neighbor[i + localMaxRadius] = input.getf(x + i, y);
-	    } else {
-		if (x + 1 < 0) {
-		    neighbor[i + localMaxRadius] = input.getf(0, y);
-		} else {
-		    if (x + 1 >= input.getWidth()) {
-			neighbor[i + localMaxRadius] = input.getf(input.getWidth() - 1, y);
-		    }
-		}
-	    }
-	}
-	// check if no neighbour is larger than the given pixel (x,y)
-	for (int i = 0; i < neighbor.length; i++) {
-	    if (neighbor[i] > testValue) {
-		isMax = false;
-		break;
-	    }
-	}
-	return isMax;
     }
 
     /*
@@ -604,7 +197,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      */
     private int showModeDialog(String title) {
 	GenericDialog gd = new GenericDialog(title + " - detection mode", IJ.getInstance());
-	gd.addMessage("Select mode of the SR-EELS correction.");
+	gd.addMessage("Select the mode of the SR-EELS correction.");
 	gd.setOKLabel("Automatic");
 	gd.setCancelLabel("Manual");
 	// TODO write the description
@@ -627,18 +220,20 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      * @return OK or CANCEL
      */
     private int showParameterDialog(String title) {
-	GenericDialog gd = new GenericDialog(title + " - set parameters", IJ.getInstance());
-	String[] items = { "y-axis", "x-axis" };
-	gd.addChoice("energy loss on...", items, items[0]);
+	GenericDialog gd = new GenericDialog(title + " - set detection parameters", IJ.getInstance());
+	String[] items = { "x-axis", "y-axis" };
+	// Try to make a good default selection.
+	String selectedItem = ((input.getWidth() >= input.getHeight()) ? items[0] : items[1]);
+	gd.addChoice("Energy loss on...", items, selectedItem);
 	gd.addNumericField("Median filter radius:", kernelRadius, 1, 3, "pixel");
 	gd.addNumericField("Maximums per row:", maxCount, 0, 3, null);
 	gd.addNumericField("Radius of a local maximum:", localMaxRadius, 0, 2, "pixel");
-	gd.addCheckbox("Use a linear fit", false);
+	gd.addCheckbox("Use a linear fit:", false);
 	gd.addNumericField("Linear fit steps:", linearFitIntervals, 0, 2, null);
 	gd.addCheckbox("Show unprocessed border", true);
-	gd.addCheckbox("Use maxCount optimization", false);
+	gd.addCheckbox("Optimise maxCount:", false);
 	// TODO write the description
-	String help = "<html><h3>Parameter</h3><p>description</p></html>";
+	String help = "<html><h3>Detection parameters</h3><p>description</p></html>";
 	gd.addHelp(help);
 	gd.showDialog();
 	if (gd.wasCanceled() == true) {
@@ -666,27 +261,350 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 		    + ".\n " + "You need an intervall of at least 3 pixel tobenefit from a linear fit.");
 	}
 	showUnprocessedBorder = gd.getNextBoolean();
-	optimizeParameters = gd.getNextBoolean();
+	optimizeMaxCount = gd.getNextBoolean();
 	return OK;
     }
 
     /*
      * (non-Javadoc)
      * 
-     * @see ij.plugin.filter.ExtendedPlugInFilter#setNPasses(int)
+     * @see ij.plugin.filter.PlugInFilter#run(ij.process.ImageProcessor)
      */
     @Override
-    public void setNPasses(int nPasses) {
-	// This method is not used.
+    public void run(ImageProcessor ip) {
+	if (rotate == true) {
+	    Transformer transformer = new Transformer();
+	    transformer.setup("right", input);
+	    transformer.run(input.getProcessor());
+	}
+	switch (mode) {
+	case AUTOMATIC:
+	    runAutomaticDetection();
+	    break;
+	case MANUAL:
+	    runManualDetection();
+	    break;
+	default:
+	    break;
+	}
+	// Select the grayscale channel.
+	if (result.getStackSize() == 2) {
+	    result.setC(2);
+	} else if (result.getStackSize() == 3) {
+	    result.setC(3);
+	}
+	if (rotate == true) {
+	    Transformer transformer = new Transformer();
+	    transformer.setup("left", input);
+	    transformer.run(input.getProcessor());
+	    transformer.setup("left", result);
+	    transformer.run(result.getProcessor());
+	}
     }
 
     /**
-     * Cancel the plugin and show a status message.
+     * Code of the automatic spectrum border detection.
      */
-    private void canceled() {
-	IJ.showStatus("Drift detection has been canceled.");
+    private void runAutomaticDetection() {
+	// The input image is not changed. The program only changes values at a duplicate or at new images.
+	FloatProcessor fp_filtered = (FloatProcessor) input.getProcessor().duplicate();
+	RankFilters rf = new RankFilters();
+	rf.rank(fp_filtered, kernelRadius, RankFilters.MEDIAN);
+	FloatProcessor fp_border = new FloatProcessor(input.getHeight(), input.getHeight());
+	// The filter matrix (-1, 0, 1) is applied.
+	for (int y = 0; y < fp_filtered.getHeight(); y++) {
+	    // left border: (-1;y) = (0;y)
+	    float value = Math.abs(fp_filtered.getf(1, y) - fp_filtered.getf(0, y));
+	    fp_border.setf(0, y, value);
+	    for (int x = 1; x < fp_filtered.getWidth() - 1; x++) {
+		value = Math.abs(fp_filtered.getf(x + 1, y) - fp_filtered.getf(x - 1, y));
+		fp_border.setf(x, y, value);
+	    }
+	    // right border: (width;y) = (width-1;y)
+	    value = Math.abs(fp_filtered.getf(input.getWidth() - 1, y) - fp_filtered.getf(input.getWidth() - 2, y));
+	    fp_border.setf(fp_filtered.getWidth() - 1, y, value);
+	}
+	int[] leftBorderPosition = new int[input.getHeight()];
+	int[] rightBorderPosition = new int[input.getHeight()];
+	int[] linearFitLeft = new int[input.getHeight()];
+	int[] linearFitRight = new int[input.getHeight()];
+	int[] leftBorderPositionTemp = new int[input.getHeight()];
+	int[] rightBorderPositionTemp = new int[input.getHeight()];
+	int[] linearFitLeftTemp = new int[input.getHeight()];
+	int[] linearFitRightTemp = new int[input.getHeight()];
+	long[] variances = (optimizeMaxCount) ? new long[2 * maxCount] : new long[1];
+	variances[0] = Long.MAX_VALUE;
+	// This index is 0 based.
+	int minVarianceIndex = 0;
+	// This index is 1 based.
+	int currentMaxCount = (optimizeMaxCount) ? 1 : maxCount;
+	// ProcessBar
+	int finalIndex = (variances.length - 1);
+	int progress = 0;
+	IJ.showProgress(0, finalIndex);
+	// I use a do-while-loop to optimise maxCount. If the optimisation is not selected, the loop will stop after
+	// the first execution.
+	do {
+	    // This variable is used to count the empty places at the arrays "maxPos" and "maxValues".
+	    int count;
+	    // This is the smallest value at the array "maxValues".
+	    float limit;
+	    // The next 2 arrays will be accessed by the same index.
+	    int[] maxPos = new int[currentMaxCount];
+	    float[] maxValues = new float[currentMaxCount];
+	    for (int y = 0; y < input.getHeight(); y++) {
+		// The following code is processed at each line of the image.
+		count = currentMaxCount;
+		Arrays.fill(maxPos, 0);
+		Arrays.fill(maxValues, 0);
+		maxValues[0] = fp_border.getf(0, y);
+		limit = fp_border.getf(0, y);
+		count--;
+		for (int x = 1; x < input.getWidth(); x++) {
+		    // 1. Check if this pixel is a local maximum.
+		    if (isLocalMaximum(fp_border, x, y)) {
+			// 2. Check if there are empty places at maxPos.
+			if (count > 0) {
+			    maxPos[currentMaxCount - count] = x;
+			    maxValues[currentMaxCount - count] = fp_border.getf(x, y);
+			    count--;
+			    // Skip all pixels that can't be a local maximum.
+			    x += localMaxRadius + 1;
+			    // When the arrays are filled you have to find the smallest maximum.
+			    if (count == 0) {
+				// A temporary array used for sorting the content of "maxValues".
+				float[] temp = Arrays.copyOf(maxValues, maxValues.length);
+				Arrays.sort(temp);
+				limit = temp[0];
+			    }
+			}
+			// else part of 2.
+			else {
+			    // 3. Check if the local maximum is larger than the current limit.
+			    if (fp_border.getf(x, y) > limit) {
+				// Find out the position of the current limit.
+				int index = searchArray(maxValues, limit);
+				// Replace the old limit by the new local maximum.
+				maxPos[index] = x;
+				maxValues[index] = fp_border.getf(x, y);
+				// The new local maximum might not be the smallest.
+				// temporary array used for sorting the content of "maxValues".
+				float[] temp = Arrays.copyOf(maxValues, maxValues.length);
+				Arrays.sort(temp);
+				limit = temp[0];
+				// Skip all pixels that can't be a local maximum.
+				x += localMaxRadius + 1;
+			    }
+			}
+		    }
+		}
+		// Get the most left and the most right position of the largest local maximums.
+		Arrays.sort(maxPos);
+		// If count is not zero you have to skip the first entries of the array.
+		leftBorderPosition[y] = maxPos[0 + count];
+		rightBorderPosition[y] = maxPos[maxPos.length - 1];
+		// Continue at next image line
+	    }
+	    linearFitLeft = applyLinearFit(leftBorderPosition);
+	    linearFitRight = applyLinearFit(rightBorderPosition);
+	    variances[(optimizeMaxCount ? currentMaxCount - 1 : 0)] = calculateVariance(leftBorderPosition,
+		    linearFitLeft) + calculateVariance(rightBorderPosition, linearFitRight);
+	    logTool.println(String.format("Variance (maxCount = %d): %d", currentMaxCount,
+		    variances[(optimizeMaxCount ? currentMaxCount - 1 : 0)]));
+	    if (optimizeMaxCount && variances[currentMaxCount - 1] < variances[minVarianceIndex]) {
+		minVarianceIndex = currentMaxCount - 1;
+		leftBorderPositionTemp = Arrays.copyOf(leftBorderPosition, leftBorderPosition.length);
+		rightBorderPositionTemp = Arrays.copyOf(rightBorderPosition, rightBorderPosition.length);
+		linearFitLeftTemp = Arrays.copyOf(linearFitLeft, linearFitLeft.length);
+		linearFitRightTemp = Arrays.copyOf(linearFitRight, linearFitRight.length);
+	    }
+	    IJ.showProgress(++progress, finalIndex);
+	    currentMaxCount++;
+	    optimizeMaxCount = (optimizeMaxCount & currentMaxCount <= 2 * maxCount) ? true : false;
+	} while (optimizeMaxCount);
+	if (variances.length > 1) {
+	    logTool.println(String.format("The optimal maxCount is %d.", minVarianceIndex + 1));
+	    leftBorderPosition = leftBorderPositionTemp;
+	    rightBorderPosition = rightBorderPositionTemp;
+	    linearFitLeft = linearFitLeftTemp;
+	    linearFitRight = linearFitRightTemp;
+	}
+	// ImageJ can combine 32-bit greyscale images to an RGB image. A stack
+	// with the size 7 is used to handle the 32-bit images and ImageJ shows
+	// a RGB image. If you open the saved file with Digital Micrograph it's
+	// a regular 32-bit stack.
+	ImagePlus[] images = new ImagePlus[7];
+	// index 0 = red
+	images[0] = (useLinearFit) ? new ImagePlus("Borders", paintBorders(linearFitLeft, linearFitRight))
+		: new ImagePlus("borders", paintBorders(leftBorderPosition, rightBorderPosition));
+	// index 1 = green
+	images[1] = (useLinearFit & showUnprocessedBorder) ? new ImagePlus("Unprocessed Borders", paintBorders(
+		leftBorderPosition, rightBorderPosition)) : null;
+	// index 2 = blue
+	// index 3 = white
+	images[3] = input;
+	// This class creates the RGB image.
+	RGBStackMerge rgbMerge = new RGBStackMerge();
+	ImagePlus composite = rgbMerge.mergeHyperstacks(images, true);
+	composite.setTitle(input.getTitle());
+	composite.show();
+	result = composite;
+	logTool.showLogDialog();
     }
 
+    /**
+     * Searches the array for the given value and returns the index. In contrast to <code>Arrays.binarySearch()</code>
+     * the array has not to be sorted.
+     * 
+     * @param array
+     *            An array that can be unsorted.
+     * @param value
+     *            The value to search for.
+     * @return The index of the first occurrence.
+     */
+    private int searchArray(float[] array, float value) {
+	int i;
+	for (i = 0; i < array.length; i++) {
+	    if (array[i] == value) {
+		break;
+	    }
+	}
+	return i;
+    }
+
+    /**
+     * Creates a {@link FloatProcessor} that shows the left and the right borders as white (255) on black (0).
+     * 
+     * @param leftBorder
+     * @param rightBorder
+     * @return A new {@link FloatProcessor}
+     */
+    private FloatProcessor paintBorders(int[] leftBorder, int[] rightBorder) {
+	FloatProcessor result = new FloatProcessor(input.getWidth(), input.getHeight());
+	result.setValue(0);
+	result.fill();
+	for (int y = 0; y < input.getHeight(); y++) {
+	    // TODO Check for values outside the image boundaries.
+	    result.setf(leftBorder[y], y, 255);
+	    result.setf(rightBorder[y], y, 255);
+	}
+	return result;
+    }
+
+    /**
+     * Applies a linear fit to the given array of int values. This method considers the configured number of fit
+     * intervals.
+     * 
+     * @param input
+     *            An array of int values.
+     * @return A new array of {@link Integer}s that represent a linear fit to the input data.
+     */
+    private int[] applyLinearFit(int[] input) {
+	int[] result = new int[input.length];
+	int intervalWidth = (int) Math.floor(1.0 * this.input.getHeight() / linearFitIntervals);
+	int remainder = this.input.getHeight() % linearFitIntervals;
+	int start = 0;
+	int end;
+	for (int index = 1; index <= linearFitIntervals; index++) {
+	    end = start + intervalWidth - 1;
+	    // the reminder is distributed to the first intervals
+	    if (remainder > 0) {
+		end++;
+	    }
+	    float meanX;
+	    float meanY;
+	    int count = 0;
+	    float sumX = 0;
+	    float sumY = 0;
+	    for (int i = start; i <= end; i++) {
+		if (input[i] != 0 & input[i] != this.input.getWidth()) {
+		    sumX += i;
+		    sumY += input[i];
+		    count++;
+		}
+	    }
+	    meanX = sumX / count;
+	    meanY = sumY / count;
+	    float sumCovar = 0;
+	    float sumX2 = 0;
+	    for (int i = start; i <= end; i++) {
+		if (input[i] != 0) {
+		    sumCovar += (i - meanX) * (input[i] - meanY);
+		    sumX2 += Math.pow(i - meanX, 2);
+		}
+	    }
+	    float m = sumCovar / sumX2;
+	    float b = meanY - m * meanX;
+	    for (int i = start; i <= end; i++) {
+		result[i] = Math.round(m * i + b);
+	    }
+
+	    remainder--;
+	    start = end + 1;
+	}
+
+	return result;
+    }
+
+    /**
+     * Calculates the variance of the given arrays. Both must have the same length.
+     * 
+     * @param values
+     *            1st array with length N.
+     * @param fit
+     *            2nd array with length N.
+     * @return The variance.
+     */
+    private long calculateVariance(int[] values, int[] fit) {
+	long variance = 0;
+	for (int i = 0; i < values.length; i++) {
+	    variance += Math.pow(values[i] - fit[i], 2);
+	}
+	return variance;
+    }
+
+    /**
+     * Checks if the pixel is a local maximum. Only the x-direction is considered.
+     * 
+     * @param input
+     *            A {@link FloatProcessor}
+     * @param x
+     *            The x-axis coordinate.
+     * @param y
+     *            The y-axis coordinate.
+     * @return True if the Point (x,y) is a local maximum.
+     */
+    private boolean isLocalMaximum(FloatProcessor input, int x, int y) {
+	boolean isMax = true;
+	float testValue = input.getf(x, y);
+	// all neighbouring pixels are stored at an array
+	float[] neighbor = new float[2 * localMaxRadius + 1];
+	for (int i = -localMaxRadius; i <= localMaxRadius; i++) {
+	    if (x + i >= 0 & x + i < input.getWidth()) {
+		neighbor[i + localMaxRadius] = input.getf(x + i, y);
+	    } else {
+		if (x + 1 < 0) {
+		    neighbor[i + localMaxRadius] = input.getf(0, y);
+		} else {
+		    if (x + 1 >= input.getWidth()) {
+			neighbor[i + localMaxRadius] = input.getf(input.getWidth() - 1, y);
+		    }
+		}
+	    }
+	}
+	// check if no neighbour is larger than the given pixel (x,y)
+	for (int i = 0; i < neighbor.length; i++) {
+	    if (neighbor[i] > testValue) {
+		isMax = false;
+		break;
+	    }
+	}
+	return isMax;
+    }
+
+    /**
+     * Code of the manual spectrum border detection.
+     */
     private void runManualDetection() {
 	// Store some settings for resetting them later on.
 	double oldMax = input.getDisplayRangeMax();
@@ -707,7 +625,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	RoiManager roiManager = new RoiManager();
 	roiManager.runCommand("show all with labels");
 	roiManager.setVisible(true);
-	// TODO Replace WaitForUserDialog by ExtendedWaitForUserDialog to add some controls (e.g. Zoom).
+	// TODO Add some controls (e.g. Zoom) to the ExtendedWaitForUserDialog.
 	ExtendedWaitForUserDialog waitDLG = new ExtendedWaitForUserDialog(command + " - manual mode",
 		"Place two lines at the border of the spectrum\n" + "1. line at the left side\n"
 			+ "2. line at the right side\n" + "Press OK when you have added both lines to the RoiManager",
@@ -773,5 +691,22 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	    border[y] = (int) Math.round((y - intercept) / slope);
 	}
 	return border;
+    }
+
+    /**
+     * Cancel the plugin and show a status message.
+     */
+    private void canceled() {
+	IJ.showStatus("Drift detection has been canceled.");
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see ij.plugin.filter.ExtendedPlugInFilter#setNPasses(int)
+     */
+    @Override
+    public void setNPasses(int nPasses) {
+	// This method is not used.
     }
 }
