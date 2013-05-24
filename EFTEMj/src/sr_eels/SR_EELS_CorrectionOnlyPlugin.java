@@ -26,7 +26,6 @@
  */
 package sr_eels;
 
-import java.util.Arrays;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
@@ -35,6 +34,8 @@ import ij.plugin.filter.PlugInFilterRunner;
 import ij.plugin.filter.Transformer;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
+
+import java.util.Arrays;
 
 /**
  * This plugin is used to correct SR-EELS data that shows a geometric aberration. This aberration is visible in SR-EELS
@@ -187,27 +188,16 @@ public class SR_EELS_CorrectionOnlyPlugin implements ExtendedPlugInFilter {
     }
 
     /**
-     * Call <code>showDialog()</code> first.<br />
-     * Starts the correction of the SR-EELS data.
-     * 
-     * @return The corrected SR-EELS data as an {@link ImagePlus}.
-     */
-    public ImagePlus getCorrectedData() {
-	correctData();
-	return result;
-    }
-
-    /**
      * This is the correction of the SR-EELS data.
      */
     private void correctData() {
-	FloatProcessor input_borders;
+	FloatProcessor fp_borders;
 	// By default the first image of the stack shows the borders.
 	// If the first image of the stack shows a processed border, the second image shows the unprocessed border.
 	if (useUnprocessedBorders) {
-	    input_borders = (FloatProcessor) input.getStack().getProcessor(2);
+	    fp_borders = (FloatProcessor) input.getStack().getProcessor(2);
 	} else {
-	    input_borders = (FloatProcessor) input.getStack().getProcessor(1);
+	    fp_borders = (FloatProcessor) input.getStack().getProcessor(1);
 	}
 	FloatProcessor fp_data;
 	// You have to check if the stack contains 2 or 3 images to get the input image.
@@ -224,11 +214,39 @@ public class SR_EELS_CorrectionOnlyPlugin implements ExtendedPlugInFilter {
 	// read position of borders from the image
 	int[] leftBorderPositions = new int[input.getHeight()];
 	int[] rightBorderPositions = new int[input.getHeight()];
-	readBorderPositions(input_borders, leftBorderPositions, rightBorderPositions);
-	// find the optimal spectrum width
+	// the default positions of the borders are the left and the right border of the image
+	Arrays.fill(leftBorderPositions, 0);
+	Arrays.fill(rightBorderPositions, input.getWidth() - 1);
+	int minimumWidth = input.getWidth();
+	for (int y = 0; y < input.getHeight(); y++) {
+	    int count = 2;
+	    int x = 0;
+	    while (count > 0 & x < input.getWidth()) {
+		if (fp_borders.getf(x, y) != 0) {
+		    switch (count) {
+		    case 2:
+			leftBorderPositions[y] = x;
+			count--;
+			break;
+		    case 1:
+			rightBorderPositions[y] = x;
+			count--;
+			break;
+		    default:
+			break;
+		    }
+		}
+		x++;
+	    }
+	    // Find the optimal spectrum width but ignore the first and last 1% of the image.
+	    if (y > 0.01 * input.getHeight() && y < 0.99 * input.getHeight()
+		    && rightBorderPositions[y] - leftBorderPositions[y] < minimumWidth) {
+		minimumWidth = rightBorderPositions[y] - leftBorderPositions[y];
+	    }
+	}
 	int newSpecWidth;
 	if (optionalSpecWidth == 0) {
-	    int minimumWidth = findMinimumWidth(leftBorderPositions, rightBorderPositions);
+
 	    newSpecWidth = minimumWidth;
 	} else {
 	    newSpecWidth = optionalSpecWidth;
@@ -273,67 +291,5 @@ public class SR_EELS_CorrectionOnlyPlugin implements ExtendedPlugInFilter {
     @Override
     public void setNPasses(int nPasses) {
 	// This method is not used.
-    }
-
-    /**
-     * Finds the minimum distance between the left border and the right border.
-     * 
-     * @param leftBorderPositions
-     *            An array containing the positions of the left border.
-     * @param rightBorderPositions
-     *            An array containing the positions of the right border.
-     * @return The minimum distance between the left border and the right border.
-     */
-    private int findMinimumWidth(int[] leftBorderPositions, int[] rightBorderPositions) {
-	int min = input.getWidth();
-	for (int y = 0; y < input.getHeight(); y++) {
-	    if (rightBorderPositions[y] - leftBorderPositions[y] < min) {
-		min = rightBorderPositions[y] - leftBorderPositions[y];
-	    }
-	}
-	return min;
-    }
-
-    /**
-     * Fills the 2 arrays with the position of the left and the right border.
-     * 
-     * @param fp_borders
-     *            A black (0) image with 2 values >0 in each line.
-     * @param leftBorderPositions
-     *            An array that will containing the positions of the left border.
-     * @param rightBorderPositions
-     *            An array that will containing the positions of the right border.
-     */
-    private void readBorderPositions(FloatProcessor fp_borders, int[] leftBorderPositions, int[] rightBorderPositions) {
-	if (leftBorderPositions.length != fp_borders.getHeight()) {
-	    leftBorderPositions = new int[fp_borders.getHeight()];
-	}
-	if (rightBorderPositions.length != fp_borders.getHeight()) {
-	    rightBorderPositions = new int[fp_borders.getHeight()];
-	}
-	// the default positions of the borders are the left and the right border of the image
-	Arrays.fill(leftBorderPositions, 0);
-	Arrays.fill(rightBorderPositions, input.getWidth() - 1);
-	for (int y = 0; y < input.getHeight(); y++) {
-	    int count = 2;
-	    int x = 0;
-	    while (count > 0 & x < input.getWidth()) {
-		if (fp_borders.getf(x, y) != 0) {
-		    switch (count) {
-		    case 2:
-			leftBorderPositions[y] = x;
-			count--;
-			break;
-		    case 1:
-			rightBorderPositions[y] = x;
-			count--;
-			break;
-		    default:
-			break;
-		    }
-		}
-		x++;
-	    }
-	}
     }
 }

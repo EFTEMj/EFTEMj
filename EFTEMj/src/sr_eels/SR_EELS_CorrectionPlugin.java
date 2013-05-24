@@ -26,8 +26,6 @@
  */
 package sr_eels;
 
-import java.util.Arrays;
-import tools.EFTEMjLogTool;
 import gui.ExtendedWaitForUserDialog;
 import ij.IJ;
 import ij.ImagePlus;
@@ -44,6 +42,10 @@ import ij.plugin.frame.RoiManager;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import ij.process.ImageStatistics;
+
+import java.util.Arrays;
+
+import tools.EFTEMjLogTool;
 
 /**
  * This plugin is used to correct SR-EELS data that shows a geometric aberration. This aberration is visible in SR-EELS
@@ -148,12 +150,16 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     @Override
     public int setup(String arg, ImagePlus imp) {
 	if (arg == "final" & result != null) {
-	    // TODO Edit SR_EELS_CorrectionOnlyPlugin to only match this type of call.
-	    SR_EELS_CorrectionOnlyPlugin correction = new SR_EELS_CorrectionOnlyPlugin();
-	    correction.showDialog(result, command, null);
-	    correction.run(result.getProcessor());
-	    correction.setup("final", result);
+	    // SR_EELS_CorrectionOnlyPlugin correction = new SR_EELS_CorrectionOnlyPlugin();
+	    // correction.showDialog(result, command, null);
+	    // correction.run(result.getProcessor());
+	    // correction.setup("final", result);
+	    IJ.run("correct SR-EELS (no detection)");
 	}
+	kernelRadius = (float) (0.5 * Math.ceil(2.0 * imp.getWidth() / 200));
+	maxCount = (int) Math.ceil(1.0 * imp.getWidth() / 75);
+	localMaxRadius = (int) Math.floor(kernelRadius);
+	linearFitIntervals = (int) Math.ceil(1.0 * imp.getHeight() / 100);
 	return FLAGS;
     }
 
