@@ -33,11 +33,11 @@ import ij.gui.GenericDialog;
 import ij.gui.Line;
 import ij.gui.Roi;
 import ij.gui.Toolbar;
+import ij.plugin.Duplicator;
 import ij.plugin.RGBStackMerge;
 import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
 import ij.plugin.filter.RankFilters;
-import ij.plugin.filter.Transformer;
 import ij.plugin.frame.RoiManager;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
@@ -57,7 +57,8 @@ import tools.EFTEMjLogTool;
  * {@link SR_EELS_CorrectionOnlyPlugin} will perform this step.
  * 
  * For faster processing the energy loss direction has to be the y-axis. Images with the energy loss direction at the
- * x-axis will be rotated during processing.
+ * x-axis will be rotated during automatic processing. To satisfy the NO_CHANGES flag a copy of the input image is
+ * Rotated. The resulting image has always the orientation of the input image.
  * 
  * @author Michael Epping <michael.epping@uni-muenster.de>
  * 
@@ -136,11 +137,15 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      * Determines if the image has to be rotated before and after processing.
      */
     private boolean rotate;
-    private Line leftLine;
-    private Line rightLine;
-    private int[] leftBorder;
-    private int[] rightBorder;
+    private Line firstLine;
+    private Line secondLine;
+    private int[] firstBorder;
+    private int[] secondBorder;
     private int mode;
+    private boolean horizontalOrientation;
+    private boolean skipCorrection;
+    private String inputTitle;
+    private boolean canceled;
 
     /*
      * (non-Javadoc)
@@ -149,17 +154,35 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      */
     @Override
     public int setup(String arg, ImagePlus imp) {
-	if (arg == "final" & result != null) {
-	    // SR_EELS_CorrectionOnlyPlugin correction = new SR_EELS_CorrectionOnlyPlugin();
-	    // correction.showDialog(result, command, null);
-	    // correction.run(result.getProcessor());
-	    // correction.setup("final", result);
-	    IJ.run("correct SR-EELS (no detection)");
+	// When starting the plugin this method is only used to set the flags.
+	if (arg.equals("final")) {
+	    if (canceled) {
+		return DONE;
+	    }
+	    result.setTitle(inputTitle);
+	    // Select the grayscale channel.
+	    if (result.getStackSize() == 2) {
+		result.setC(2);
+	    } else if (result.getStackSize() == 3) {
+		result.setC(3);
+	    }
+	    if (rotate == true) {
+		IJ.run(result, "Rotate 90 Degrees Left", "");
+	    }
+	    // If a rotation was necessary input is a copy of the original image and is not needed any more.
+	    input = (rotate) ? null : input;
+	    result.show();
+	    logTool.showLogDialog();
+	    if (!skipCorrection) {
+		// If no rotation was necessary the input image is still locked. We have to unlock it before another
+		// plugin is started.
+		if (rotate) {
+		    input.unlock();
+		}
+		IJ.run("correct SR-EELS (no detection)");
+	    }
+	    return DONE;
 	}
-	kernelRadius = (float) (0.5 * Math.ceil(2.0 * imp.getWidth() / 200));
-	maxCount = (int) Math.ceil(1.0 * imp.getWidth() / 75);
-	localMaxRadius = (int) Math.floor(kernelRadius);
-	linearFitIntervals = (int) Math.ceil(1.0 * imp.getHeight() / 100);
 	return FLAGS;
     }
 
@@ -171,25 +194,42 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      */
     @Override
     public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
+	// I assume that the axis of the energy loss is the longer one.
+	kernelRadius = (float) (0.5 * Math.ceil(2.0 * Math.min(imp.getWidth(), imp.getHeight()) / 200));
+	maxCount = (int) Math.ceil(1.0 * Math.min(imp.getWidth(), imp.getHeight()) / 75);
+	localMaxRadius = (int) Math.floor(kernelRadius);
+	linearFitIntervals = (int) Math.ceil(1.0 * Math.max(imp.getWidth(), imp.getHeight()) / 100);
 	this.command = command;
 	logTool = new EFTEMjLogTool(command);
 	input = imp;
+	inputTitle = imp.getTitle();
+	String message;
 	switch (showModeDialog(command)) {
 	case AUTOMATIC:
-	    IJ.showStatus("Automatic SR-EELS correction has been selected.");
+	    message = "Automatic SR-EELS correction has been selected.";
+	    logTool.println(message);
+	    IJ.showStatus(message);
 	    if (showParameterDialog(command) == CANCEL) {
-		canceled();
-		return NO_CHANGES | DONE;
+		cancel();
+		return DONE;
 	    }
 	    mode = AUTOMATIC;
 	    break;
 	case MANUAL:
-	    IJ.showStatus("Manual SR-EELS correction has been selected.");
+	    message = "Manual SR-EELS correction has been selected.";
+	    logTool.println(message);
+	    IJ.showStatus(message);
 	    mode = MANUAL;
 	    break;
 	default:
-	    canceled();
-	    return NO_CHANGES | DONE;
+	    cancel();
+	    return DONE;
+	}
+	if (rotate == true) {
+	    ImagePlus temp = input;
+	    input = new Duplicator().run(input);
+	    temp.unlock();
+	    IJ.run(input, "Rotate 90 Degrees Right", "");
 	}
 	return FLAGS;
     }
@@ -232,12 +272,13 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	String selectedItem = ((input.getWidth() >= input.getHeight()) ? items[0] : items[1]);
 	gd.addChoice("Energy loss on...", items, selectedItem);
 	gd.addNumericField("Median filter radius:", kernelRadius, 1, 3, "pixel");
-	gd.addNumericField("Maximums per row:", maxCount, 0, 3, null);
-	gd.addNumericField("Radius of a local maximum:", localMaxRadius, 0, 2, "pixel");
+	gd.addNumericField("Maxima per row:", maxCount, 0, 3, null);
+	gd.addNumericField("Radius of a local maxima:", localMaxRadius, 0, 2, "pixel");
 	gd.addCheckbox("Use a linear fit:", false);
 	gd.addNumericField("Linear fit steps:", linearFitIntervals, 0, 2, null);
 	gd.addCheckbox("Show unprocessed border", true);
 	gd.addCheckbox("Optimise maxCount:", false);
+	gd.addCheckbox("Skip corrction", false);
 	// TODO write the description
 	String help = "<html><h3>Detection parameters</h3><p>description</p></html>";
 	gd.addHelp(help);
@@ -248,9 +289,11 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	// for faster processing the energy loss axis has to be the y-axis.
 	switch (gd.getNextChoice()) {
 	case "x-axis":
+	    logTool.println("Energy loss on x-axis.");
 	    rotate = true;
 	    break;
 	case "y-axis":
+	    logTool.println("Energy loss on y-axis.");
 	    rotate = false;
 	    break;
 	default:
@@ -268,6 +311,17 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	}
 	showUnprocessedBorder = gd.getNextBoolean();
 	optimizeMaxCount = gd.getNextBoolean();
+	skipCorrection = gd.getNextBoolean();
+	logTool.println(String.format("Median filter radius: %.1f", kernelRadius));
+	logTool.println(String.format("Maxima per row: %d", maxCount));
+	logTool.println(String.format("Radius of a local maxima: %d", localMaxRadius));
+	logTool.println(String.format("Use a linear fit: %b", useLinearFit));
+	if (useLinearFit) {
+	    logTool.println(String.format("Linear fit steps: %d", linearFitIntervals));
+	    logTool.println(String.format("Show unprocessed border: %b", showUnprocessedBorder));
+	}
+	logTool.println(String.format("Optimise maxCount: %b", optimizeMaxCount));
+	logTool.println(String.format("Skip corrction: %b%n", skipCorrection));
 	return OK;
     }
 
@@ -278,11 +332,6 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      */
     @Override
     public void run(ImageProcessor ip) {
-	if (rotate == true) {
-	    Transformer transformer = new Transformer();
-	    transformer.setup("right", input);
-	    transformer.run(input.getProcessor());
-	}
 	switch (mode) {
 	case AUTOMATIC:
 	    runAutomaticDetection();
@@ -293,51 +342,41 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	default:
 	    break;
 	}
-	// Select the grayscale channel.
-	if (result.getStackSize() == 2) {
-	    result.setC(2);
-	} else if (result.getStackSize() == 3) {
-	    result.setC(3);
-	}
-	if (rotate == true) {
-	    Transformer transformer = new Transformer();
-	    transformer.setup("left", input);
-	    transformer.run(input.getProcessor());
-	    transformer.setup("left", result);
-	    transformer.run(result.getProcessor());
-	}
     }
 
     /**
-     * Code of the automatic spectrum border detection.
+     * Code of the automatic spectrum border detection. This code uses an image with the y-axis representing the energy
+     * loss. The image input has to be rotated before running this method.
      */
     private void runAutomaticDetection() {
 	// The input image is not changed. The program only changes values at a duplicate or at new images.
 	FloatProcessor fp_filtered = (FloatProcessor) input.getProcessor().duplicate();
+	// Create a median filter and apply it.
 	RankFilters rf = new RankFilters();
 	rf.rank(fp_filtered, kernelRadius, RankFilters.MEDIAN);
-	FloatProcessor fp_border = new FloatProcessor(input.getHeight(), input.getHeight());
+	FloatProcessor fp_simplifiedSobel = new FloatProcessor(input.getHeight(), input.getHeight());
 	// The filter matrix (-1, 0, 1) is applied.
 	for (int y = 0; y < fp_filtered.getHeight(); y++) {
 	    // left border: (-1;y) = (0;y)
 	    float value = Math.abs(fp_filtered.getf(1, y) - fp_filtered.getf(0, y));
-	    fp_border.setf(0, y, value);
+	    fp_simplifiedSobel.setf(0, y, value);
 	    for (int x = 1; x < fp_filtered.getWidth() - 1; x++) {
 		value = Math.abs(fp_filtered.getf(x + 1, y) - fp_filtered.getf(x - 1, y));
-		fp_border.setf(x, y, value);
+		fp_simplifiedSobel.setf(x, y, value);
 	    }
 	    // right border: (width;y) = (width-1;y)
 	    value = Math.abs(fp_filtered.getf(input.getWidth() - 1, y) - fp_filtered.getf(input.getWidth() - 2, y));
-	    fp_border.setf(fp_filtered.getWidth() - 1, y, value);
+	    fp_simplifiedSobel.setf(fp_filtered.getWidth() - 1, y, value);
 	}
-	int[] leftBorderPosition = new int[input.getHeight()];
-	int[] rightBorderPosition = new int[input.getHeight()];
+	int[] borderPositionLeft = new int[input.getHeight()];
+	int[] borderPositionRight = new int[input.getHeight()];
 	int[] linearFitLeft = new int[input.getHeight()];
 	int[] linearFitRight = new int[input.getHeight()];
-	int[] leftBorderPositionTemp = new int[input.getHeight()];
-	int[] rightBorderPositionTemp = new int[input.getHeight()];
+	int[] borderPositionLeftTemp = new int[input.getHeight()];
+	int[] borderPositionRightTemp = new int[input.getHeight()];
 	int[] linearFitLeftTemp = new int[input.getHeight()];
 	int[] linearFitRightTemp = new int[input.getHeight()];
+	// If no optimisation is done only one variance is calculated.
 	long[] variances = (optimizeMaxCount) ? new long[2 * maxCount] : new long[1];
 	variances[0] = Long.MAX_VALUE;
 	// This index is 0 based.
@@ -352,75 +391,83 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	// the first execution.
 	do {
 	    // This variable is used to count the empty places at the arrays "maxPos" and "maxValues".
-	    int count;
+	    int counterEmptyPositions;
 	    // This is the smallest value at the array "maxValues".
-	    float limit;
+	    float smallestMaxValue;
 	    // The next 2 arrays will be accessed by the same index.
-	    int[] maxPos = new int[currentMaxCount];
+	    int[] maxPositions = new int[currentMaxCount];
 	    float[] maxValues = new float[currentMaxCount];
+	    // A loop over all image lines y.
 	    for (int y = 0; y < input.getHeight(); y++) {
-		// The following code is processed at each line of the image.
-		count = currentMaxCount;
-		Arrays.fill(maxPos, 0);
+		counterEmptyPositions = currentMaxCount;
+		Arrays.fill(maxPositions, 0);
 		Arrays.fill(maxValues, 0);
-		maxValues[0] = fp_border.getf(0, y);
-		limit = fp_border.getf(0, y);
-		count--;
+		maxValues[0] = fp_simplifiedSobel.getf(0, y);
+		smallestMaxValue = fp_simplifiedSobel.getf(0, y);
+		counterEmptyPositions--;
+		// A loops over all pixels (x,y) of the current image line y.
 		for (int x = 1; x < input.getWidth(); x++) {
 		    // 1. Check if this pixel is a local maximum.
-		    if (isLocalMaximum(fp_border, x, y)) {
+		    if (isLocalMaximum(fp_simplifiedSobel, x, y)) {
 			// 2. Check if there are empty places at maxPos.
-			if (count > 0) {
-			    maxPos[currentMaxCount - count] = x;
-			    maxValues[currentMaxCount - count] = fp_border.getf(x, y);
-			    count--;
+			if (counterEmptyPositions > 0) {
+			    maxPositions[currentMaxCount - counterEmptyPositions] = x;
+			    maxValues[currentMaxCount - counterEmptyPositions] = fp_simplifiedSobel.getf(x, y);
+			    counterEmptyPositions--;
 			    // Skip all pixels that can't be a local maximum.
 			    x += localMaxRadius + 1;
-			    // When the arrays are filled you have to find the smallest maximum.
-			    if (count == 0) {
-				// A temporary array used for sorting the content of "maxValues".
+			    // When the arrays are filled you have to find the smallest maximum. This is necessary for
+			    // the successful further iterations of this loop over all x-values.
+			    if (counterEmptyPositions == 0) {
+				// A temporary array is used for sorting the content of "maxValues".
 				float[] temp = Arrays.copyOf(maxValues, maxValues.length);
 				Arrays.sort(temp);
-				limit = temp[0];
+				smallestMaxValue = temp[0];
 			    }
 			}
 			// else part of 2.
 			else {
-			    // 3. Check if the local maximum is larger than the current limit.
-			    if (fp_border.getf(x, y) > limit) {
+			    // 3. Check if the local maximum is larger than the current smallest value.
+			    if (fp_simplifiedSobel.getf(x, y) > smallestMaxValue) {
 				// Find out the position of the current limit.
-				int index = searchArray(maxValues, limit);
-				// Replace the old limit by the new local maximum.
-				maxPos[index] = x;
-				maxValues[index] = fp_border.getf(x, y);
+				// TODO What to do if there are two maxima with the same value?
+				int index = searchArray(maxValues, smallestMaxValue);
+				// Replace the old smallest value by the value of the new local maximum.
+				maxPositions[index] = x;
+				maxValues[index] = fp_simplifiedSobel.getf(x, y);
 				// The new local maximum might not be the smallest.
-				// temporary array used for sorting the content of "maxValues".
+				// A temporary array is used for sorting the content of "maxValues".
 				float[] temp = Arrays.copyOf(maxValues, maxValues.length);
 				Arrays.sort(temp);
-				limit = temp[0];
+				smallestMaxValue = temp[0];
 				// Skip all pixels that can't be a local maximum.
 				x += localMaxRadius + 1;
+			    } else {
+				// else part of 3.
 			    }
 			}
+		    } else {
+			// else part of 1.
+			// Nothing is done if the pixel is no local maximum.
 		    }
 		}
-		// Get the most left and the most right position of the largest local maximums.
-		Arrays.sort(maxPos);
+		// Get the most left and the most right position of the largest local maxima.
+		Arrays.sort(maxPositions);
 		// If count is not zero you have to skip the first entries of the array.
-		leftBorderPosition[y] = maxPos[0 + count];
-		rightBorderPosition[y] = maxPos[maxPos.length - 1];
-		// Continue at next image line
+		borderPositionLeft[y] = maxPositions[0 + counterEmptyPositions];
+		borderPositionRight[y] = maxPositions[maxPositions.length - 1];
+		// Continue at next image line (next y).
 	    }
-	    linearFitLeft = applyLinearFit(leftBorderPosition);
-	    linearFitRight = applyLinearFit(rightBorderPosition);
-	    variances[(optimizeMaxCount ? currentMaxCount - 1 : 0)] = calculateVariance(leftBorderPosition,
-		    linearFitLeft) + calculateVariance(rightBorderPosition, linearFitRight);
+	    linearFitLeft = applyLinearFit(borderPositionLeft);
+	    linearFitRight = applyLinearFit(borderPositionRight);
+	    variances[(optimizeMaxCount ? currentMaxCount - 1 : 0)] = calculateVariance(borderPositionLeft,
+		    linearFitLeft) + calculateVariance(borderPositionRight, linearFitRight);
 	    logTool.println(String.format("Variance (maxCount = %d): %d", currentMaxCount,
 		    variances[(optimizeMaxCount ? currentMaxCount - 1 : 0)]));
 	    if (optimizeMaxCount && variances[currentMaxCount - 1] < variances[minVarianceIndex]) {
 		minVarianceIndex = currentMaxCount - 1;
-		leftBorderPositionTemp = Arrays.copyOf(leftBorderPosition, leftBorderPosition.length);
-		rightBorderPositionTemp = Arrays.copyOf(rightBorderPosition, rightBorderPosition.length);
+		borderPositionLeftTemp = Arrays.copyOf(borderPositionLeft, borderPositionLeft.length);
+		borderPositionRightTemp = Arrays.copyOf(borderPositionRight, borderPositionRight.length);
 		linearFitLeftTemp = Arrays.copyOf(linearFitLeft, linearFitLeft.length);
 		linearFitRightTemp = Arrays.copyOf(linearFitRight, linearFitRight.length);
 	    }
@@ -430,32 +477,28 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	} while (optimizeMaxCount);
 	if (variances.length > 1) {
 	    logTool.println(String.format("The optimal maxCount is %d.", minVarianceIndex + 1));
-	    leftBorderPosition = leftBorderPositionTemp;
-	    rightBorderPosition = rightBorderPositionTemp;
+	    borderPositionLeft = borderPositionLeftTemp;
+	    borderPositionRight = borderPositionRightTemp;
 	    linearFitLeft = linearFitLeftTemp;
 	    linearFitRight = linearFitRightTemp;
 	}
-	// ImageJ can combine 32-bit greyscale images to an RGB image. A stack
-	// with the size 7 is used to handle the 32-bit images and ImageJ shows
-	// a RGB image. If you open the saved file with Digital Micrograph it's
-	// a regular 32-bit stack.
+	// ImageJ can combine 32-bit greyscale images to an RGB image. A stack with the size 7 is used to handle the
+	// 32-bit images and ImageJ shows a RGB image. If you open the saved file with Digital Micrograph it's a regular
+	// 32-bit stack.
 	ImagePlus[] images = new ImagePlus[7];
 	// index 0 = red
 	images[0] = (useLinearFit) ? new ImagePlus("Borders", paintBorders(linearFitLeft, linearFitRight))
-		: new ImagePlus("borders", paintBorders(leftBorderPosition, rightBorderPosition));
+		: new ImagePlus("borders", paintBorders(borderPositionLeft, borderPositionRight));
 	// index 1 = green
 	images[1] = (useLinearFit & showUnprocessedBorder) ? new ImagePlus("Unprocessed Borders", paintBorders(
-		leftBorderPosition, rightBorderPosition)) : null;
+		borderPositionLeft, borderPositionRight)) : null;
 	// index 2 = blue
 	// index 3 = white
 	images[3] = input;
 	// This class creates the RGB image.
 	RGBStackMerge rgbMerge = new RGBStackMerge();
 	ImagePlus composite = rgbMerge.mergeHyperstacks(images, true);
-	composite.setTitle(input.getTitle());
-	composite.show();
 	result = composite;
-	logTool.showLogDialog();
     }
 
     /**
@@ -479,20 +522,48 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     }
 
     /**
-     * Creates a {@link FloatProcessor} that shows the left and the right borders as white (255) on black (0).
+     * Creates a {@link FloatProcessor} that shows both borders as white (255) on black (0).
      * 
-     * @param leftBorder
-     * @param rightBorder
+     * @param firstBorder
+     * @param secondBorder
      * @return A new {@link FloatProcessor}
      */
-    private FloatProcessor paintBorders(int[] leftBorder, int[] rightBorder) {
+    private FloatProcessor paintBorders(int[] firstBorder, int[] secondBorder) {
 	FloatProcessor result = new FloatProcessor(input.getWidth(), input.getHeight());
 	result.setValue(0);
 	result.fill();
-	for (int y = 0; y < input.getHeight(); y++) {
-	    // TODO Check for values outside the image boundaries.
-	    result.setf(leftBorder[y], y, 255);
-	    result.setf(rightBorder[y], y, 255);
+	for (int index = 0; index < ((horizontalOrientation) ? input.getWidth() : input.getHeight()); index++) {
+	    if (horizontalOrientation) {
+		if (firstBorder[index] < 0) {
+		    result.setf(index, 0, 255);
+		} else if (firstBorder[index] >= result.getHeight()) {
+		    result.setf(index, result.getHeight() - 1, 255);
+		} else {
+		    result.setf(index, firstBorder[index], 255);
+		}
+		if (secondBorder[index] < 0) {
+		    result.setf(index, 0, 255);
+		} else if (secondBorder[index] >= result.getHeight()) {
+		    result.setf(index, result.getHeight() - 1, 255);
+		} else {
+		    result.setf(index, secondBorder[index], 255);
+		}
+	    } else {
+		if (firstBorder[index] < 0) {
+		    result.setf(0, index, 255);
+		} else if (firstBorder[index] >= result.getWidth()) {
+		    result.setf(result.getWidth() - 1, index, 255);
+		} else {
+		    result.setf(firstBorder[index], index, 255);
+		}
+		if (secondBorder[index] < 0) {
+		    result.setf(0, index, 255);
+		} else if (secondBorder[index] >= result.getWidth()) {
+		    result.setf(result.getWidth() - 1, index, 255);
+		} else {
+		    result.setf(secondBorder[index], index, 255);
+		}
+	    }
 	}
 	return result;
     }
@@ -613,69 +684,90 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      */
     private void runManualDetection() {
 	// Store some settings for resetting them later on.
-	double oldMax = input.getDisplayRangeMax();
-	double oldMin = input.getDisplayRangeMin();
-	String oldTool = IJ.getToolName();
+	double oldDisplayRangeMax = input.getDisplayRangeMax();
+	double oldDisplayRangeMin = input.getDisplayRangeMin();
+	String oldToolName = IJ.getToolName();
 	// Set a display limit that enhances the visibility of the spectrum border.
+	// I assume, that the image contains pixel values between 0 and 2^16.
 	int[] histogram = input.getStatistics(ImageStatistics.MIN_MAX, 256, 0.0, Math.pow(2, 16)).histogram;
-	int limit = 0;
-	int sum = 0;
-	while (sum < 0.01 * input.getWidth() * input.getHeight()) {
-	    sum += histogram[limit];
-	    limit++;
+	int displayRangeLimit = 0;
+	int sumOfPixels = 0;
+	while (sumOfPixels < 0.01 * input.getWidth() * input.getHeight()) {
+	    sumOfPixels += histogram[displayRangeLimit];
+	    displayRangeLimit++;
 	}
-	input.setDisplayRange(0, Math.pow(2, 16) / 256 * limit);
+	input.setDisplayRange(0, Math.pow(2, 16) / 256 * displayRangeLimit);
 	input.updateAndDraw();
-	// Wait for the user to place two lines as ROIs.
+	// Prepare ImageJ for manually marking the spectrum borders.
 	IJ.setTool(Toolbar.LINE);
 	RoiManager roiManager = new RoiManager();
 	roiManager.runCommand("show all with labels");
 	roiManager.setVisible(true);
 	// TODO Add some controls (e.g. Zoom) to the ExtendedWaitForUserDialog.
+	// TODO Add a checkbox for "Skip correction".
 	ExtendedWaitForUserDialog waitDLG = new ExtendedWaitForUserDialog(command + " - manual mode",
-		"Place two lines at the border of the spectrum\n" + "1. line at the left side\n"
-			+ "2. line at the right side\n" + "Press OK when you have added both lines to the RoiManager",
-		null);
+		"Place two lines at the borders of the spectrum\n" + "One line at each site of the spectrum.\n"
+			+ "Press OK when you have added both lines to the RoiManager", null);
+	// Wait for the user to place two lines as ROIs.
 	waitDLG.show();
 	// The user has pressed Ok.
-	Roi[] rois = roiManager.getRoisAsArray();
-	roiManager.runCommand("show none");
-	roiManager.close();
-	if (rois.length == 2) {
-	    if (rois[0].isLine() & rois[1].isLine()) {
-		leftLine = (Line) rois[0];
-		rightLine = (Line) rois[1];
-		System.out.println(leftLine.toString());
-		System.out.println(leftLine.x1 + "; " + leftLine.x2 + "; " + leftLine.y1 + "; " + leftLine.y2);
-		System.out.println(rightLine.toString());
-		System.out.println(rightLine.x1 + "; " + rightLine.x2 + "; " + rightLine.y1 + "; " + rightLine.y2);
-		leftBorder = lineToArray(leftLine);
-		rightBorder = lineToArray(rightLine);
-		FloatProcessor input_borders;
-		input_borders = paintBorders(leftBorder, rightBorder);
-		ImagePlus ipBorders = new ImagePlus("Borders", input_borders);
-		// A composite image can contain up to 7 channels.
-		ImagePlus[] images = new ImagePlus[7];
-		// index 0 = red
-		images[0] = ipBorders;
-		// index 1 = green
-		// index 2 = blue
-		// index 3 = grey
-		images[3] = input;
-		// It is easier to reset the display limits before creating the composite images.
-		input.setDisplayRange(oldMin, oldMax);
-		// This class creates the RGB image.
-		RGBStackMerge rgbMerge = new RGBStackMerge();
-		ImagePlus composite = rgbMerge.mergeHyperstacks(images, true);
-		composite.setTitle(input.getTitle());
-		composite.show();
-		result = composite;
+	if (waitDLG.escPressed()) {
+	    cancel();
+	} else {
+	    boolean roiError = false;
+	    Roi[] rois = roiManager.getRoisAsArray();
+	    if (rois.length == 2) {
+		if (rois[0].isLine() & rois[1].isLine()) {
+		    firstLine = (Line) rois[0];
+		    secondLine = (Line) rois[1];
+		    System.out.println(firstLine.toString());
+		    System.out.println(firstLine.x1 + "; " + firstLine.x2 + "; " + firstLine.y1 + "; " + firstLine.y2);
+		    System.out.println(secondLine.toString());
+		    System.out.println(secondLine.x1 + "; " + secondLine.x2 + "; " + secondLine.y1 + "; "
+			    + secondLine.y2);
+		    // TODO Add log entries.
+		    firstBorder = lineToArray(firstLine);
+		    secondBorder = lineToArray(secondLine);
+		    FloatProcessor input_borders;
+		    input_borders = paintBorders(firstBorder, secondBorder);
+		    ImagePlus ipBorders = new ImagePlus("Borders", input_borders);
+		    // A composite image can contain up to 7 channels.
+		    ImagePlus[] images = new ImagePlus[7];
+		    // index 0 = red
+		    images[0] = ipBorders;
+		    // index 1 = green
+		    // index 2 = blue
+		    // index 3 = grey
+		    images[3] = input;
+		    // It is easier to reset the display limits before creating the composite images.
+		    input.setDisplayRange(oldDisplayRangeMin, oldDisplayRangeMax);
+		    // This class creates the RGB image.
+		    RGBStackMerge rgbMerge = new RGBStackMerge();
+		    ImagePlus composite = rgbMerge.mergeHyperstacks(images, true);
+		    composite.setTitle(input.getTitle());
+		    result = composite;
+		} else {
+		    // If one of the ROIs is no line:
+		    roiError = true;
+		}
+	    } else {
+		// If there is a number of ROIs that is not equal to 2:
+		roiError = true;
+	    }
+	    if (roiError) {
+		String message = "The manual mode has been aborded.\nYou have to add exacly 2 line ROIs to the ROI Manager.";
+		IJ.showMessage(command + " - error", message);
+		logTool.println(message);
+		cancel();
 	    }
 	}
+
 	// Reset some settings.
-	input.setDisplayRange(oldMin, oldMax);
+	roiManager.runCommand("show none");
+	roiManager.close();
+	input.setDisplayRange(oldDisplayRangeMin, oldDisplayRangeMax);
 	input.updateAndDraw();
-	IJ.setTool(oldTool);
+	IJ.setTool(oldToolName);
     }
 
     /**
@@ -688,13 +780,27 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      * @return An array representing the line.
      */
     private int[] lineToArray(Line line) {
-	int[] border = new int[input.getHeight()];
+	int[] border;
+	// ImageJ uses angles between 0 and 180 degree. Negative values are used for a clockwise rotation and positive
+	// values for a counterclockwise rotation.
+	System.out.println(String.format("angle: %s", Math.abs(line.getAngle(line.x1, line.y1, line.x2, line.y2))));
+	if (Math.abs(line.getAngle(line.x1, line.y1, line.x2, line.y2)) > 45
+		& Math.abs(line.getAngle(line.x1, line.y1, line.x2, line.y2)) < 135) {
+	    border = new int[input.getHeight()];
+	} else {
+	    border = new int[input.getWidth()];
+	    horizontalOrientation = true;
+	}
 	double slope = (line.y2d - line.y1d) / (line.x2d - line.x1d);
 	System.out.println(String.format("slope: %s", slope));
 	double intercept = -line.x1d * slope + line.y1d;
 	System.out.println(String.format("intercept: %s", intercept));
-	for (int y = 0; y < border.length; y++) {
-	    border[y] = (int) Math.round((y - intercept) / slope);
+	for (int index = 0; index < border.length; index++) {
+	    if (horizontalOrientation) {
+		border[index] = (int) Math.round(slope * index + intercept);
+	    } else {
+		border[index] = (int) Math.round((index - intercept) / slope);
+	    }
 	}
 	return border;
     }
@@ -702,8 +808,11 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     /**
      * Cancel the plugin and show a status message.
      */
-    private void canceled() {
-	IJ.showStatus("Drift detection has been canceled.");
+    private void cancel() {
+	canceled = true;
+	String message = "Drift detection has been canceled.";
+	logTool.println(message);
+	IJ.showStatus(message);
     }
 
     /*

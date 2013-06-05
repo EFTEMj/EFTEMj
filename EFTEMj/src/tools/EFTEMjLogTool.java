@@ -28,9 +28,12 @@ package tools;
 
 import ij.IJ;
 import ij.gui.GenericDialog;
+
 import java.awt.FileDialog;
 import java.awt.TextArea;
+import java.text.DateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
 import java.util.Vector;
 
@@ -70,6 +73,8 @@ public class EFTEMjLogTool {
      */
     public EFTEMjLogTool(String process) {
 	this.process = process;
+	DateFormat df = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM, Locale.ENGLISH);
+	println(String.format("%s - Starting %s%n", df.format(new Date()), process));
     }
 
     /**
@@ -147,6 +152,6 @@ public class EFTEMjLogTool {
 	    }
 	}
     }
-    
+
     // TODO Implement a Plugin that will display the global log.
 }

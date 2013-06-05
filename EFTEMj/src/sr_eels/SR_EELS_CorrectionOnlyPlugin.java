@@ -29,9 +29,9 @@ package sr_eels;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
+import ij.plugin.Duplicator;
 import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
-import ij.plugin.filter.Transformer;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 
@@ -97,9 +97,14 @@ public class SR_EELS_CorrectionOnlyPlugin implements ExtendedPlugInFilter {
      */
     @Override
     public int setup(String arg, ImagePlus imp) {
-	if (arg == "final") {
+	if (arg.equals("final")) {
+	    if (rotate == true) {
+		input = null;
+		IJ.run(result, "Rotate 90 Degrees Left", "");
+	    }
 	    result.show();
 	    // TODO Show a log dialog and write some log messages.
+	    return DONE;
 	}
 	return FLAGS;
     }
@@ -111,19 +116,7 @@ public class SR_EELS_CorrectionOnlyPlugin implements ExtendedPlugInFilter {
      */
     @Override
     public void run(ImageProcessor ip) {
-	if (rotate == true) {
-	    Transformer transformer = new Transformer();
-	    transformer.setup("right", input);
-	    transformer.run(input.getProcessor());
-	}
 	correctData();
-	if (rotate == true) {
-	    Transformer transformer = new Transformer();
-	    transformer.setup("left", input);
-	    transformer.run(input.getProcessor());
-	    transformer.setup("left", result);
-	    transformer.run(result.getProcessor());
-	}
     }
 
     /*
@@ -141,6 +134,12 @@ public class SR_EELS_CorrectionOnlyPlugin implements ExtendedPlugInFilter {
 	}
 	input = imp;
 	if (showParameterDialog(command) == OK) {
+	    if (rotate) {
+		ImagePlus temp = input;
+		input = new Duplicator().run(input, 1, input.getStackSize(), 1, 1, 1, 1);
+		temp.unlock();
+		IJ.run(input, "Rotate 90 Degrees Right", "");
+	    }
 	    return FLAGS;
 	} else {
 	    return DONE;
