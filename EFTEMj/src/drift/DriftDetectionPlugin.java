@@ -26,12 +26,6 @@
  */
 package drift;
 
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.Scrollbar;
-import java.util.Arrays;
-import javax.naming.InitialContext;
-import tools.ExtendedStackToImage;
 import gui.ExtendedWaitForUserDialog;
 import ij.IJ;
 import ij.ImagePlus;
@@ -45,6 +39,15 @@ import ij.plugin.filter.PlugInFilterRunner;
 import ij.process.Blitter;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
+
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Scrollbar;
+import java.util.Arrays;
+
+import javax.naming.InitialContext;
+
+import tools.ExtendedStackToImage;
 
 /**
  * This plugin can measure the drift between all images of a stack. The output is the drift of all other images compared
@@ -89,7 +92,7 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
     /**
      * This is the index (one-based) of the slice that is used as reference image.
      */
-    private int referenceIndex;
+    private int referenceIndex = OK;
     /**
      * Set this to <code>false</code> for only detecting the drift and not performing the image shift.
      */
@@ -123,6 +126,10 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
      * An array to store the processed shift.
      */
     private Point[] shiftArray;
+    /**
+     * The methods that can be used to fill the border.
+     */
+    private OptimisedStackShifter.MODES mode;
 
     /*
      * (non-Javadoc)
@@ -172,7 +179,7 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	// OptimisedStackShifter will modify the Array
 	shiftArray = Arrays.copyOf(driftArray, driftArray.length);
 	if (performShift == true) {
-	    ImagePlus correctedStack = OptimisedStackShifter.shiftImages(stack, shiftArray, true, optimiseShift,
+	    ImagePlus correctedStack = OptimisedStackShifter.shiftImages(stack, shiftArray, mode, true, optimiseShift,
 		    createNew);
 	    if (correctedStack.isVisible() == true) {
 		correctedStack.updateAndRepaintWindow();
@@ -206,10 +213,17 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	switch (showModeDialog(command)) {
 	case AUTOMATIC:
 	    IJ.showStatus("Automatic drift detection has been selected.");
-	    // Show the ROI dialog again until the user cancels it or places a ROI.
-	    do {
-		referenceIndex = showRoiDialog(command);
-	    } while (referenceIndex != CANCEL & imp.getRoi() == null);
+	    /*
+	     * Only show a ROI dialog if there is no ROI. This will improve the usage of this plugin in a macro.
+	     */
+	    if (imp.getRoi() == null) {
+		/*
+		 * Show the ROI dialog again until the user cancels it or places a ROI.
+		 */
+		do {
+		    referenceIndex = showRoiDialog(command);
+		} while (referenceIndex != CANCEL & imp.getRoi() == null);
+	    }
 	    if (referenceIndex == CANCEL) {
 		canceled();
 		return NO_CHANGES | DONE;
@@ -339,22 +353,27 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	int maxDeltaX = maxDelta.x;
 	int maxDeltaY = maxDelta.y;
 	// maxValue is a multiple of 10, except when maxDelta is smaller than 10.
-	gd.addSlider("Set delta x", 0, Math.min(Math.max(maxDeltaX / 10 * 10, 10), maxDeltaX),
+	gd.addSlider("Set_delta_x", 0, Math.min(Math.max(maxDeltaX / 10 * 10, 10), maxDeltaX),
 		Math.min(Math.max(maxDeltaX / 10 * 10, 10), maxDeltaX) / 2);
-	gd.addSlider("Set delta y", 0, Math.min(Math.max(maxDeltaY / 10 * 10, 10), maxDeltaY),
+	gd.addSlider("Set_delta_y", 0, Math.min(Math.max(maxDeltaY / 10 * 10, 10), maxDeltaY),
 		Math.min(Math.max(maxDeltaY / 10 * 10, 10), maxDeltaY) / 2);
 	String[] stackLabels = new String[stack.getStackSize()];
 	for (int i = 0; i < stack.getStackSize(); i++) {
 	    stackLabels[i] = String.format("%s/%s (%s)", i + 1, stack.getStackSize(), stack.getStack()
 		    .getShortSliceLabel(i + 1));
 	}
-	gd.addChoice("Select reference image", stackLabels, stackLabels[referenceIndex - 1]);
+	gd.addChoice("Select_reference slice", stackLabels, stackLabels[referenceIndex - 1]);
 	// begin - CheckboxGroup
-	String[] labels = { "Perform image shift", "Optimise image shift", "Create a new image" };
+	String[] labels = { "Perform_image_shift", "Optimise_image_shift", "Create_new_image" };
 	boolean[] defaults = { true, true, true };
 	String[] headings = { "Shift images" };
 	gd.addCheckboxGroup(3, 1, labels, defaults, headings);
 	// end - checkboxGroup
+	String[] items = new String[OptimisedStackShifter.MODES.values().length];
+	for (int i = 0; i < items.length; i++) {
+	    items[i] = OptimisedStackShifter.MODES.values()[i].toString();
+	}
+	gd.addChoice("Border_mode:", items, items[0]);
 	gd.showDialog();
 	if (gd.wasCanceled() == true) {
 	    return CANCEL;
@@ -370,6 +389,7 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	optimiseShift = gd.getNextBoolean();
 	createNew = gd.getNextBoolean();
 	// end - checkboxGroup
+	mode = OptimisedStackShifter.MODES.values()[gd.getNextChoiceIndex()];
 	return OK;
     }
 

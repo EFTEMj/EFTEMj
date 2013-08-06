@@ -26,17 +26,18 @@
  */
 package drift;
 
-import java.awt.FlowLayout;
-import java.awt.Label;
-import java.awt.Panel;
-import java.awt.Point;
-import java.awt.TextField;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
 import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
 import ij.process.ImageProcessor;
+
+import java.awt.FlowLayout;
+import java.awt.Label;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.TextField;
 
 /**
  * This plugin is used to shift the images of an {@link ImagePlus} containing a stack. The user is asked to enter the
@@ -76,6 +77,10 @@ public class StackShifterPlugin implements ExtendedPlugInFilter {
      * An array containing the shift values (as {@link Point}s) for each image of the initial stack.
      */
     private Point[] shift;
+    /**
+     * The methods that can be used to fill the border.
+     */
+    private OptimisedStackShifter.MODES mode;
 
     /*
      * (non-Javadoc)
@@ -94,7 +99,7 @@ public class StackShifterPlugin implements ExtendedPlugInFilter {
      */
     @Override
     public void run(ImageProcessor ip) {
-	ImagePlus correctedImp = OptimisedStackShifter.shiftImages(initialImp, shift, optimise, createNew);
+	ImagePlus correctedImp = OptimisedStackShifter.shiftImages(initialImp, shift, mode, optimise, createNew);
 	correctedImp.show();
     }
 
@@ -165,6 +170,11 @@ public class StackShifterPlugin implements ExtendedPlugInFilter {
 	String[] labels = { "Optimise image shift", "Create a new image" };
 	boolean[] defaults = { true, true };
 	gd.addCheckboxGroup(2, 1, labels, defaults);
+	String[] items = new String[OptimisedStackShifter.MODES.values().length];
+	for (int i = 0; i < items.length; i++) {
+	    items[i] = OptimisedStackShifter.MODES.values()[i].toString();
+	}
+	gd.addChoice("Border mode:", items, items[0]);
 	// TODO write the description
 	String help = "<html><h3>Stack Shifter</h3><p>description</p></html>";
 	gd.addHelp(help);
@@ -178,6 +188,7 @@ public class StackShifterPlugin implements ExtendedPlugInFilter {
 	}
 	optimise = gd.getNextBoolean();
 	createNew = gd.getNextBoolean();
+	mode = OptimisedStackShifter.MODES.values()[gd.getNextChoiceIndex()];
 	return OK;
     }
 
