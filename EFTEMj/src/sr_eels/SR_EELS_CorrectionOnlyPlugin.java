@@ -29,6 +29,7 @@ package sr_eels;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
+import ij.measure.Calibration;
 import ij.plugin.Duplicator;
 import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
@@ -89,6 +90,10 @@ public class SR_EELS_CorrectionOnlyPlugin implements ExtendedPlugInFilter {
      * Determines if the image has to be rotated before and after processing.
      */
     private boolean rotate;
+    /**
+     * the {@link Calibration} of the input stack.
+     */
+    private Calibration calibration;
 
     /*
      * (non-Javadoc)
@@ -102,6 +107,7 @@ public class SR_EELS_CorrectionOnlyPlugin implements ExtendedPlugInFilter {
 		input = null;
 		IJ.run(result, "Rotate 90 Degrees Left", "");
 	    }
+	    result.setCalibration(calibration);
 	    result.show();
 	    // TODO Show a log dialog and write some log messages.
 	    return DONE;
@@ -133,6 +139,7 @@ public class SR_EELS_CorrectionOnlyPlugin implements ExtendedPlugInFilter {
 	    return DONE;
 	}
 	input = imp;
+	calibration = imp.getCalibration();
 	if (showParameterDialog(command) == OK) {
 	    if (rotate) {
 		ImagePlus temp = input;

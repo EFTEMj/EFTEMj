@@ -33,6 +33,7 @@ import ij.gui.GenericDialog;
 import ij.gui.Line;
 import ij.gui.Roi;
 import ij.gui.Toolbar;
+import ij.measure.Calibration;
 import ij.plugin.Duplicator;
 import ij.plugin.RGBStackMerge;
 import ij.plugin.filter.ExtendedPlugInFilter;
@@ -146,6 +147,10 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     private boolean skipCorrection;
     private String inputTitle;
     private boolean canceled;
+    /**
+     * the {@link Calibration} of the input stack.
+     */
+    private Calibration calibration;
 
     /*
      * (non-Javadoc)
@@ -160,6 +165,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 		return DONE;
 	    }
 	    result.setTitle(inputTitle);
+	    result.setCalibration(calibration);
 	    // Select the grayscale channel.
 	    if (result.getStackSize() == 2) {
 		result.setC(2);
@@ -202,6 +208,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	this.command = command;
 	logTool = new EFTEMjLogTool(command);
 	input = imp;
+	calibration = imp.getCalibration();
 	inputTitle = imp.getTitle();
 	String message;
 	switch (showModeDialog(command)) {
