@@ -29,6 +29,7 @@ package elemental_map;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
+import ij.measure.Calibration;
 import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
 import ij.process.ImageProcessor;
@@ -91,6 +92,10 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
      * The selected fit method.
      */
     private AVAILABLE_METHODS method;
+    /**
+     * the {@link Calibration} of the input stack.
+     */
+    private Calibration calibration;
 
     /*
      * (non-Javadoc)
@@ -124,10 +129,10 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
 	    ElementalMapping mle = new ElementalMapping(energyLossArray, impStack, edgeEnergyLoss, epsilon, method);
 	    mle.startCalculation();
 	    // TODO Move all show-methods to the final processing
-	    mle.showRMap();
-	    mle.showLnAMap();
-	    mle.showErrorMap();
-	    mle.showElementalMap();
+	    mle.showRMap(calibration);
+	    mle.showLnAMap(calibration);
+	    mle.showErrorMap(calibration);
+	    mle.showElementalMap(calibration);
 	    break;
 	case WLSE:
 	    IJ.showStatus(method + " has been selected.");
@@ -159,6 +164,7 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
 	    }
 	}
 	impStack = imp;
+	calibration = imp.getCalibration();
 	if (showParameterDialog(command) == CANCEL) {
 	    canceled();
 	    return NO_CHANGES | DONE;

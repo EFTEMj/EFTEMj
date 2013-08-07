@@ -30,6 +30,7 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.GenericDialog;
+import ij.measure.Calibration;
 import ij.process.Blitter;
 import ij.process.ByteProcessor;
 import ij.process.FloatProcessor;
@@ -252,9 +253,15 @@ public class ElementalMapping {
     /**
      * Shows an {@link ImagePlus}with the map of the parameter <strong>r</strong>.<br />
      * All values are 0 if no calculation has been done before.
+     * 
+     * @param cal
+     *            A {@link Calibration} object or <code>null</code>.
      */
-    public void showRMap() {
+    public void showRMap(Calibration cal) {
 	ImagePlus impRMap = new ImagePlus("Map of parameter r", rMap);
+	if (cal != null) {
+	    impRMap.setCalibration(cal);
+	}
 	impRMap.show();
     }
 
@@ -262,32 +269,50 @@ public class ElementalMapping {
      * Shows an {@link ImagePlus} with the map of the parameter <strong>ln(a)</strong>. Using the logarithm makes it
      * easier to review the map.<br />
      * All values are 0 if no calculation has been done before.
+     * 
+     * @param cal
+     *            A {@link Calibration} object or <code>null</code>.
      */
-    public void showLnAMap() {
+    public void showLnAMap(Calibration cal) {
 	FloatProcessor lnAMap = new FloatProcessor(aMap.getWidth(), aMap.getHeight());
 	lnAMap.copyBits(aMap, 0, 0, Blitter.COPY);
 	lnAMap.log();
 	ImagePlus impLnAMap = new ImagePlus("Map of parameter ln(a)", lnAMap);
+	if (cal != null) {
+	    impLnAMap.setCalibration(cal);
+	}
 	impLnAMap.show();
     }
 
     /**
      * Shows an {@link ImagePlus} with the map of the all errors that occurred at the power law fit.<br />
      * All values are 0 if no calculation has been done before, or no error occurred.
+     * 
+     * @param cal
+     *            A {@link Calibration} object or <code>null</code>.
      */
-    public void showErrorMap() {
+    public void showErrorMap(Calibration cal) {
 	ImagePlus impErrorMap = new ImagePlus("Map errors", errorMap);
+	if (cal != null) {
+	    impErrorMap.setCalibration(cal);
+	}
 	impErrorMap.show();
     }
 
     /**
      * Shows one or more {@link ImagePlus} with the elemental map.<br />
      * All values are 0 if no calculation has been done before.
+     * 
+     * @param cal
+     *            A {@link Calibration} object or <code>null</code>.
      */
-    public void showElementalMap() {
+    public void showElementalMap(Calibration cal) {
 	for (int z = 0; z < elementalMaps.length; z++) {
 	    ImagePlus impElementalMap = new ImagePlus(MessageFormat.format("Elemental map {0,number}eV",
 		    postEdgeEnergyLosses[z]), elementalMaps[z]);
+	    if (cal != null) {
+		impElementalMap.setCalibration(cal);
+	    }
 	    impElementalMap.show();
 	}
     }
