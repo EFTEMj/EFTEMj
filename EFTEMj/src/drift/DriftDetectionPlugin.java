@@ -33,6 +33,7 @@ import ij.ImageStack;
 import ij.gui.GenericDialog;
 import ij.gui.Roi;
 import ij.gui.Toolbar;
+import ij.measure.Calibration;
 import ij.measure.ResultsTable;
 import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
@@ -80,9 +81,9 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
      */
     private final int OK = 1;
     /**
-     * <code>DOES_32 | NO_CHANGES | FINAL_PROCESSING</code>
+     * <code>DOES_32 | NO_UNDO | FINAL_PROCESSING</code>
      */
-    private final int FLAGS = DOES_32 | NO_CHANGES | FINAL_PROCESSING;
+    private final int FLAGS = DOES_32 | NO_UNDO | FINAL_PROCESSING;
     /**
      * An {@link ImagePlus} that contains an {@link ImageStack}. If the initial {@link ImagePlus} is a stack then this
      * is the same {@link ImagePlus}. A new stack will be created if the {@link InitialContext} {@link ImagePlus} is no
@@ -130,6 +131,10 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
      * The methods that can be used to fill the border.
      */
     private OptimisedStackShifter.MODES mode;
+    /**
+     * the {@link Calibration} of the input stack.
+     */
+    private Calibration calibration;
 
     /*
      * (non-Javadoc)
@@ -153,7 +158,11 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 		}
 	    }
 	    result.show("Drift of " + stack.getShortTitle());
-	    return NO_CHANGES | DONE;
+	    if (createNew == true) {
+		return NO_CHANGES | DONE;
+	    } else {
+		return DONE;
+	    }
 	}
 	// No setup is done here. See showDialog() for the setup procedure.
 	return FLAGS;
@@ -181,10 +190,12 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	if (performShift == true) {
 	    ImagePlus correctedStack = OptimisedStackShifter.shiftImages(stack, shiftArray, mode, true, optimiseShift,
 		    createNew);
-	    if (correctedStack.isVisible() == true) {
-		correctedStack.updateAndRepaintWindow();
-	    } else {
+	    if (createNew == true) {
 		correctedStack.show();
+		correctedStack.setCalibration(calibration);
+	    } else {
+		correctedStack.changes = true;
+		correctedStack.updateAndRepaintWindow();
 	    }
 	}
     }
@@ -209,6 +220,7 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	    }
 	}
 	stack = imp;
+	calibration = imp.getCalibration();
 	// Select automatic or manual mode.
 	switch (showModeDialog(command)) {
 	case AUTOMATIC:
@@ -246,7 +258,11 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	    canceled();
 	    return NO_CHANGES | DONE;
 	}
-	return FLAGS;
+	if (createNew == true) {
+	    return DONE | NO_CHANGES;
+	} else {
+	    return FLAGS;
+	}
     }
 
     /**

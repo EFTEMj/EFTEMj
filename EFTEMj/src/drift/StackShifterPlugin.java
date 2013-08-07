@@ -29,6 +29,7 @@ package drift;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
+import ij.measure.Calibration;
 import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
 import ij.process.ImageProcessor;
@@ -81,6 +82,10 @@ public class StackShifterPlugin implements ExtendedPlugInFilter {
      * The methods that can be used to fill the border.
      */
     private OptimisedStackShifter.MODES mode;
+    /**
+     * the {@link Calibration} of the input stack.
+     */
+    private Calibration calibration;
 
     /*
      * (non-Javadoc)
@@ -100,7 +105,13 @@ public class StackShifterPlugin implements ExtendedPlugInFilter {
     @Override
     public void run(ImageProcessor ip) {
 	ImagePlus correctedImp = OptimisedStackShifter.shiftImages(initialImp, shift, mode, optimise, createNew);
-	correctedImp.show();
+	if (createNew == true) {
+	    correctedImp.setCalibration(calibration);
+	    correctedImp.show();
+	} else {
+	    correctedImp.changes = true;
+	    correctedImp.updateAndRepaintWindow();
+	}
     }
 
     /*
@@ -112,6 +123,7 @@ public class StackShifterPlugin implements ExtendedPlugInFilter {
     @Override
     public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
 	initialImp = imp;
+	calibration = imp.getCalibration();
 	if (showParameterDialog(command) == CANCEL) {
 	    canceled();
 	    return NO_CHANGES | DONE;
