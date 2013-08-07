@@ -1,0 +1,138 @@
+/**
+ * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
+ * 
+ * Copyright (c) 2013, Michael Entrup b. Epping
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+package tools;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.WindowManager;
+import ij.gui.GenericDialog;
+import ij.measure.Calibration;
+import ij.plugin.filter.ExtendedPlugInFilter;
+import ij.plugin.filter.PlugInFilterRunner;
+import ij.process.ImageProcessor;
+
+/**
+ * A simple plugin that will transfer the calibration of one image to another.
+ * 
+ * @author Michael Entrup <michael.entrup@uni-muenster.de>
+ * 
+ */
+public class CalibrationTransferPlugin implements ExtendedPlugInFilter {
+
+    /**
+     * <code>FLAGS = DOES_ALL | NO_CHANGES | FINAL_PROCESSING</code>
+     */
+    private final int FLAGS = DOES_ALL | NO_CHANGES | FINAL_PROCESSING;
+    /**
+     * The {@link ImagePlus} the {@link Calibration} is taken from.
+     */
+    private ImagePlus impSource;
+    /**
+     * The {@link ImagePlus} the {@link Calibration} is transfered to.
+     */
+    private ImagePlus impTarget;
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see ij.plugin.filter.PlugInFilter#setup(java.lang.String, ij.ImagePlus)
+     */
+    @Override
+    public int setup(String arg, ImagePlus imp) {
+	if (arg.equals("final")) {
+	    impTarget.updateAndRepaintWindow();
+	    impTarget.changes = true;
+	    return DONE;
+	}
+	return FLAGS;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see ij.plugin.filter.PlugInFilter#run(ij.process.ImageProcessor)
+     */
+    @Override
+    public void run(ImageProcessor ip) {
+	Calibration cal = impSource.getCalibration();
+	impTarget.setCalibration(cal);
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see ij.plugin.filter.ExtendedPlugInFilter#showDialog(ij.ImagePlus, java.lang.String,
+     * ij.plugin.filter.PlugInFilterRunner)
+     */
+    @Override
+    public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
+	int[] wList = WindowManager.getIDList();
+	if (wList.length == 1) {
+	    IJ.showMessage("Two or more images are necessary to use this tool.");
+	    return DONE;
+	}
+	String[] titles = new String[wList.length];
+	for (int i = 0; i < wList.length; i++) {
+	    ImagePlus temp = WindowManager.getImage(wList[i]);
+	    if (temp != null)
+		titles[i] = temp.getTitle();
+	    else
+		titles[i] = "";
+	}
+	GenericDialog gd = new GenericDialog(command + " - setup", IJ.getInstance());
+	gd.addChoice("Source_image:", titles, titles[0]);
+	gd.addChoice("Target_image:", titles, titles[1]);
+	gd.setResizable(false);
+	String help = "<html><h3>Transfer calibration</h3><p>description</p></html>";
+	gd.addHelp(help);
+	gd.showDialog();
+	if (gd.wasCanceled()) {
+	    return DONE;
+	}
+	int index1 = gd.getNextChoiceIndex();
+	int index2 = gd.getNextChoiceIndex();
+	if (index1 == index2) {
+	    IJ.showMessage("It is not possible to transfer the calibration." + "\n"
+		    + "You have to choose two different images.");
+	    return DONE;
+	}
+	impSource = WindowManager.getImage(wList[index1]);
+	impTarget = WindowManager.getImage(wList[index2]);
+	return FLAGS;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see ij.plugin.filter.ExtendedPlugInFilter#setNPasses(int)
+     */
+    @Override
+    public void setNPasses(int nPasses) {
+	// this method is not used.
+    }
+
+}
