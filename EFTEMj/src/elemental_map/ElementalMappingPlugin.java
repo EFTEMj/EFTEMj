@@ -125,7 +125,7 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
 	    mle.startCalculation();
 	    // TODO Move all show-methods to the final processing
 	    mle.showRMap();
-	    mle.showAMap();
+	    mle.showLnAMap();
 	    mle.showErrorMap();
 	    mle.showElementalMap();
 	    break;

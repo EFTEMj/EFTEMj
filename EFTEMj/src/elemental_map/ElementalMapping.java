@@ -30,6 +30,7 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.GenericDialog;
+import ij.process.Blitter;
 import ij.process.ByteProcessor;
 import ij.process.FloatProcessor;
 
@@ -257,12 +258,16 @@ public class ElementalMapping {
     }
 
     /**
-     * Shows an {@link ImagePlus} with the map of the parameter <strong>a</strong>.<br />
+     * Shows an {@link ImagePlus} with the map of the parameter <strong>ln(a)</strong>. Using the logarithm makes it
+     * easier to review the map.<br />
      * All values are 0 if no calculation has been done before.
      */
-    public void showAMap() {
-	ImagePlus impAMap = new ImagePlus("Map of parameter a", aMap);
-	impAMap.show();
+    public void showLnAMap() {
+	FloatProcessor lnAMap = new FloatProcessor(aMap.getWidth(), aMap.getHeight());
+	lnAMap.copyBits(aMap, 0, 0, Blitter.COPY);
+	lnAMap.log();
+	ImagePlus impLnAMap = new ImagePlus("Map of parameter ln(a)", lnAMap);
+	impLnAMap.show();
     }
 
     /**
