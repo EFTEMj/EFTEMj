@@ -361,7 +361,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	// Create a median filter and apply it.
 	RankFilters rf = new RankFilters();
 	rf.rank(fp_filtered, kernelRadius, RankFilters.MEDIAN);
-	FloatProcessor fp_simplifiedSobel = new FloatProcessor(input.getHeight(), input.getHeight());
+	FloatProcessor fp_simplifiedSobel = new FloatProcessor(input.getWidth(), input.getHeight());
 	// The filter matrix (-1, 0, 1) is applied.
 	for (int y = 0; y < fp_filtered.getHeight(); y++) {
 	    // left border: (-1;y) = (0;y)
