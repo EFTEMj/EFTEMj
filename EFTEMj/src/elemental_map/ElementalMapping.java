@@ -26,28 +26,117 @@
  */
 package elemental_map;
 
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.gui.GenericDialog;
+import ij.measure.Calibration;
+import ij.process.Blitter;
+import ij.process.ByteProcessor;
+import ij.process.FloatProcessor;
+
+import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import ij.IJ;
-import ij.ImagePlus;
-import ij.ImageStack;
-import ij.process.ByteProcessor;
-import ij.process.FloatProcessor;
 
 /**
+ * This class will calculate the elemental maps. It is separated from the plugin for reason of clarity.
+ * 
  * @author Michael Epping <michael.epping@uni-muenster.de>
  * 
  */
 public class ElementalMapping {
 
-    public static final String LSE = "Least squares estimation";
-    public static final String MLE = "Maximum-likelihood estimation";
-    public static final String WLSE = "Weighted least squares estimation";
-    public static final String[] AVAILABLE_METHODS = { LSE, MLE, WLSE };
-    public static final String[] AVAILABLE_EPSILONS = { "1.0E-06", "1.0E-09", "1.0E-12" };
+    /**
+     * All fit methods that are available are listed at the {@link Enum}. Each method contains a full name that can be
+     * used to be displayed at the GUI.
+     * 
+     * @author Michael Entrup <michael.entrup@uni-muenster.de>
+     */
+    public static enum AVAILABLE_METHODS {
+	LSE("Least squares estimation"), MLE("Maximum-likelihood estimation"), WLSE("Weighted least squares estimation");
+
+	/**
+	 * Full name of the method. Display this {@link String} at the GUI.
+	 */
+	private String fullName;
+
+	/**
+	 * @param fullName
+	 *            The full name that identifies the method.
+	 */
+	private AVAILABLE_METHODS(String fullName) {
+	    this.fullName = fullName;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Enum#toString()
+	 */
+	public String toString() {
+	    return fullName;
+	}
+
+	/**
+	 * @return A {@link String} array that can be used to create a choice at a {@link GenericDialog}.
+	 */
+	public static String[] toStringArray() {
+	    String[] array = new String[values().length];
+	    for (int i = 0; i < array.length; i++) {
+		array[i] = values()[i].toString();
+	    }
+	    return array;
+	}
+    }
+
+    /**
+     * This {@link Enum} lists all accuracy values (break conditions) that are available to the background fit.
+     * 
+     * @author Michael Entrup <michael.entrup@uni-muenster.de>
+     */
+    public static enum AVAILABLE_EPSILONS {
+	VERY_LOW(1.0E-03), LOW(1.0E-06), MID(1.0E-09), HIGH(1.0E-12), VERRY_HIGH(1.0E-15);
+
+	/**
+	 * A double value that represents the accuracy of the background fit.
+	 */
+	private double epsilon;
+
+	/**
+	 * @param epsilon
+	 *            A double value that represents the accuracy (break conditions).
+	 */
+	private AVAILABLE_EPSILONS(double epsilon) {
+	    this.epsilon = epsilon;
+	}
+
+	/**
+	 * @return The accuracy (break condition).
+	 */
+	public double getValue() {
+	    return epsilon;
+	}
+
+	public String toString() {
+	    return Double.toString(epsilon);
+	}
+
+	/**
+	 * @return A {@link String} array that can be used to create a choice at a {@link GenericDialog}.
+	 */
+	public static String[] toStringArray() {
+	    String[] array = new String[values().length];
+	    for (int i = 0; i < array.length; i++) {
+		array[i] = values()[i].toString();
+	    }
+	    return array;
+	}
+    }
+
     /**
      * All energy losses that are lower than the selected edge energy loss.<br />
      * The images with this energy losses will be used to fit the power law background signal.
@@ -71,7 +160,7 @@ public class ElementalMapping {
     /**
      * This {@link String} represents the power law fit method that has been choosen.
      */
-    private String method;
+    private AVAILABLE_METHODS method;
     /**
      * This is the break condition for iterative power law fit methods.<br />
      * If the results of two iteration differ by less then this value the iteration will be stopped.
@@ -119,7 +208,8 @@ public class ElementalMapping {
      * @param method
      *            The method used for fitting the power law function.
      */
-    public ElementalMapping(float[] energyLossArray, ImagePlus stack, float edgeEnergyLoss, float epsilon, String method) {
+    public ElementalMapping(float[] energyLossArray, ImagePlus stack, float edgeEnergyLoss, float epsilon,
+	    AVAILABLE_METHODS method) {
 	this.method = method;
 	this.epsilon = epsilon;
 	this.impStack = stack;
@@ -163,38 +253,66 @@ public class ElementalMapping {
     /**
      * Shows an {@link ImagePlus}with the map of the parameter <strong>r</strong>.<br />
      * All values are 0 if no calculation has been done before.
+     * 
+     * @param cal
+     *            A {@link Calibration} object or <code>null</code>.
      */
-    public void showRMap() {
+    public void showRMap(Calibration cal) {
 	ImagePlus impRMap = new ImagePlus("Map of parameter r", rMap);
+	if (cal != null) {
+	    impRMap.setCalibration(cal);
+	}
 	impRMap.show();
     }
 
     /**
-     * Shows an {@link ImagePlus} with the map of the parameter <strong>a</strong>.<br />
+     * Shows an {@link ImagePlus} with the map of the parameter <strong>ln(a)</strong>. Using the logarithm makes it
+     * easier to review the map.<br />
      * All values are 0 if no calculation has been done before.
+     * 
+     * @param cal
+     *            A {@link Calibration} object or <code>null</code>.
      */
-    public void showAMap() {
-	ImagePlus impAMap = new ImagePlus("Map of parameter a", aMap);
-	impAMap.show();
+    public void showLnAMap(Calibration cal) {
+	FloatProcessor lnAMap = new FloatProcessor(aMap.getWidth(), aMap.getHeight());
+	lnAMap.copyBits(aMap, 0, 0, Blitter.COPY);
+	lnAMap.log();
+	ImagePlus impLnAMap = new ImagePlus("Map of parameter ln(a)", lnAMap);
+	if (cal != null) {
+	    impLnAMap.setCalibration(cal);
+	}
+	impLnAMap.show();
     }
 
     /**
      * Shows an {@link ImagePlus} with the map of the all errors that occurred at the power law fit.<br />
      * All values are 0 if no calculation has been done before, or no error occurred.
+     * 
+     * @param cal
+     *            A {@link Calibration} object or <code>null</code>.
      */
-    public void showErrorMap() {
+    public void showErrorMap(Calibration cal) {
 	ImagePlus impErrorMap = new ImagePlus("Map errors", errorMap);
+	if (cal != null) {
+	    impErrorMap.setCalibration(cal);
+	}
 	impErrorMap.show();
     }
 
     /**
      * Shows one or more {@link ImagePlus} with the elemental map.<br />
      * All values are 0 if no calculation has been done before.
+     * 
+     * @param cal
+     *            A {@link Calibration} object or <code>null</code>.
      */
-    public void showElementalMap() {
+    public void showElementalMap(Calibration cal) {
 	for (int z = 0; z < elementalMaps.length; z++) {
-	    ImagePlus impElementalMap = new ImagePlus("Elemental map " + postEdgeEnergyLosses[z] + "eV",
-		    elementalMaps[z]);
+	    ImagePlus impElementalMap = new ImagePlus(MessageFormat.format("Elemental map {0,number}eV",
+		    postEdgeEnergyLosses[z]), elementalMaps[z]);
+	    if (cal != null) {
+		impElementalMap.setCalibration(cal);
+	    }
 	    impElementalMap.show();
 	}
     }
