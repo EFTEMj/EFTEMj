@@ -34,6 +34,7 @@ import ij.process.Blitter;
 import ij.process.ByteProcessor;
 import ij.process.FloatProcessor;
 
+import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
@@ -285,8 +286,8 @@ public class ElementalMapping {
      */
     public void showElementalMap() {
 	for (int z = 0; z < elementalMaps.length; z++) {
-	    ImagePlus impElementalMap = new ImagePlus("Elemental map " + postEdgeEnergyLosses[z] + "eV",
-		    elementalMaps[z]);
+	    ImagePlus impElementalMap = new ImagePlus(MessageFormat.format("Elemental map {0,number}eV",
+		    postEdgeEnergyLosses[z]), elementalMaps[z]);
 	    impElementalMap.show();
 	}
     }
