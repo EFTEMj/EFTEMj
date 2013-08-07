@@ -185,7 +185,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 		if (rotate) {
 		    input.unlock();
 		}
-		IJ.run("correct SR-EELS (no detection)");
+		IJ.run("Correct SR-EELS (skip detection)");
 	    }
 	    return DONE;
 	}
