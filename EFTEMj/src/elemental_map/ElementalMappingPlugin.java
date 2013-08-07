@@ -26,22 +26,26 @@
  */
 package elemental_map;
 
-import java.awt.FlowLayout;
-import java.awt.Label;
-import java.awt.Panel;
-import java.awt.Scrollbar;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import javax.swing.JLabel;
-import tools.EnergyLossExtractor;
-import tools.ExtendedStackToImage;
-import tools.IonisationEdges;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
 import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
 import ij.process.ImageProcessor;
+
+import java.awt.FlowLayout;
+import java.awt.Label;
+import java.awt.Panel;
+import java.awt.Scrollbar;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+
+import javax.swing.JLabel;
+
+import tools.EnergyLossExtractor;
+import tools.ExtendedStackToImage;
+import tools.IonisationEdges;
+import elemental_map.ElementalMapping.AVAILABLE_METHODS;
 
 /**
  * This plugin is used to create elemental maps. A power law model estimates the background signal. There are no
@@ -86,7 +90,7 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
     /**
      * The selected fit method.
      */
-    private String method;
+    private AVAILABLE_METHODS method;
 
     /*
      * (non-Javadoc)
@@ -111,12 +115,12 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
     @Override
     public void run(ImageProcessor ip) {
 	switch (method) {
-	case ElementalMapping.LSE:
+	case LSE:
 	    IJ.showStatus(method + " has been selected.");
 	    IJ.showMessage(method + " is not available", "The method has not yet been implemented.\n"
 		    + "Check if a newer version of EFTEMj includes this feature.");
 	    break;
-	case ElementalMapping.MLE:
+	case MLE:
 	    ElementalMapping mle = new ElementalMapping(energyLossArray, impStack, edgeEnergyLoss, epsilon, method);
 	    mle.startCalculation();
 	    // TODO Move all show-methods to the final processing
@@ -125,7 +129,7 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
 	    mle.showErrorMap();
 	    mle.showElementalMap();
 	    break;
-	case ElementalMapping.WLSE:
+	case WLSE:
 	    IJ.showStatus(method + " has been selected.");
 	    IJ.showMessage(method + " is not available", "The method has not yet been implemented.\n"
 		    + "Check if a newer version of EFTEMj includes this feature.");
@@ -176,8 +180,9 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
 	panel.add(new Label("Predicted edge:"));
 	panel.add(new JLabel("<html>" + getPredictedEdgeLabel(Math.round(edgeEnergyLoss)) + "</html>"));
 	gd.addPanel(panel);
-	gd.addChoice("Epsilon:", ElementalMapping.AVAILABLE_EPSILONS, ElementalMapping.AVAILABLE_EPSILONS[0]);
-	gd.addChoice("Method:", ElementalMapping.AVAILABLE_METHODS, ElementalMapping.MLE);
+	gd.addChoice("Epsilon:", ElementalMapping.AVAILABLE_EPSILONS.toStringArray(),
+		ElementalMapping.AVAILABLE_EPSILONS.toStringArray()[0]);
+	gd.addChoice("Method:", ElementalMapping.AVAILABLE_METHODS.toStringArray(), AVAILABLE_METHODS.MLE.toString());
 	gd.setResizable(false);
 	gd.showDialog();
 	if (gd.wasCanceled()) {
@@ -186,7 +191,7 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
 	Scrollbar scrollbar = (Scrollbar) gd.getSliders().get(0);
 	edgeEnergyLoss = scrollbar.getValue();
 	epsilon = new Float(gd.getNextChoice());
-	method = gd.getNextChoice();
+	method = AVAILABLE_METHODS.values()[gd.getNextChoiceIndex()];
 	return OK;
     }
 
