@@ -41,11 +41,11 @@ import java.awt.Choice;
 import java.awt.Rectangle;
 import java.awt.TextField;
 
+import sr_eels.SR_EELS.KEYS;
 import tools.EFTEMjLogTool;
-import eftemj.EFTEMj;
 
 /**
- * This class is used to set the energy dispersion of SR-EELs images or stacks. There is a second class (
+ * This class is used to set the energy dispersion of SR-EELS images or stacks. There is a second class (
  * {@link SR_EELS_DispersionConfigurationPlugin}) that is used to setup predefined values. The offset (origin) can be
  * set by different methods.
  * 
@@ -55,17 +55,54 @@ import eftemj.EFTEMj;
 public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter {
 
     /**
+     * Items of a {@link Choice} element.<br />
+     * This items are hard coded.
+     */
+    private static enum BINNING {
+	B1("1"), B2("2"), B4("4"), B8("8"), BINNING_OTHER("Other binning");
+
+	/**
+	 * The {@link String} that will be returned when using the method <code>toString()</code>.
+	 */
+	private String string;
+
+	/**
+	 * @param string
+	 *            The {@link String} that will be returned when using the method <code>toString()</code>.
+	 */
+	private BINNING(String string) {
+	    this.string = string;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Enum#toString()
+	 */
+	public String toString() {
+	    return string;
+	}
+
+	/**
+	 * @return A {@link String} array that can be used to create a choice at a {@link GenericDialog}.
+	 */
+	public static String[] toStringArray() {
+	    String[] array = new String[values().length];
+	    for (int i = 0; i < array.length; i++) {
+		array[i] = values()[i].toString();
+	    }
+	    return array;
+	}
+    }
+
+    /**
      * <code>DOES_ALL | FINAL_PROCESSING</code>
      */
     private static final int FLAGS = DOES_ALL | FINAL_PROCESSING;
     /**
-     * <code>other value</code>
-     */
-    private static final String BINNING_OTHER = "other value";
-    /**
      * A prefix used to create key for accessing IJ_Prefs.txt by the class {@link Prefs}.
      */
-    private static final String PREFIX = EFTEMj.PREFS_PREFIX + "SR-EELS.dispersion.";
+    private static final String PREFIX = SR_EELS_DispersionConfigurationPlugin.PREFIX;
     /**
      * An instance of {@link EFTEMjLogTool}.
      */
@@ -74,11 +111,6 @@ public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter
      * Items of a {@link Choice} element.
      */
     private String[] specMagValues;
-    /**
-     * Items of a {@link Choice} element.<br />
-     * This items are hard coded.
-     */
-    private final String[] binningValues = { "1", "2", "4", "8", BINNING_OTHER };
     /**
      * Items of a {@link Choice} element.<br />
      * This items are hard coded.
@@ -133,15 +165,6 @@ public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter
      */
     private Rectangle point;
 
-    /**
-     * This {@link Enum} holds all {@link Prefs} keys that are used by this plugin.<br />
-     * When using <code>dispersion</code> you have to add a additional number that indicates the Spec Mag.<br />
-     * <code>PREFIX + KEYS.dispersion + "." + number</code>
-     */
-    private enum KEYS {
-	specMagValues, specMagIndex, binningIndex, binningUser, offsetIndex, offsetLoss, offsetAbsolute, dispersion
-    }
-
     /*
      * (non-Javadoc)
      * 
@@ -182,7 +205,7 @@ public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter
 	// Load the values that were saved at the last usage of this plugin.
 	specMagIndex = (int) Prefs.get(PREFIX + KEYS.specMagIndex, 0);
 	binningIndex = (int) Prefs.get(PREFIX + KEYS.binningIndex, 0);
-	binningUser = (int) Prefs.get(PREFIX + KEYS.binningUser, 0);
+	binningUser = (int) Prefs.get(PREFIX + KEYS.binningUser, 1);
 	offsetIndex = (int) Prefs.get(PREFIX + KEYS.offsetIndex, 0);
 	offsetLoss = Prefs.get(PREFIX + KEYS.offsetLoss, 0);
 	offsetAbsolute = (int) Prefs.get(PREFIX + KEYS.offsetAbsolute, 0);
@@ -196,13 +219,13 @@ public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter
      */
     @Override
     public void run(ImageProcessor ip) {
-	double dispersion = Prefs.get(PREFIX + KEYS.dispersion + "." + specMagValues[specMagIndex], 1);
+	double dispersion = Prefs.get(PREFIX + specMagValues[specMagIndex], 1);
 	int offsetValue = 0;
 	int binning;
-	if (binningValues[binningIndex] == BINNING_OTHER) {
+	if (BINNING.toStringArray()[binningIndex].equals(BINNING.BINNING_OTHER.toString())) {
 	    binning = binningUser;
 	} else {
-	    binning = new Integer(binningValues[binningIndex]);
+	    binning = new Integer(BINNING.toStringArray()[binningIndex]);
 	}
 	switch (offsetIndex) {
 	case 0:
@@ -275,8 +298,8 @@ public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter
 	String selectedItem = ((input.getWidth() >= input.getHeight()) ? items[0] : items[1]);
 	gd.addChoice("Energy_axis:", items, selectedItem);
 	gd.addChoice("Spec_Mag:", specMagValues, specMagValues[specMagIndex]);
-	gd.addChoice("Binning:", binningValues, binningValues[binningIndex]);
-	gd.addNumericField("Other_binning:", binningUser, 0);
+	gd.addChoice("Binning:", BINNING.toStringArray(), BINNING.toStringArray()[binningIndex]);
+	gd.addNumericField("Other_binning:", binningUser, 1);
 	gd.addChoice("Offset_method:", offsetMethods, offsetMethods[offsetIndex]);
 	gd.addNumericField("Energy_loss:", offsetLoss, 0, 6, "eV");
 	gd.addNumericField("Absolute_offset:", offsetAbsolute, 0, 6, "px");
