@@ -253,7 +253,7 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	    // TODO copy the input stack
 	    // TODO implement manual drift detection
 	    canceled();
-	    break;
+	    return NO_CHANGES | DONE;
 	default:
 	    canceled();
 	    return NO_CHANGES | DONE;
