@@ -24,14 +24,15 @@ An introduction to elemental mapping with Energy Filtering Transmission Electron
 
 ## Spatially resolved electron energy loss spectroscopy (SR-EELS)
 
-SR-EELS is a method that preserves spatial information when recording EEL spectra [[Reimer1988]]. The SR-EELS plugins included in EFTEMj are used to correct distortions that occur when applying SR-EELS with an in-column imaging energy filter of a Zeiss Libra 200FE.
+SR-EELS is a method that preserves spatial information when recording [EEL spectra][eels] [[Reimer1988]]. The SR-EELS plugins included in EFTEMj are used to correct distortions that occur when applying SR-EELS with an in-column imaging energy filter of a Zeiss Libra 200FE.
 
 ## References
 
 - [[Heil2012]] T. Heil et al., Ultramicroscopy **118** (2012), 11-16
 - [Unser1987] M. Unser et al., Journal of Microscopy **145** (1987), 245-256
-- [Reimer1988] L. Reimer et al., Ultramicroscopy **24** (1988) 339-354.
+- [[Reimer1988]] L. Reimer et al., Ultramicroscopy **24** (1988) 339-354.
 
+[eels]: https://en.wikipedia.org/wiki/Electron_energy_loss_spectroscopy
 [ij]: http://rsbweb.nih.gov/ij/
 [1]: http://www.imagingbook.com/
 [2]: http://www.electroiq.com/articles/sst/print/volume-43/issue-3/features/metrology-test/metrology-eftem-provides-elemental-mapping-at-nanometer-resolution.html
