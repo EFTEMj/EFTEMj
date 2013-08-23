@@ -1,0 +1,1 @@
+All kind of images that are used for testing plugins can be stored in this folder. Try to use meaningful names. Best practice would be to add a description file to explain how to use the test image. If there is an image named `test.tif` than `test.md`  should be the description file.
