@@ -259,7 +259,7 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	    return NO_CHANGES | DONE;
 	}
 	if (createNew == true) {
-	    return DONE | NO_CHANGES;
+	    return FLAGS | NO_CHANGES;
 	} else {
 	    return FLAGS;
 	}
