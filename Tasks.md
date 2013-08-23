@@ -1,4 +1,5 @@
 - Use `IJ.Prefs` at all plugins yet implemented.
+- Add a documentation to all plugins by using `GenericDialog.addHelp(String url)`
 - [DriftDetectionPlugin.java][drift]: Add an option to show a normalised copy of the stack. This will help to judge the result of the drift correction.
 - [DriftDetectionPlugin.java][drift]: Implement the manual drift correction.
 - [ElementalMappingPlugin.java][map]: Implement new background fit methods (least squares & weighted least squares).
