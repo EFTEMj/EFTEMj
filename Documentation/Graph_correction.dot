@@ -1,0 +1,28 @@
+digraph G {
+rankdir = LR;
+node [style=filled,color=black,fillcolor=white,shape=box];
+
+// Definition der Knoten
+{
+	rank = same;
+	source [label="recorded\nSR-EELS\nimage",shape=Msquare];
+	border [label="spectrum\nborder",shape=Msquare];
+}
+1 [label="automatic\ndetection",style=dashed];
+{
+	rank = same;
+	2 [label="scale each energy\nchannel to the\nspatial extension"];
+	w [label="spatial\nextension",shape=oval];
+}
+3 [label="scale the intensity\nof each\nenergy channel"];
+result [label="corrected\nSR-EELS\nimage",shape=Msquare];
+
+// Definition der Verbindungen
+source -> 2;
+border -> 2;
+border -> 1 [style=dashed];
+1 -> w [style=dashed];
+2 -> w [dir=back];
+2 -> 3;
+3 -> result;
+}

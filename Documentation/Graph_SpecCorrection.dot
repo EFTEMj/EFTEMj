@@ -1,0 +1,51 @@
+digraph G {
+rankdir = LR;
+node [style=filled,color=black,fillcolor=white,shape=box];
+source [label="recorded\nspectrum\nimage",shape=Msquare];
+
+subgraph cluster_detect {
+	label = "spectrum border detection";
+{
+	rank = same;
+	radius [label="kernel\nradius",shape=oval]
+	1 [label="median\nfilter"];
+}
+2 [label="derivation in\nx-direction"];
+subgraph cluster_0 {
+	label = "at each image line";
+	rank = same;
+	style = filled;
+	color = lightgrey;
+	3 [label="find local\nmaxima"];
+	4 [label="pick the N\nlargest maxima"];
+	5 [label="select the most left\nand the most right one"]
+}
+N [label="number of\nmaxima N",shape=oval];
+}
+border [label="spectrum\nborder",shape=Msquare];
+subgraph cluster_correct {
+	label = "spectrum correction";
+6 [label="find the\nminimal width"];
+width [label="width of\ncorrected\nspectrum",shape=oval];
+7 [label="scale each line\nto the same width"];
+8 [label="scale the intensity\nof each line"];
+}
+result [label="corrected\nspectrum\nimage",shape=Msquare];
+
+source -> 1 [weight=8];
+radius -> 1 [constraint=false];
+1 -> 2 [weight=8];
+2 -> 3;
+3 -> 4 [constraint=false];
+N -> 4 [constraint=false];
+4 -> 5 [constraint=false];
+5 -> 3 [label="Y times",constraint=false,style=dashed];
+5 -> border;
+border -> 6 [constraint=false];
+border -> 7 [weight=8];
+6 -> width [constraint=false];
+width -> 7 [constraint=false];
+source -> 7 [constraint=false];
+7 -> 8 [weight=8];
+8 -> result [weight=8];
+}
