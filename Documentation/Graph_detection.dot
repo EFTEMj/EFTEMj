@@ -1,0 +1,39 @@
+digraph G {
+rankdir = LR;
+node [style=filled,color=black,fillcolor=white,shape=box];
+
+// Definition der Knoten
+source [label="recorded\nSR-EELS\nimage",shape=Msquare];
+{
+	rank = same;
+	1 [label="median\nfilter"];
+	r [label="kernel\nradius",shape=oval]
+}
+{
+	rank = same;
+	2 [label="derivation in\nx-direction"];
+	N [label="number of\nmaxima (N)",shape=oval];
+	autoN [label="automatic\noptimization",style=dashed];
+}
+subgraph cluster_0 {
+	label = "at each energy channel";
+	rank = same;
+	style = filled;
+	color = lightgrey;
+	3 [label="find local\nmaxima"];
+	4 [label="pick the N\nlargest maxima"];
+	5 [label="select the left most\nand the right most"]
+}
+border [label="spectrum\nborder",shape=Msquare];
+
+// Definition der Verbindungen
+source -> 1;
+1 -> r [dir=back];
+1 -> 2;
+2 -> 3 [weight=9];
+3 -> 4 [constraint=false];
+autoN -> N [constraint=false];
+N -> 4 [constraint=false];
+4 -> 5 [constraint=false];
+5 -> border [weight=0];
+}
