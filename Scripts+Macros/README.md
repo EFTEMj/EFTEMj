@@ -3,7 +3,7 @@ Scripts+Macros
 
 This folder contains different types of scripts and macros. At the moment there are two types:
 
-- [ImageJ][ij] macros (\*.ij)
+- [ImageJ][ij] macros (\*.ijm)
 - script files for [Gnuplot][gnuplot] (\*.plt)
 
 
