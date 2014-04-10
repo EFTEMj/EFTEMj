@@ -43,11 +43,11 @@ list = getFileList(dir);
 list = filter_images(list);	// only select tif and dm3 files; ignore subfolders
 
 open(list[0]);
-// id will be used to close the image
-id = getImageID();
-doRotate = getBoolean("Rotate images?");
-// show the results table
-updateResults();
+id = getImageID();	// id will be used to close the image
+draw_axes_as_overlay(); 	// create an overlay to simplify the next user choice
+doRotate = getBoolean("The macro requires the following configuration:\nx: lateral axis\ny: energy axis\n\nRotate the images?");
+run("Remove Overlay");
+updateResults(); // show the results table
 
 // setup
 start = getTime();
@@ -246,4 +246,25 @@ function save_pos_and_width(index, pos, width, left, right) {
 			run("Close");
 		}		
 	}
+}
+
+function draw_axes_as_overlay() {
+	setFont("SansSerif", getHeight/32, " antialiased");
+	setColor("white");
+	Overlay.drawString("lateral axis", getWidth*0.7, getHeight*0.2, 0.0);
+	Overlay.drawString("energy axis", getWidth*0.12, getHeight*0.7, 0.0);
+	Overlay.show();
+	makeLine(getWidth*0.7, getHeight*0.1, getWidth*0.9, getHeight*0.1);
+	run("Add Selection...");
+	makeLine(getWidth*0.9, getHeight*0.1, getWidth*0.85, getHeight*0.05);
+	run("Add Selection...");
+	makeLine(getWidth*0.9, getHeight*0.1, getWidth*0.85, getHeight*0.15);
+	run("Add Selection...");
+	makeLine(getWidth*0.1, getHeight*0.7, getWidth*0.1, getHeight*0.9);
+	run("Add Selection...");
+	makeLine(getWidth*0.1, getHeight*0.9, getWidth*0.05, getHeight*0.85);
+	run("Add Selection...");
+	makeLine(getWidth*0.1, getHeight*0.9, getWidth*0.15, getHeight*0.85);
+	run("Add Selection...");
+	run("Select None");
 }
