@@ -16,7 +16,7 @@
  /*
   *  step_size determines the number of energy channels that will result in one data point of the resulting dataset.
   */
-step_size = -1;		// choose '-1' for automatic mode 'abs(height / 64)'
+step_size = -1;	// choose '-1' for automatic mode 'abs(height / 64)'
 /*
  * border_top and border_bot are used to limit the energy range that is used. This is useful to cut off the ZLP or to ignore low counts at high energy losses.
  */
@@ -25,13 +25,18 @@ border_bot = -1;	// choose '-1' for automatic mode 'abs(height / 16)'
 /*
  * This value is used when applying different filters, like remove outliers or median.
  */
-filter_radius = -1;	// choose '-1' for automatic mode 'sqrt(step_size)'
+filter_radius = -1;	// choose '-1' for automatic mode 'round(sqrt(step_size))'
 /*
  * The macro will create a diagram that plots the spectrum width against the spectrum position. This value determines the energy channel that is used to calculate the spectrum width.
  *
  * ToDo: implement a function to calibrate the energy scale. Then it is possible to select an energy loss instead of a relative value.
  */
 energy_pos = 0.5;	// choose a value between 0 and 1; 0.5 is the centre of the SR-EELS dataset
+/*
+ * Select a method used for threshold. The following options are available:
+ * Default, Huang, Intermodes, IsoData, Li, MaxEntropy, Mean, MinError(I), Minimum, Moments, Otsu, Percentile, RenyiEntropy, Shanbhag, Triangle and Yen
+ */
+threshold = "Intermodes";
 
 /*
  * Load images:
@@ -79,12 +84,12 @@ if (border_bot == -1) {
 	border_bot = abs(height / 16);
 }
 if (filter_radius == -1) {
-	filter_radius = sqrt(step_size);
+	filter_radius = round(sqrt(step_size));
 }
 /*
  * Create all necessary arrays and the folder to store the results:
  */
-datapoints = floor(height - border_top - border_bot) / step_size;
+datapoints =ceil( (height - border_top - border_bot) / step_size);
 array_index = newArray(datapoints);
 array_pos_y = newArray(datapoints);
 array_pos_x = newArray(datapoints);
@@ -93,7 +98,7 @@ array_right = newArray(datapoints);
 array_width = newArray(datapoints);
 array_width_calc = newArray(datapoints);
 var array_pos_all; var array_width_all; var array_pos_all_calc; var array_width_all_calc;	// global variables for use in 'save_pos_and_width()'
-result_dir = dir + "results_" +  toString(step_size) + toString(border_top) + toString(border_bot) + toString(filter_radius) + File.separator;	// the folder name contains the parameters
+result_dir = dir + "results_" +  toString(step_size) + toString(border_top) + toString(border_bot) + toString(filter_radius) + threshold + File.separator;	// the folder name contains the parameters
 if (File.isDirectory(result_dir)) {
 	if (!getBoolean("There are previous results for the selected parameters.\nDo you want to overwrite these results?")) {
 		exit();
@@ -127,7 +132,7 @@ for (i=0; i<list.length; i++) {
 	while (y_pos < getHeight - border_top - border_bot) {
 		makeRectangle(0, y_pos + border_top, getWidth, step_size);
 		run("Duplicate...", "temp");	// create a temporary image: only the rectangle selection gets duplicated
-		setAutoThreshold("Li dark");	// threshold with...
+		setAutoThreshold(threshold + " dark");	// threshold with...
 		run("NaN Background");	// ..set background to NaN
 		run("Measure");
 		result_pos = y_pos / step_size;	// line number at the result table
@@ -300,4 +305,16 @@ function draw_axes_as_overlay() {
 	makeLine(getWidth*0.1, getHeight*0.9, getWidth*0.15, getHeight*0.85);
 	run("Add Selection...");
 	run("Select None");
+}
+
+/*
+ * function: ceil
+ * description: There is no function ceil available, that is why had to implement it.
+ */
+function ceil(value) {
+	if (value != floor(value)) {
+		return floor(value) + 1;
+	} else {
+		return value;
+	}
 }
