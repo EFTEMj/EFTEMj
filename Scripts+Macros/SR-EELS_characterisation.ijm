@@ -36,7 +36,7 @@ energy_pos = 0.5;	// choose a value between 0 and 1; 0.5 is the centre of the SR
  * Select a method used for threshold. The following options are available:
  * Default, Huang, Intermodes, IsoData, Li, MaxEntropy, Mean, MinError(I), Minimum, Moments, Otsu, Percentile, RenyiEntropy, Shanbhag, Triangle and Yen
  */
-threshold = "Intermodes";
+threshold = "Li";
 
 /*
  * Load images:
@@ -173,6 +173,16 @@ for (i=0; i<list.length; i++) {
 		}
 		y_pos += step_size;
 	}
+	selectImage(id);
+	run("Select None");
+	fileNameOverlay = img_name + "_overlay";
+	run("Duplicate...", fileNameOverlay);
+	addPointsToOverlay(array_left, array_pos_y, 0);
+	addPointsToOverlay(array_pos_x, array_pos_y, 1);
+	addPointsToOverlay(array_right, array_pos_y, 2);
+	run("Flatten");
+	saveAs("Jpeg", result_dir + fileNameOverlay + ".jpg");
+	close();	// close the image that contains the overlay
 	selectImage(id);	// select and...
 	close();	// ...close the image
 	/*
@@ -316,5 +326,26 @@ function ceil(value) {
 		return floor(value) + 1;
 	} else {
 		return value;
+	}
+}
+
+function addPointsToOverlay(xPos, yPos, overlayColorIndex) {
+	color = newArray("Yellow", "Red", "Orange");
+	markerSize = "Tiny";
+	if (maxOf(getHeight, getWidth) > 4000) {
+		markerSize = "Large";
+	} else {
+		if (maxOf(getHeight, getWidth) > 2000) {
+			markerSize = "Mediam";
+		} else {
+			if (maxOf(getHeight, getWidth) > 1000) {
+				markerSize = "Small";
+			}
+			}
+		}
+	run("Point Tool...", "selection=" + color[overlayColorIndex] + " cross=White marker=" + markerSize + " mark=0");
+	for (i=0; i<xPos.length; i++) {
+		makePoint(xPos[i], yPos[i]);
+		run("Add Selection...");
 	}
 }
