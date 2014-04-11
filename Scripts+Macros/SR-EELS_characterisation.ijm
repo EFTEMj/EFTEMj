@@ -338,7 +338,7 @@ function addPointsToOverlay(xPos, yPos, overlayColorIndex) {
 		if (maxOf(getHeight, getWidth) > 2000) {
 			markerSize = "Mediam";
 		} else {
-			if maxOf(getHeight, getWidth) > 1000) {
+			if (maxOf(getHeight, getWidth) > 1000) {
 				markerSize = "Small";
 			}
 			}
