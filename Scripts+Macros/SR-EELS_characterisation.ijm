@@ -45,6 +45,7 @@ threshold = newArray("Li", "Intermodes");
  */
 dir = getDirectory("Choose a Directory ");
 if (dir == "") exit();	// if cancel was selected, the script will stop
+var list;
 list = getFileList(dir);
 list = filter_images(list);	// only select tif and dm3 files; ignore sub-folders
 
@@ -90,14 +91,9 @@ if (filter_radius == -1) {
 /*
  * Create all necessary arrays and the folder to store the results:
  */
+var datapoints;
 datapoints =ceil( (height - border_top - border_bot) / step_size);
-array_index = newArray(datapoints);
-array_pos_y = newArray(datapoints);
-array_pos_x = newArray(datapoints);
-array_left = newArray(datapoints);
-array_right = newArray(datapoints);
-array_width = newArray(datapoints);
-array_width_calc = newArray(datapoints);
+
 result_dir = newArray(threshold.length);
 skipThreshold = newArray(threshold.length);
 var array_pos_all; var array_width_all; var array_pos_all_calc; var array_width_all_calc;	// global variables for use in 'save_pos_and_width()'
@@ -126,124 +122,7 @@ for(m=0;m<threshold.length;m++) {
 		/*
 		 * This for-loop will process every image separately. When the last image has been processed, 'width_vs_pos' will be created (for more details see 'save_pos_and_width()').
 		 */
-		for (i=0; i<list.length; i++) {
-			open(list[i]);
-			img_name = File.nameWithoutExtension;
-			id = getImageID();	// id will be used to close the image
-			if (doRotate) {
-				run("Rotate 90 Degrees Right");
-			}
-			run("Properties...", "unit=[] pixel_width=1 pixel_height=1 origin=0,0");	// use pixel as coordinates
-			run("Clear Results");	// we need an empty results table
-			/*
-			 *  remove the outliers and smooth
-			 */
-			run("Remove Outliers...", "radius=" + filter_radius + " threshold=32 which=Bright");
-			run("Remove Outliers...", "radius=" + filter_radius + " threshold=32 which=Dark");
-			run("Median...", "radius=" + filter_radius);
-			run("Set Measurements...", "  mean center integrated redirect=None decimal=9");	// measure the mean value, the centre of mass and the integrated intensity
-			y_pos = 0;
-			while (y_pos < getHeight - border_top - border_bot) {
-				makeRectangle(0, y_pos + border_top, getWidth, step_size);
-				run("Duplicate...", "temp");	// create a temporary image: only the rectangle selection gets duplicated
-				setAutoThreshold(threshold[m] + " dark");	// threshold with...
-				run("NaN Background");	// ..set background to NaN
-				run("Measure");
-				result_pos = y_pos / step_size;	// line number at the result table
-				array_index[result_pos] = result_pos;
-				spec_width = getResult("IntDen", result_pos) / getResult("Mean", result_pos) / step_size;	// the mean width of all 'step_size' energy channels
-				array_width[result_pos] = spec_width;
-				XM = getResult("XM", result_pos);	// the centre of mass in x-direction
-				array_pos_x[result_pos] = XM;
-				YM = getResult("YM", result_pos) + y_pos + border_top; // the centre of mass in y-direction; we need to add 'y_pos', because the measurement is done on a cropped image with the height 'step_size'
-				array_pos_y[result_pos] = YM;
-				/*
-				 * Detect left and right border:
-				 */
-				run("Macro...", "code=[if(isNaN(v)) v=-1000;]");	// replace NaN by '-1000'; this will result in the highest slope at the spectrum border
-				run("Find Edges");
-				run("Bin...", "x=1 y=" + step_size + " bin=Average");
-				/*
-				 * Left border:
-				 */
-				makeRectangle(maxOf(XM - spec_width, 1), 0, XM - maxOf(XM - spec_width, 1), step_size);
-				getMinAndMax(min, max);
-				run("Find Maxima...", "output=[Point Selection]");
-				getSelectionBounds(x, y, w, h);
-				array_left[result_pos] = x;
-				run("Select None");
-				/*
-				 *  Right border:
-				 */
-				makeRectangle(XM, 0, width - maxOf(XM - spec_width, 1), step_size);
-				getMinAndMax(min, max);
-				run("Find Maxima...", "output=[Point Selection]");
-				getSelectionBounds(x, y, w, h);
-				array_right[result_pos] = x + w;
-				array_width_calc[result_pos] = array_right[result_pos] - array_left[result_pos];	// calculate the width by using the borders positions
-				close();	// close the temporary image
-				if (abs(YM - energy_pos * height) <= step_size  / 2) {	// check if the given value of 'energy_pos' is inside the current energy interval
-					save_pos_and_width(i, array_pos_x[result_pos], array_width[result_pos], array_left[result_pos], array_right[result_pos]);
-				}
-				y_pos += step_size;
-			}
-			selectImage(id);
-			run("Select None");
-			fileNameOverlay = img_name + "_overlay";
-			run("Duplicate...", fileNameOverlay);
-			addPointsToOverlay(array_left, array_pos_y, 0);
-			addPointsToOverlay(array_pos_x, array_pos_y, 1);
-			addPointsToOverlay(array_right, array_pos_y, 2);
-			run("Flatten");
-			saveAs("Jpeg", result_dir[m] + fileNameOverlay + ".jpg");
-			close();	// close the image that contains the overlay
-			selectImage(id);	// select and...
-			close();	// ...close the image
-			/*
-			 * Plot and save the results:
-			 * The created diagrams are to estimate the quality of the used datasets.
-			 * For final fitting, Gnuplot (http://gnuplot.info/) should be used, which creates for superior results.
-			 */
-			/*
-			 * Spectrum width:
-			 */
-			Fit.doFit("2nd Degree Polynomial", array_pos_y, array_width);
-			Fit.plot;
-			saveAs("PNG", result_dir[m] + "width_" + img_name + ".png");
-			close();
-			/*
-			 * Position of spectrum centre:
-			 */
-			Fit.doFit("2nd Degree Polynomial", array_pos_y, array_pos_x);
-			Fit.plot;
-			saveAs("PNG", result_dir[m] + "center_" + img_name + ".png");
-			close();
-			/*
-			 * Position of left border:
-			 */
-			Fit.doFit("2nd Degree Polynomial", array_pos_y, array_left);
-			Fit.plot;
-			saveAs("PNG", result_dir[m] + "left_" + img_name + ".png");
-			close();
-			/*
-			 * Position of right border:
-			 */
-			Fit.doFit("2nd Degree Polynomial", array_pos_y, array_right);
-			Fit.plot;
-			saveAs("PNG", result_dir[m] + "right_" + img_name + ".png");
-			close();
-			/*
-			 * Create a table containing the results:
-			 * The table can be saved as a text file with  tab-separated values.
-			 * Gnuplot can access this files without any changes to the file.
-			 */
-			Array.show("Values", array_index, array_pos_y, array_pos_x, array_left, array_right, array_width, array_width_calc);
-			if (isOpen("Values")) {
-				selectWindow("Values");
-				saveAs("Results", result_dir[m] + "values_" + img_name + ".txt");
-				run("Close");
-			}
-		}
+		 analyse_dataset(m);
 	}
 }
 /*
@@ -254,6 +133,134 @@ if (isOpen("Results")) {
 	run("Close");
 }
 showMessage("<html><p>The evaluation finished.</p><p>Elapsed time: " + (getTime() - start) / 1000 + "s</p>");
+
+function analyse_dataset(m) {
+	array_index = newArray(datapoints);
+	array_pos_y = newArray(datapoints);
+	array_pos_x = newArray(datapoints);
+	array_left = newArray(datapoints);
+	array_right = newArray(datapoints);
+	array_width = newArray(datapoints);
+	array_width_calc = newArray(datapoints);
+	for (i=0; i<list.length; i++) {
+		open(list[i]);
+		img_name = File.nameWithoutExtension;
+		id = getImageID();	// id will be used to close the image
+		if (doRotate) {
+			run("Rotate 90 Degrees Right");
+		}
+		run("Properties...", "unit=[] pixel_width=1 pixel_height=1 origin=0,0");	// use pixel as coordinates
+		run("Clear Results");	// we need an empty results table
+		/*
+		 *  remove the outliers and smooth
+		 */
+		run("Remove Outliers...", "radius=" + filter_radius + " threshold=32 which=Bright");
+		run("Remove Outliers...", "radius=" + filter_radius + " threshold=32 which=Dark");
+		run("Median...", "radius=" + filter_radius);
+		run("Set Measurements...", "  mean center integrated redirect=None decimal=9");	// measure the mean value, the centre of mass and the integrated intensity
+		y_pos = 0;
+		while (y_pos < getHeight - border_top - border_bot) {
+			makeRectangle(0, y_pos + border_top, getWidth, step_size);
+			run("Duplicate...", "temp");	// create a temporary image: only the rectangle selection gets duplicated
+			setAutoThreshold(threshold[m] + " dark");	// threshold with...
+			run("NaN Background");	// ..set background to NaN
+			run("Measure");
+			result_pos = y_pos / step_size;	// line number at the result table
+			array_index[result_pos] = result_pos;
+			spec_width = getResult("IntDen", result_pos) / getResult("Mean", result_pos) / step_size;	// the mean width of all 'step_size' energy channels
+			array_width[result_pos] = spec_width;
+			XM = getResult("XM", result_pos);	// the centre of mass in x-direction
+			array_pos_x[result_pos] = XM;
+			YM = getResult("YM", result_pos) + y_pos + border_top; // the centre of mass in y-direction; we need to add 'y_pos', because the measurement is done on a cropped image with the height 'step_size'
+			array_pos_y[result_pos] = YM;
+			/*
+			 * Detect left and right border:
+			 */
+			run("Macro...", "code=[if(isNaN(v)) v=-1000;]");	// replace NaN by '-1000'; this will result in the highest slope at the spectrum border
+			run("Find Edges");
+			run("Bin...", "x=1 y=" + step_size + " bin=Average");
+			/*
+			 * Left border:
+			 */
+			makeRectangle(maxOf(XM - spec_width, 1), 0, XM - maxOf(XM - spec_width, 1), step_size);
+			getMinAndMax(min, max);
+			run("Find Maxima...", "output=[Point Selection]");
+			getSelectionBounds(x, y, w, h);
+			array_left[result_pos] = x;
+			run("Select None");
+			/*
+			 *  Right border:
+			 */
+			makeRectangle(XM, 0, width - maxOf(XM - spec_width, 1), step_size);
+			getMinAndMax(min, max);
+			run("Find Maxima...", "output=[Point Selection]");
+			getSelectionBounds(x, y, w, h);
+			array_right[result_pos] = x + w;
+			array_width_calc[result_pos] = array_right[result_pos] - array_left[result_pos];	// calculate the width by using the borders positions
+			close();	// close the temporary image
+			if (abs(YM - energy_pos * height) <= step_size  / 2) {	// check if the given value of 'energy_pos' is inside the current energy interval
+				save_pos_and_width(i, array_pos_x[result_pos], array_width[result_pos], array_left[result_pos], array_right[result_pos]);
+			}
+			y_pos += step_size;
+		}
+		selectImage(id);
+		run("Select None");
+		fileNameOverlay = img_name + "_overlay";
+		run("Duplicate...", fileNameOverlay);
+		addPointsToOverlay(array_left, array_pos_y, 0);
+		addPointsToOverlay(array_pos_x, array_pos_y, 1);
+		addPointsToOverlay(array_right, array_pos_y, 2);
+		run("Flatten");
+		saveAs("Jpeg", result_dir[m] + fileNameOverlay + ".jpg");
+		close();	// close the image that contains the overlay
+		selectImage(id);	// select and...
+		close();	// ...close the image
+		/*
+		 * Plot and save the results:
+		 * The created diagrams are to estimate the quality of the used datasets.
+		 * For final fitting, Gnuplot (http://gnuplot.info/) should be used, which creates for superior results.
+		 */
+		/*
+		 * Spectrum width:
+		 */
+		Fit.doFit("2nd Degree Polynomial", array_pos_y, array_width);
+		Fit.plot;
+		saveAs("PNG", result_dir[m] + "width_" + img_name + ".png");
+		close();
+		/*
+		 * Position of spectrum centre:
+		 */
+		Fit.doFit("2nd Degree Polynomial", array_pos_y, array_pos_x);
+		Fit.plot;
+		saveAs("PNG", result_dir[m] + "center_" + img_name + ".png");
+		close();
+		/*
+		 * Position of left border:
+		 */
+		Fit.doFit("2nd Degree Polynomial", array_pos_y, array_left);
+		Fit.plot;
+		saveAs("PNG", result_dir[m] + "left_" + img_name + ".png");
+		close();
+		/*
+		 * Position of right border:
+		 */
+		Fit.doFit("2nd Degree Polynomial", array_pos_y, array_right);
+		Fit.plot;
+		saveAs("PNG", result_dir[m] + "right_" + img_name + ".png");
+		close();
+		/*
+		 * Create a table containing the results:
+		 * The table can be saved as a text file with  tab-separated values.
+		 * Gnuplot can access this files without any changes to the file.
+		 */
+		Array.show("Values", array_index, array_pos_y, array_pos_x, array_left, array_right, array_width, array_width_calc);
+		if (isOpen("Values")) {
+			selectWindow("Values");
+			saveAs("Results", result_dir[m] + "values_" + img_name + ".txt");
+			run("Close");
+		}
+	}
+}
 
 /*
  * function: filter_images
