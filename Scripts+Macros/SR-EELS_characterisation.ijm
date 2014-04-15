@@ -11,118 +11,60 @@
  * Parameters:
  * Only this values should be changed by the user.
  *
- * ToDo: create a dialoge for parameter input.
+ * ToDo: create a dialogue for parameter input.
  */
  /*
   *  step_size determines the number of energy channels that will result in one data point of the resulting dataset.
   */
-step_size = -1;	// choose '-1' for automatic mode 'abs(height / 64)'
+var step_size = -1;	// choose '-1' for automatic mode 'abs(height / 64)'
 /*
  * border_top and border_bot are used to limit the energy range that is used. This is useful to cut off the ZLP or to ignore low counts at high energy losses.
  */
-border_top = -1;	// choose '-1' for automatic mode 'abs(height / 16)'
-border_bot = -1;	// choose '-1' for automatic mode 'abs(height / 16)'
+var border_top = -1;	// choose '-1' for automatic mode 'abs(height / 16)'
+var border_bot = -1;	// choose '-1' for automatic mode 'abs(height / 16)'
 /*
  * This value is used when applying different filters, like remove outliers or median.
  */
-filter_radius = -1;	// choose '-1' for automatic mode 'round(sqrt(step_size))'
+var filter_radius = -1;	// choose '-1' for automatic mode 'round(sqrt(step_size))'
 /*
  * The macro will create a diagram that plots the spectrum width against the spectrum position. This value determines the energy channel that is used to calculate the spectrum width.
  *
  * ToDo: implement a function to calibrate the energy scale. Then it is possible to select an energy loss instead of a relative value.
  */
-energy_pos = 0.5;	// choose a value between 0 and 1; 0.5 is the centre of the SR-EELS dataset
+var energy_pos = 0.5;	// choose a value between 0 and 1; 0.5 is the centre of the SR-EELS dataset
 /*
  * Select some methods used for threshold. The following options are available:
  * Default, Huang, Intermodes, IsoData, Li, MaxEntropy, Mean, MinError, Minimum, Moments, Otsu, Percentile, RenyiEntropy, Shanbhag, Triangle and Yen
  */
 //threshold = newArray("Default", "Huang", "Intermodes", "IsoData", "Li", "MaxEntropy", "Mean", "MinError", "Minimum", "Moments", "Otsu", "Percentile", "RenyiEntropy", "Shanbhag", "Triangle and Yen");
-threshold = newArray("Li", "Intermodes");
+var thresholds = newArray("Li", "Intermodes");
 
 /*
- * Load images:
- * This macro requires at least two images (SR-EELS datasets) to run properly. You have to select a folder and ImageJ will load all tif and dm3 images that are stored at the selected folder. Sub-folders are not considered.
+ * Global variables
  */
-dir = getDirectory("Choose a Directory ");
-if (dir == "") exit();	// if cancel was selected, the script will stop
-var list;
-list = getFileList(dir);
-list = filter_images(list);	// only select tif and dm3 files; ignore sub-folders
+var doRotate; var result_dirs; var skip_threshold; var dir; var datapoints; var list; var width; var height;	// global variables for use in 'load_images()'
+var array_pos_all; var array_width_all; var array_pos_all_calc; var array_width_all_calc;	// global variables for use in 'save_pos_and_width()'
+var threshold;	// global variables for use in 'analyse_dataset()'
 
-open(list[0]);
-id = getImageID();	// id will be used to close the image
-draw_axes_as_overlay(); 	// create an overlay to simplify the next user choice
-doRotate = getBoolean("The macro requires the following configuration:\nx: lateral axis\ny: energy axis\n\nRotate the images?");
-run("Remove Overlay");
+load_images();
 
 /*
  *  Set-up:
- *  Start a timer and gather some information about the images.
+ *  Start a timer and switch to Batch mode.
  */
 start = getTime();
 setBatchMode(true);	// Batch mode will speed up the macro
-selectImage(id);	// ensure that the first image is selected
-/*
- * Each image will be rotated at the for-loop. We have to interchange width and height if doRotate is true.
- */
-if (!doRotate) {
-	width = getWidth;
-	height = getHeight;
-} else {
-	height = getWidth;
-	width = getHeight;
-}
-close();	// we will open the image again, when entering the for-loop
-/*
- * Automatic assignment of parameters:
- */
-if (step_size == -1) {
-	step_size = abs(height / 64);
-}
-if (border_top == -1) {
-	border_top = abs(height / 16);
-}
-if (border_bot == -1) {
-	border_bot = abs(height / 16);
-}
-if (filter_radius == -1) {
-	filter_radius = round(sqrt(step_size));
-}
-/*
- * Create all necessary arrays and the folder to store the results:
- */
-var datapoints;
-datapoints =ceil( (height - border_top - border_bot) / step_size);
 
-result_dir = newArray(threshold.length);
-skipThreshold = newArray(threshold.length);
-var array_pos_all; var array_width_all; var array_pos_all_calc; var array_width_all_calc;	// global variables for use in 'save_pos_and_width()'
 /*
- * For each set of parameters (currently only threshold can include different values) it is checked, if there are already some result. The user is asked, if he wants to overwrite these previous results.
+ * For every value in threshold, the complete analysis will be performed. This will be optimised in future versions of this macro.
  */
-for(m=0;m<threshold.length;m++) {
-	result_dir[m] = dir + "results_" +  toString(step_size) + toString(border_top) + toString(border_bot) + toString(filter_radius) + threshold[m] + File.separator;	// the folder name contains the parameters
-	if (File.isDirectory(result_dir[m])) {
-		if (!getBoolean("There are previous results for the selected parameters.\nstep size: "+ step_size +"\ntop border: " + border_top + "\nbottom border: " + border_bot + "\nfilter radius: " + filter_radius + "\nthreshold method: " + threshold[m] + "\nDo you want to overwrite these results?")) {
-			skipThreshold[m] = true;
-		}
-	} else {
-		File.makeDirectory(result_dir[m]);
-		if (!File.exists(result_dir[m])) {
-			exit("Unable to create the directory:\n" + result_dir[m]);
-		}
-		skipThreshold[m] = false;
-	}
-}
-/*
- * For every value in threshold, the complete analysis will be performed. This will be optimised in futute versions of this macro.
- */
-for(m=0;m<threshold.length;m++) {	
-	if (skipThreshold[m] == false) {
+for(m=0; m < thresholds.length; m++) {
+	if (skip_threshold[m] == false) {
 		/*
 		 * This for-loop will process every image separately. When the last image has been processed, 'width_vs_pos' will be created (for more details see 'save_pos_and_width()').
 		 */
-		 analyse_dataset(m);
+		threshold = thresholds[m];
+		analyse_dataset();
 	}
 }
 /*
@@ -134,7 +76,14 @@ if (isOpen("Results")) {
 }
 showMessage("<html><p>The evaluation finished.</p><p>Elapsed time: " + (getTime() - start) / 1000 + "s</p>");
 
-function analyse_dataset(m) {
+/*
+ * function: analyse_dataset
+ * description: This is the main part of the macro. For every set of parameters (global variables) this function is called. It contains image filters, threshold, curve fitting and saving the results.
+ */
+function analyse_dataset() {
+	/*
+	 * Create all necessary arrays:
+	 */
 	array_index = newArray(datapoints);
 	array_pos_y = newArray(datapoints);
 	array_pos_x = newArray(datapoints);
@@ -162,7 +111,7 @@ function analyse_dataset(m) {
 		while (y_pos < getHeight - border_top - border_bot) {
 			makeRectangle(0, y_pos + border_top, getWidth, step_size);
 			run("Duplicate...", "temp");	// create a temporary image: only the rectangle selection gets duplicated
-			setAutoThreshold(threshold[m] + " dark");	// threshold with...
+			setAutoThreshold(threshold + " dark");	// threshold with...
 			run("NaN Background");	// ..set background to NaN
 			run("Measure");
 			result_pos = y_pos / step_size;	// line number at the result table
@@ -211,7 +160,7 @@ function analyse_dataset(m) {
 		addPointsToOverlay(array_pos_x, array_pos_y, 1);
 		addPointsToOverlay(array_right, array_pos_y, 2);
 		run("Flatten");
-		saveAs("Jpeg", result_dir[m] + fileNameOverlay + ".jpg");
+		saveAs("Jpeg", result_dirs[m] + fileNameOverlay + ".jpg");
 		close();	// close the image that contains the overlay
 		selectImage(id);	// select and...
 		close();	// ...close the image
@@ -225,28 +174,28 @@ function analyse_dataset(m) {
 		 */
 		Fit.doFit("2nd Degree Polynomial", array_pos_y, array_width);
 		Fit.plot;
-		saveAs("PNG", result_dir[m] + "width_" + img_name + ".png");
+		saveAs("PNG", result_dirs[m] + "width_" + img_name + ".png");
 		close();
 		/*
 		 * Position of spectrum centre:
 		 */
 		Fit.doFit("2nd Degree Polynomial", array_pos_y, array_pos_x);
 		Fit.plot;
-		saveAs("PNG", result_dir[m] + "center_" + img_name + ".png");
+		saveAs("PNG", result_dirs[m] + "center_" + img_name + ".png");
 		close();
 		/*
 		 * Position of left border:
 		 */
 		Fit.doFit("2nd Degree Polynomial", array_pos_y, array_left);
 		Fit.plot;
-		saveAs("PNG", result_dir[m] + "left_" + img_name + ".png");
+		saveAs("PNG", result_dirs[m] + "left_" + img_name + ".png");
 		close();
 		/*
 		 * Position of right border:
 		 */
 		Fit.doFit("2nd Degree Polynomial", array_pos_y, array_right);
 		Fit.plot;
-		saveAs("PNG", result_dir[m] + "right_" + img_name + ".png");
+		saveAs("PNG", result_dirs[m] + "right_" + img_name + ".png");
 		close();
 		/*
 		 * Create a table containing the results:
@@ -256,8 +205,67 @@ function analyse_dataset(m) {
 		Array.show("Values", array_index, array_pos_y, array_pos_x, array_left, array_right, array_width, array_width_calc);
 		if (isOpen("Values")) {
 			selectWindow("Values");
-			saveAs("Results", result_dir[m] + "values_" + img_name + ".txt");
+			saveAs("Results", result_dirs[m] + "values_" + img_name + ".txt");
 			run("Close");
+		}
+	}
+}
+
+/*
+ * function: Load images:
+ * This macro requires at least two images (SR-EELS datasets) to run properly. You have to select a folder and ImageJ will load all tif and dm3 images that are stored at the selected folder. Sub-folders are not considered.
+ */
+function load_images() {
+	dir = getDirectory("Choose a Directory ");
+	if (dir == "") exit();	// if cancel was selected, the script will stop
+	list = getFileList(dir);
+	list = filter_images(list);	// only select tif and dm3 files; ignore sub-folders
+	open(list[0]);
+	id = getImageID();	// id will be used to close the image
+	draw_axes_as_overlay(); 	// create an overlay to simplify the next user choice
+	doRotate = getBoolean("The macro requires the following configuration:\nx: lateral axis\ny: energy axis\n\nRotate the images?");
+	run("Remove Overlay");
+	if (!doRotate) {
+		width = getWidth;
+		height = getHeight;
+	} else {	// Each image will be rotated at the function 'analyse_dataset'. We have to interchange width and height if doRotate is true.
+		height = getWidth;
+		width = getHeight;
+	}
+	close();	// We will open the image again, when entering the function 'analyse_dataset'
+	/*
+	 * Automatic assignment of parameters:
+	 */
+	if (step_size == -1) {
+		step_size = abs(height / 64);
+	}
+	if (border_top == -1) {
+		border_top = abs(height / 16);
+	}
+	if (border_bot == -1) {
+		border_bot = abs(height / 16);
+	}
+	if (filter_radius == -1) {
+		filter_radius = round(sqrt(step_size));
+	}
+	datapoints = ceil((height - border_top - border_bot) / step_size);
+	/*
+	 * For each set of parameters (currently only threshold can include different values) it is checked, if there are already some result. The user is asked, if he wants to overwrite these previous results.
+	 */
+	result_dirs = newArray(thresholds.length);
+	skip_threshold = newArray(thresholds.length);
+	for(m=0; m<thresholds.length; m++) {
+		result_dirs[m] = dir + "results_" +  toString(step_size) + toString(border_top) + toString(border_bot) + toString(filter_radius) + thresholds[m] + File.separator;	// the folder name contains the parameters
+		if (File.isDirectory(result_dirs[m])) {
+			if (!getBoolean("There are previous results for the selected parameters.\nstep size: "+ step_size +"\ntop border: " + border_top + "\nbottom border: " + border_bot + "\nfilter radius: " + filter_radius + "\nthreshold method: " + thresholds[m] + "\nDo you want to overwrite these results?")) {
+				skip_threshold[m] = true;
+			}
+		} else {
+			File.makeDirectory(result_dirs[m]);
+			if (!File.exists(result_dirs[m])) {
+				exit("Unable to create the directory:\n" + result_dirs[m]);
+			}
+			skip_threshold[m] = false;
 		}
 	}
 }
@@ -300,16 +308,16 @@ function save_pos_and_width(index, pos, width, left, right) {
 	if (index == list.length - 1) {
 		Fit.doFit("2nd Degree Polynomial", array_pos_all, array_width_all);
 		Fit.plot;
-		saveAs("PNG", result_dir[m] + "width_vs_pos.png");
+		saveAs("PNG", result_dirs[m] + "width_vs_pos.png");
 		close();
 		Fit.doFit("2nd Degree Polynomial", array_pos_all_calc, array_width_all_calc);
 		Fit.plot;
-		saveAs("PNG", result_dir[m] + "width_vs_pos_calc.png");
+		saveAs("PNG", result_dirs[m] + "width_vs_pos_calc.png");
 		close();
 		Array.show("Values", array_pos_all, array_width_all, array_pos_all_calc, array_width_all_calc);
 		if (isOpen("Values")) {
 			selectWindow("Values");
-			saveAs("Results", result_dir[m] + "width_vs_pos.txt");
+			saveAs("Results", result_dirs[m] + "width_vs_pos.txt");
 			run("Close");
 		}
 	}
@@ -352,6 +360,10 @@ function ceil(value) {
 	}
 }
 
+/*
+ * function: addPointsToOverlay:
+ * description: This function is used to draw axes labels to the first image. These labels will help the user to decide, if the images have to be rotated.
+ */
 function addPointsToOverlay(xPos, yPos, overlayColorIndex) {
 	color = newArray("Yellow", "Red", "Orange");
 	markerSize = "Tiny";
