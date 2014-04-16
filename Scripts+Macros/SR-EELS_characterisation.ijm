@@ -36,15 +36,16 @@ var energy_pos = 0.5;	// choose a value between 0 and 1; 0.5 is the centre of th
  * Select some methods used for threshold. The following options are available:
  * Default, Huang, Intermodes, IsoData, Li, MaxEntropy, Mean, MinError, Minimum, Moments, Otsu, Percentile, RenyiEntropy, Shanbhag, Triangle and Yen
  */
-//threshold = newArray("Default", "Huang", "Intermodes", "IsoData", "Li", "MaxEntropy", "Mean", "MinError", "Minimum", "Moments", "Otsu", "Percentile", "RenyiEntropy", "Shanbhag", "Triangle and Yen");
-var thresholds = newArray("Li", "Intermodes");
+var thresholds = newArray("Default", "Huang", "Intermodes", "IsoData", "Li", "MaxEntropy", "Mean", "MinError", "Minimum", "Moments", "Otsu", "Percentile", "RenyiEntropy", "Shanbhag", "Triangle and Yen");
+// var thresholds = newArray("Default", "Intermodes", "Li");
+// var thresholds = newArray("Li");
 
 /*
  * Global variables
  */
 var doRotate; var result_dirs; var skip_threshold; var dir; var datapoints; var list; var width; var height;	// global variables for use in 'load_images()'
 var array_pos_all; var array_width_all; var array_pos_all_calc; var array_width_all_calc;	// global variables for use in 'save_pos_and_width()'
-var threshold;	// global variables for use in 'analyse_dataset()'
+var threshold; var r2_array;	// global variables for use in 'analyse_dataset()'
 
 load_images();
 
@@ -58,6 +59,8 @@ setBatchMode(true);	// Batch mode will speed up the macro
 /*
  * For every value in threshold, the complete analysis will be performed. This will be optimised in future versions of this macro.
  */
+r2_mean = newArray(thresholds.length);
+r2_stdv = newArray(thresholds.length);
 for(m=0; m < thresholds.length; m++) {
 	if (skip_threshold[m] == false) {
 		/*
@@ -65,8 +68,18 @@ for(m=0; m < thresholds.length; m++) {
 		 */
 		threshold = thresholds[m];
 		analyse_dataset();
+		r2_array = Array.slice(r2_array, 1);	// The first entry is 0, because I only use 'Array.concat()' to fill the array.
+		Array.getStatistics(r2_array, min, max, r2_mean[m], r2_stdv[m]);
+		run("Collect Garbage");	// The macro needs a large amount of memory. After each analysis most of the used memory can be freed.
 	}
 }
+Array.show("Optimal Threshold", thresholds, r2_mean, r2_stdv);
+if (isOpen("Optimal Threshold")) {
+	selectWindow("Optimal Threshold");
+	saveAs("Results", dir + "Optimal Threshold.txt");
+	run("Close");
+}
+
 /*
  *  Select and close the result window:
  */
@@ -93,8 +106,8 @@ function analyse_dataset() {
 	array_width_calc = newArray(datapoints);
 	for (i=0; i<list.length; i++) {
 		open(list[i]);
-		img_name = File.nameWithoutExtension;
 		id = getImageID();	// id will be used to close the image
+		img_name = File.nameWithoutExtension;
 		if (doRotate) {
 			run("Rotate 90 Degrees Right");
 		}
@@ -154,13 +167,11 @@ function analyse_dataset() {
 		}
 		selectImage(id);
 		run("Select None");
-		fileNameOverlay = img_name + "_overlay";
-		run("Duplicate...", fileNameOverlay);
 		addPointsToOverlay(array_left, array_pos_y, 0);
 		addPointsToOverlay(array_pos_x, array_pos_y, 1);
 		addPointsToOverlay(array_right, array_pos_y, 2);
 		run("Flatten");
-		saveAs("Jpeg", result_dirs[m] + fileNameOverlay + ".jpg");
+		saveAs("Jpeg", result_dirs[m] + img_name + ".jpg");
 		close();	// close the image that contains the overlay
 		selectImage(id);	// select and...
 		close();	// ...close the image
@@ -174,6 +185,7 @@ function analyse_dataset() {
 		 */
 		Fit.doFit("2nd Degree Polynomial", array_pos_y, array_width);
 		Fit.plot;
+		r2_array = Array.concat(r2_array, Fit.rSquared);
 		saveAs("PNG", result_dirs[m] + "width_" + img_name + ".png");
 		close();
 		/*
@@ -181,6 +193,7 @@ function analyse_dataset() {
 		 */
 		Fit.doFit("2nd Degree Polynomial", array_pos_y, array_pos_x);
 		Fit.plot;
+		r2_array = Array.concat(r2_array, Fit.rSquared);
 		saveAs("PNG", result_dirs[m] + "center_" + img_name + ".png");
 		close();
 		/*
@@ -188,6 +201,7 @@ function analyse_dataset() {
 		 */
 		Fit.doFit("2nd Degree Polynomial", array_pos_y, array_left);
 		Fit.plot;
+		r2_array = Array.concat(r2_array, Fit.rSquared);
 		saveAs("PNG", result_dirs[m] + "left_" + img_name + ".png");
 		close();
 		/*
@@ -195,6 +209,7 @@ function analyse_dataset() {
 		 */
 		Fit.doFit("2nd Degree Polynomial", array_pos_y, array_right);
 		Fit.plot;
+		r2_array = Array.concat(r2_array, Fit.rSquared);
 		saveAs("PNG", result_dirs[m] + "right_" + img_name + ".png");
 		close();
 		/*
@@ -362,7 +377,7 @@ function ceil(value) {
 
 /*
  * function: addPointsToOverlay:
- * description: This function is used to draw axes labels to the first image. These labels will help the user to decide, if the images have to be rotated.
+ * description: This function is used to draw data points at the current image. The datapoints are added to the overlay.
  */
 function addPointsToOverlay(xPos, yPos, overlayColorIndex) {
 	color = newArray("Yellow", "Red", "Orange");
