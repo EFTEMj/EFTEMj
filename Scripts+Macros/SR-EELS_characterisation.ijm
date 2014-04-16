@@ -1,8 +1,8 @@
 /*
  * file:	SR-EELS_characterisation.ijm
  * author:	Michael Entrup (entrup@arcor.de)
- * version:	20140415
- * date:	15.04.2014
+ * version:	20140416
+ * date:	16.04.2014
  * info:	This macro is used to characterise the  aberrations of an Zeiss in-column energy filter when using SR-EELS. A series of calibration datasets is necessary  to run the characterisation. Place all datasets (images) at a folder that contains no other images.
  * You can find an example SR-EELS series at https://github.com/EFTEMj/EFTEMj/tree/master/Scripts+Macros/examples/SR-EELS_characterisation. There you will find a instruction on how to record such a series, too.
  */
@@ -36,16 +36,31 @@ var energy_pos = 0.5;	// choose a value between 0 and 1; 0.5 is the centre of th
  * Select some methods used for threshold. The following options are available:
  * Default, Huang, Intermodes, IsoData, Li, MaxEntropy, Mean, MinError, Minimum, Moments, Otsu, Percentile, RenyiEntropy, Shanbhag, Triangle and Yen
  */
-var thresholds = newArray("Default", "Huang", "Intermodes", "IsoData", "Li", "MaxEntropy", "Mean", "MinError", "Minimum", "Moments", "Otsu", "Percentile", "RenyiEntropy", "Shanbhag", "Triangle and Yen");
-// var thresholds = newArray("Default", "Intermodes", "Li");
-// var thresholds = newArray("Li");
+// var thresholds = newArray("Default", "Huang", "Intermodes", "IsoData", "Li", "MaxEntropy", "Mean", "MinError", "Minimum", "Moments", "Otsu", "Percentile", "RenyiEntropy", "Shanbhag", "Triangle and Yen");	// this are all available methods
+// var thresholds = newArray("IsoData", "Huang", "RenyiEntropy", "Minimum", "Otsu", "Li", "Default");	// these 7 methods performed best with my test datasets
+var thresholds = newArray("Li");
+/*
+ * With 'Li' the borders match best.
+ * Other methods perform better at low counts, but they underestimate the width of the spectrum at higher counts.
+ * If you want to test other threshold methods, just add them to the array 'thresholds'. A seperate folder with results is created for each method.
+ *
+ * Li
+ * Implements Li's Minimum Cross Entropy thresholding method based on the iterative version (2nd reference below) of the algorithm.
+ * 	Li, CH & Lee, CK (1993), "Minimum Cross Entropy Thresholding", Pattern Recognition 26(4): 617-625
+ * 	Li, CH & Tam, PKS (1998), "An Iterative Algorithm for Minimum Cross Entropy Thresholding", Pattern Recognition Letters 18(8): 771-776
+ * 	Sezgin, M & Sankur, B (2004), "Survey over Image Thresholding Techniques and Quantitative Performance Evaluation", Journal of Electronic Imaging 13(1): 146-165 [1]
+ * Ported from ME Celebi's fourier_0.8 routines [2].
+ *
+ * [1]:	http://citeseer.ist.psu.edu/sezgin04survey.html
+ * [2]:	http://sourceforge.net/projects/fourier-ipal
+ */
 
 /*
  * Global variables
  */
 var doRotate; var result_dirs; var skip_threshold; var dir; var datapoints; var list; var width; var height;	// global variables for use in 'load_images()'
 var array_pos_all; var array_width_all; var array_pos_all_calc; var array_width_all_calc;	// global variables for use in 'save_pos_and_width()'
-var threshold; var r2_array;	// global variables for use in 'analyse_dataset()'
+var threshold;	// global variables for use in 'analyse_dataset()'
 
 load_images();
 
@@ -57,29 +72,16 @@ start = getTime();
 setBatchMode(true);	// Batch mode will speed up the macro
 
 /*
- * For every value in threshold, the complete analysis will be performed. This will be optimised in future versions of this macro.
+ * Set different parameters and start 'analyse_dataset()'.
+ * This version only allows to iterate through different threshold methods. Future versions will be able to to iterate through other parameters, too.
  */
-r2_mean = newArray(thresholds.length);
-r2_stdv = newArray(thresholds.length);
 for(m=0; m < thresholds.length; m++) {
 	if (skip_threshold[m] == false) {
-		/*
-		 * This for-loop will process every image separately. When the last image has been processed, 'width_vs_pos' will be created (for more details see 'save_pos_and_width()').
-		 */
 		threshold = thresholds[m];
-		analyse_dataset();
-		r2_array = Array.slice(r2_array, 1);	// The first entry is 0, because I only use 'Array.concat()' to fill the array.
-		Array.getStatistics(r2_array, min, max, r2_mean[m], r2_stdv[m]);
+		analyse_dataset();	// this is the main function of this macro
 		run("Collect Garbage");	// The macro needs a large amount of memory. After each analysis most of the used memory can be freed.
 	}
 }
-Array.show("Optimal Threshold", thresholds, r2_mean, r2_stdv);
-if (isOpen("Optimal Threshold")) {
-	selectWindow("Optimal Threshold");
-	saveAs("Results", dir + "Optimal Threshold.txt");
-	run("Close");
-}
-
 /*
  *  Select and close the result window:
  */
@@ -104,6 +106,9 @@ function analyse_dataset() {
 	array_right = newArray(datapoints);
 	array_width = newArray(datapoints);
 	array_width_calc = newArray(datapoints);
+	/*
+	 * This for-loop will process every image separately. When the last image has been processed, 'width_vs_pos' will be created (for more details see 'save_pos_and_width()').
+	 */
 	for (i=0; i<list.length; i++) {
 		open(list[i]);
 		id = getImageID();	// id will be used to close the image
@@ -185,7 +190,6 @@ function analyse_dataset() {
 		 */
 		Fit.doFit("2nd Degree Polynomial", array_pos_y, array_width);
 		Fit.plot;
-		r2_array = Array.concat(r2_array, Fit.rSquared);
 		saveAs("PNG", result_dirs[m] + "width_" + img_name + ".png");
 		close();
 		/*
@@ -193,7 +197,6 @@ function analyse_dataset() {
 		 */
 		Fit.doFit("2nd Degree Polynomial", array_pos_y, array_pos_x);
 		Fit.plot;
-		r2_array = Array.concat(r2_array, Fit.rSquared);
 		saveAs("PNG", result_dirs[m] + "center_" + img_name + ".png");
 		close();
 		/*
@@ -201,7 +204,6 @@ function analyse_dataset() {
 		 */
 		Fit.doFit("2nd Degree Polynomial", array_pos_y, array_left);
 		Fit.plot;
-		r2_array = Array.concat(r2_array, Fit.rSquared);
 		saveAs("PNG", result_dirs[m] + "left_" + img_name + ".png");
 		close();
 		/*
@@ -209,7 +211,6 @@ function analyse_dataset() {
 		 */
 		Fit.doFit("2nd Degree Polynomial", array_pos_y, array_right);
 		Fit.plot;
-		r2_array = Array.concat(r2_array, Fit.rSquared);
 		saveAs("PNG", result_dirs[m] + "right_" + img_name + ".png");
 		close();
 		/*
