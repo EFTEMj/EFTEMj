@@ -1,8 +1,8 @@
 /*
  * file:	SR-EELS_characterisation.ijm
  * author:	Michael Entrup (entrup@arcor.de)
- * version:	20140416
- * date:	16.04.2014
+ * version:	20140417
+ * date:	17.04.2014
  * info:	This macro is used to characterise the  aberrations of an Zeiss in-column energy filter when using SR-EELS. A series of calibration datasets is necessary  to run the characterisation. Place all datasets (images) at a folder that contains no other images.
  * You can find an example SR-EELS series at https://github.com/EFTEMj/EFTEMj/tree/master/Scripts+Macros/examples/SR-EELS_characterisation. There you will find a instruction on how to record such a series, too.
  */
@@ -35,11 +35,7 @@ var energy_pos = 0.5;	// choose a value between 0 and 1; 0.5 is the centre of th
 /*
  * Select some methods used for threshold. The following options are available:
  * Default, Huang, Intermodes, IsoData, Li, MaxEntropy, Mean, MinError, Minimum, Moments, Otsu, Percentile, RenyiEntropy, Shanbhag, Triangle and Yen
- */
-// var thresholds = newArray("Default", "Huang", "Intermodes", "IsoData", "Li", "MaxEntropy", "Mean", "MinError", "Minimum", "Moments", "Otsu", "Percentile", "RenyiEntropy", "Shanbhag", "Triangle and Yen");	// this are all available methods
-// var thresholds = newArray("IsoData", "Huang", "RenyiEntropy", "Minimum", "Otsu", "Li", "Default");	// these 7 methods performed best with my test datasets
-var thresholds = newArray("Li");
-/*
+ * 
  * With 'Li' the borders match best.
  * Other methods perform better at low counts, but they underestimate the width of the spectrum at higher counts.
  * If you want to test other threshold methods, just add them to the array 'thresholds'. A seperate folder with results is created for each method.
@@ -54,6 +50,14 @@ var thresholds = newArray("Li");
  * [1]:	http://citeseer.ist.psu.edu/sezgin04survey.html
  * [2]:	http://sourceforge.net/projects/fourier-ipal
  */
+// var thresholds = newArray("Default", "Huang", "Intermodes", "IsoData", "Li", "MaxEntropy", "Mean", "MinError", "Minimum", "Moments", "Otsu", "Percentile", "RenyiEntropy", "Shanbhag", "Triangle and Yen");	// this are all available methods
+// var thresholds = newArray("IsoData", "Huang", "RenyiEntropy", "Minimum", "Otsu", "Li", "Default");	// these 7 methods performed best with my test datasets
+var thresholds = newArray("Li");
+ /*
+  * This is the multiplicator of the standard deviation sigma:
+  * This is only a minimal value. The macro will automaticaly increas it if r² of the gaussian fit decreases.
+  */
+sigma_weighting = 3;	// 1 = 68.27%, 2 = 95.45%, 3 = 99.73%
 
 /*
  * Global variables
@@ -126,8 +130,29 @@ function analyse_dataset() {
 		run("Median...", "radius=" + filter_radius);
 		run("Set Measurements...", "  mean center integrated redirect=None decimal=9");	// measure the mean value, the centre of mass and the integrated intensity
 		y_pos = 0;
+		x_offset = 0;
+		roi_width = width;
 		while (y_pos < getHeight - border_top - border_bot) {
-			makeRectangle(0, y_pos + border_top, getWidth, step_size);
+			makeRectangle(x_offset, y_pos + border_top, roi_width, step_size);
+			/*
+			 * A gaussian fit is used to limit the region used for thresholding:
+			 * The profile is no gaussian distribution, but the gaussian fit estimates centre and width well. For more presice results thresholding is needed.
+			 */
+			profile = getProfile();
+			/*
+			 * We need an array to define the x-axis values (0,1,2,...,roi_width-1) when fitting a gaussian:
+			 */
+			array_x = newArray(roi_width);
+			for (x=0; x<roi_width; x++) {
+				array_x[x] = x;
+			}
+			Fit.doFit("Gaussian", array_x, profile);
+			gauss_centre = Fit.p(2);
+			gauss_sigma =  Fit.p(3);	// sigma is used to estimate the region that is used for thresholding
+			sigma_weighed = sigma_weighting * gauss_sigma / pow(Fit.rSquared(), 2);	// if the fit has a low r², sigma will be increased
+			x_offset = maxOf(x_offset + round(gauss_centre - sigma_weighed), 0);	// all further measurements use the coordinates of the duplicated selection and this value is used to transform them to coordinates of the full image
+			roi_width = round(2 * sigma_weighed);
+			makeRectangle(x_offset, y_pos + border_top, roi_width, step_size);
 			run("Duplicate...", "temp");	// create a temporary image: only the rectangle selection gets duplicated
 			setAutoThreshold(threshold + " dark");	// threshold with...
 			run("NaN Background");	// ..set background to NaN
@@ -137,7 +162,7 @@ function analyse_dataset() {
 			spec_width = getResult("IntDen", result_pos) / getResult("Mean", result_pos) / step_size;	// the mean width of all 'step_size' energy channels
 			array_width[result_pos] = spec_width;
 			XM = getResult("XM", result_pos);	// the centre of mass in x-direction
-			array_pos_x[result_pos] = XM;
+			array_pos_x[result_pos] = XM + x_offset;
 			YM = getResult("YM", result_pos) + y_pos + border_top; // the centre of mass in y-direction; we need to add 'y_pos', because the measurement is done on a cropped image with the height 'step_size'
 			array_pos_y[result_pos] = YM;
 			/*
@@ -149,23 +174,23 @@ function analyse_dataset() {
 			/*
 			 * Left border:
 			 */
-			makeRectangle(maxOf(XM - spec_width, 1), 0, XM - maxOf(XM - spec_width, 1), step_size);
+			makeRectangle(maxOf(XM - spec_width, 0), 0, XM - maxOf(XM - spec_width, 0), step_size);
 			getMinAndMax(min, max);
 			run("Find Maxima...", "output=[Point Selection]");
 			getSelectionBounds(x, y, w, h);
-			array_left[result_pos] = x;
+			array_left[result_pos] = x + x_offset;
 			run("Select None");
 			/*
 			 *  Right border:
 			 */
-			makeRectangle(XM, 0, width - maxOf(XM - spec_width, 1), step_size);
+			makeRectangle(XM, 0, width - maxOf(XM - spec_width, 0), step_size);
 			getMinAndMax(min, max);
 			run("Find Maxima...", "output=[Point Selection]");
 			getSelectionBounds(x, y, w, h);
-			array_right[result_pos] = x + w;
+			array_right[result_pos] = x + w + x_offset;
 			array_width_calc[result_pos] = array_right[result_pos] - array_left[result_pos];	// calculate the width by using the borders positions
 			close();	// close the temporary image
-			if (abs(YM - energy_pos * height) <= step_size  / 2) {	// check if the given value of 'energy_pos' is inside the current energy interval
+			if (abs(round(YM) - energy_pos * height) <= (step_size  / 2)) {	// check if the given value of 'energy_pos' is inside the current energy interval
 				save_pos_and_width(i, array_pos_x[result_pos], array_width[result_pos], array_left[result_pos], array_right[result_pos]);
 			}
 			y_pos += step_size;
