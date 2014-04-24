@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+		http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.scijava</groupId>
+		<artifactId>pom-scijava</artifactId>
+		<version>1.162</version>
+		<relativePath />
+	</parent>
+
+	<groupId>EFTEMj</groupId>
+	<artifactId>EFTEMj</artifactId>
+	<version>_0.1.0</version>
+
+	<name>plugins/EFTEMj_.jar</name>
+	<description>A collection of plugins used for analyse data from Energy Filtering TransmissionElectronMicroscopy (EFTEM).</description>
+
+	<dependencies>
+		<dependency>
+			<groupId>net.imagej</groupId>
+			<artifactId>ij</artifactId>
+			<version>${imagej1.version}</version><!--$NO-MVN-MAN-VER$-->
+		</dependency>
+	</dependencies>
+
+	<build>
+		<resources>
+			<resource>
+				<directory>${basedir}/src/main/resources</directory>
+			</resource>
+			<resource>
+				<directory>${project.build.sourceDirectory}</directory>
+			</resource>
+		</resources>
+		<testResources>
+			<testResource>
+				<directory>${basedir}/src/test/resources</directory>
+			</testResource>
+			<testResource>
+				<directory>${project.build.testSourceDirectory}</directory>
+			</testResource>
+		</testResources>
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>java</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<mainClass>ElementalMappingPlugin</mainClass>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+	<developers>
+		<developer>
+			<id>m-entrup</id>
+			<name>Michael Entrup</name>
+			<email>michael.entrup@wwu.de</email>
+			<url>https://www.github.com/EFTEMj/EFTEMj</url>
+			<organization>WWU Münster</organization>
+			<organizationUrl>http://www.uni-muenster.de/</organizationUrl>
+			<roles>
+				<role>architect</role>
+				<role>developer</role>
+			</roles>
+			<timezone>+2</timezone>
+		</developer>
+	</developers>
+
+	<repositories>
+		<!-- NB: for project parent -->
+		<repository>
+			<id>imagej.public</id>
+			<url>http://maven.imagej.net/content/groups/public</url>
+		</repository>
+	</repositories>
+
+	<scm>
+		<connection>scm:git:git://github.com/EFTEMj/EFTEMj</connection>
+		<developerConnection>scm:git:git@github.com:EFTEMj/EFTEMj</developerConnection>
+		<tag>toMaven</tag>
+		<url>https://github.com/EFTEMj/EFTEMj</url>
+	</scm>
+
+</project>

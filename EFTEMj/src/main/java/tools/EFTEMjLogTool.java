@@ -127,7 +127,7 @@ public class EFTEMjLogTool {
 	    if (localMessages.get(i).length() > maxLengt) {
 		maxLengt = localMessages.get(i).length();
 	    }
-	    text += localMessages.get(i) + System.lineSeparator();
+	    text += localMessages.get(i) + System.getProperty("line.separator");
 	}
 	gd.addTextAreas(text, null, localMessages.size() + 1, maxLengt + 5);
 	gd.setOKLabel("Save Log...");
@@ -136,7 +136,6 @@ public class EFTEMjLogTool {
 	gd.showDialog();
 	if (gd.wasOKed()) {
 	    FileDialog fDialog = new FileDialog(gd, "Save log...", FileDialog.SAVE);
-	    fDialog.setMultipleMode(false);
 	    fDialog.setDirectory(IJ.getDirectory("image"));
 	    // adds date and time to the file name
 	    Calendar cal = Calendar.getInstance();
