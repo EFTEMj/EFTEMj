@@ -326,10 +326,10 @@ public class ElementalMapping {
      *            All energy losses lower than this one are pre-edge energy losses.
      */
     private void splitEnergyLosses(float[] allEnergyLosses, float edgeEnergyLoss) {
-	Vector<Float> preEdgeVector = new Vector<>();
-	Vector<Float> postEdgeVector = new Vector<>();
-	Vector<Integer> preEdgeIndexVector = new Vector<>();
-	Vector<Integer> postEdgeIndexVector = new Vector<>();
+	Vector<Float> preEdgeVector = new Vector<Float>();
+	Vector<Float> postEdgeVector = new Vector<Float>();
+	Vector<Integer> preEdgeIndexVector = new Vector<Integer>();
+	Vector<Integer> postEdgeIndexVector = new Vector<Integer>();
 	for (int i = 0; i < allEnergyLosses.length; i++) {
 	    if (allEnergyLosses[i] < edgeEnergyLoss) {
 		preEdgeVector.add(allEnergyLosses[i]);
