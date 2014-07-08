@@ -49,11 +49,12 @@ import tools.IonisationEdges;
 import elemental_map.ElementalMapping.AVAILABLE_METHODS;
 
 /**
- * This plugin is used to create elemental maps. A power law model estimates the background signal. There are no
- * limitations (except system memory) regarding the number of used pre- and post-edge images.
+ * This plugin is used to create elemental maps. A power law model estimates the
+ * background signal. There are no limitations (except system memory) regarding
+ * the number of used pre- and post-edge images.
  * 
- * Several methods are available to make a power law fit to the background signal. All methods are optimised for
- * parallel processing.
+ * Several methods are available to make a power law fit to the background
+ * signal. All methods are optimised for parallel processing.
  * 
  * @author Michael Epping <michael.epping@uni-muenster.de>
  * 
@@ -122,11 +123,14 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
 	switch (method) {
 	case LSE:
 	    IJ.showStatus(method + " has been selected.");
-	    IJ.showMessage(method + " is not available", "The method has not yet been implemented.\n"
-		    + "Check if a newer version of EFTEMj includes this feature.");
+	    IJ.showMessage(
+		    method + " is not available",
+		    "The method has not yet been implemented.\n"
+			    + "Check if a newer version of EFTEMj includes this feature.");
 	    break;
 	case MLE:
-	    ElementalMapping mle = new ElementalMapping(energyLossArray, impStack, edgeEnergyLoss, epsilon, method);
+	    ElementalMapping mle = new ElementalMapping(energyLossArray,
+		    impStack, edgeEnergyLoss, epsilon, method);
 	    mle.startCalculation();
 	    // TODO Move all show-methods to the final processing
 	    mle.showRMap(calibration);
@@ -136,8 +140,10 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
 	    break;
 	case WLSE:
 	    IJ.showStatus(method + " has been selected.");
-	    IJ.showMessage(method + " is not available", "The method has not yet been implemented.\n"
-		    + "Check if a newer version of EFTEMj includes this feature.");
+	    IJ.showMessage(
+		    method + " is not available",
+		    "The method has not yet been implemented.\n"
+			    + "Check if a newer version of EFTEMj includes this feature.");
 	    break;
 	default:
 	    break;
@@ -147,8 +153,8 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
     /*
      * (non-Javadoc)
      * 
-     * @see ij.plugin.filter.ExtendedPlugInFilter#showDialog(ij.ImagePlus, java.lang.String,
-     * ij.plugin.filter.PlugInFilterRunner)
+     * @see ij.plugin.filter.ExtendedPlugInFilter#showDialog(ij.ImagePlus,
+     * java.lang.String, ij.plugin.filter.PlugInFilterRunner)
      */
     @Override
     public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
@@ -173,22 +179,30 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
     }
 
     /**
-     * Creates and shows the {@link GenericDialog} that is used to set the parameters for elemental mapping.
+     * Creates and shows the {@link GenericDialog} that is used to set the
+     * parameters for elemental mapping.
      * 
      * @param title
      * @return The constant <code>OK</code> or <code>CANCEL</code>.
      */
     private int showParameterDialog(String title) {
-	GenericDialog gd = new GenericDialog(title + " - set parameters", IJ.getInstance());
-	// TODO Add a button to show a text window with all detected energy losses.
-	gd.addSlider("Edge energy loss:", getMinELoss(), getMaxELoss(), getPredictedEdgeELoss());
+	GenericDialog gd = new GenericDialog(title + " - set parameters",
+		IJ.getInstance());
+	// TODO Add a button to show a text window with all detected energy
+	// losses.
+	gd.addSlider("Edge energy loss:", getMinELoss(), getMaxELoss(),
+		getPredictedEdgeELoss());
 	Panel panel = new Panel(new FlowLayout());
 	panel.add(new Label("Predicted edge:"));
-	panel.add(new JLabel("<html>" + getPredictedEdgeLabel(Math.round(edgeEnergyLoss)) + "</html>"));
+	panel.add(new JLabel("<html>"
+		+ getPredictedEdgeLabel(Math.round(edgeEnergyLoss)) + "</html>"));
 	gd.addPanel(panel);
-	gd.addChoice("Epsilon:", ElementalMapping.AVAILABLE_EPSILONS.toStringArray(),
+	gd.addChoice("Epsilon:",
+		ElementalMapping.AVAILABLE_EPSILONS.toStringArray(),
 		ElementalMapping.AVAILABLE_EPSILONS.toStringArray()[0]);
-	gd.addChoice("Method:", ElementalMapping.AVAILABLE_METHODS.toStringArray(), AVAILABLE_METHODS.MLE.toString());
+	gd.addChoice("Method:",
+		ElementalMapping.AVAILABLE_METHODS.toStringArray(),
+		AVAILABLE_METHODS.MLE.toString());
 	gd.setResizable(false);
 	gd.showDialog();
 	if (gd.wasCanceled()) {
@@ -208,7 +222,8 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
 	if (energyLossArray == null) {
 	    initELossArry();
 	}
-	float[] sortedELossArray = Arrays.copyOf(energyLossArray, energyLossArray.length);
+	float[] sortedELossArray = Arrays.copyOf(energyLossArray,
+		energyLossArray.length);
 	Arrays.sort(sortedELossArray);
 	return sortedELossArray[sortedELossArray.length - 1];
     }
@@ -220,25 +235,29 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
 	if (energyLossArray == null) {
 	    initELossArry();
 	}
-	float[] sortedELossArray = Arrays.copyOf(energyLossArray, energyLossArray.length);
+	float[] sortedELossArray = Arrays.copyOf(energyLossArray,
+		energyLossArray.length);
 	Arrays.sort(sortedELossArray);
 	return sortedELossArray[0];
     }
 
     /**
      * 
-     * This method takes the two highest energy loss values of the energy loss array and tries to find an edge at the
-     * given interval. If no edge is listed for the given interval the median of the selected energy loss values is
-     * used.
+     * This method takes the two highest energy loss values of the energy loss
+     * array and tries to find an edge at the given interval. If no edge is
+     * listed for the given interval the median of the selected energy loss
+     * values is used.
      * 
      * @return A prediction of the edge energy loss.
      */
     private float getPredictedEdgeELoss() {
-	float[] sortedELossArray = Arrays.copyOf(energyLossArray, energyLossArray.length);
+	float[] sortedELossArray = Arrays.copyOf(energyLossArray,
+		energyLossArray.length);
 	Arrays.sort(sortedELossArray);
 	float eLossHigh = sortedELossArray[energyLossArray.length - 1];
 	float eLossLow = sortedELossArray[energyLossArray.length - 2];
-	// TODO enhance the code to detect edges if there are 2 or more post-edge images.
+	// TODO enhance the code to detect edges if there are 2 or more
+	// post-edge images.
 	if (findEdge(eLossLow, eLossHigh) == false) {
 	    edgeEnergyLoss = (eLossHigh + eLossLow) / 2;
 	}
@@ -246,8 +265,9 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
     }
 
     /**
-     * Tries to find an edge in the given energy loss interval. The value is saved at the field
-     * <code>edgeEnergyLoss</code>. The class {@link IonisationEdges} is used at this method.
+     * Tries to find an edge in the given energy loss interval. The value is
+     * saved at the field <code>edgeEnergyLoss</code>. The class
+     * {@link IonisationEdges} is used at this method.
      * 
      * @param eLossLow
      *            The lower limit of the interval.
@@ -256,7 +276,8 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
      * @return <code>true</code> if an edge was found.
      */
     private boolean findEdge(float eLossLow, float eLossHigh) {
-	LinkedHashMap<Integer, String> edges = IonisationEdges.getInstance().getEdges();
+	LinkedHashMap<Integer, String> edges = IonisationEdges.getInstance()
+		.getEdges();
 	int[] possibleEdges = new int[edges.size()];
 	int edgeCount = 0;
 	for (int i = (int) Math.ceil(eLossLow); i < eLossHigh; i++) {
@@ -271,11 +292,13 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
 	    edgeEnergyLoss = (float) possibleEdges[0];
 	} else {
 	    int selected = 0;
-	    GenericDialog gd = new GenericDialog("Select an ionisation edge", IJ.getInstance());
+	    GenericDialog gd = new GenericDialog("Select an ionisation edge",
+		    IJ.getInstance());
 	    gd.addMessage("More than one edge is qualified for the given energy losses.\nPlease select one.");
 	    String[] edgeLabels = new String[edgeCount];
 	    for (int i = 0; i < edgeCount; i++) {
-		edgeLabels[i] = possibleEdges[i] + "eV - " + edges.get(possibleEdges[i]);
+		edgeLabels[i] = possibleEdges[i] + "eV - "
+			+ edges.get(possibleEdges[i]);
 	    }
 	    gd.addChoice("Edges:", edgeLabels, edgeLabels[selected]);
 	    gd.setResizable(false);
@@ -298,16 +321,18 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
     }
 
     /**
-     * The class {@link IonisationEdges} is used to identify an ionisation edge at the given energy loss.
+     * The class {@link IonisationEdges} is used to identify an ionisation edge
+     * at the given energy loss.
      * 
      * @param edgeELoss
      *            The energy loss of the ionisation edge.
-     * @return If the given energy loss is listed at the database the element and the name of the edge are written to
-     *         this string.
+     * @return If the given energy loss is listed at the database the element
+     *         and the name of the edge are written to this string.
      */
     private String getPredictedEdgeLabel(int edgeELoss) {
 	String label;
-	LinkedHashMap<Integer, String> edges = IonisationEdges.getInstance().getEdges();
+	LinkedHashMap<Integer, String> edges = IonisationEdges.getInstance()
+		.getEdges();
 	label = edges.get(edgeELoss);
 	if (label == null) {
 	    label = "Found no matching edge.";
@@ -316,13 +341,14 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
     }
 
     /**
-     * Initialises the array (the field <code>energyLossArray</code>) that represents the energy losses of the stack
-     * used for elemental mapping.
+     * Initialises the array (the field <code>energyLossArray</code>) that
+     * represents the energy losses of the stack used for elemental mapping.
      */
     private void initELossArry() {
 	energyLossArray = new float[impStack.getStackSize()];
 	for (int i = 0; i < energyLossArray.length; i++) {
-	    energyLossArray[i] = EnergyLossExtractor.eLossFromTitle(impStack, i);
+	    energyLossArray[i] = EnergyLossExtractor
+		    .eLossFromTitle(impStack, i);
 	}
     }
 

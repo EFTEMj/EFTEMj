@@ -43,7 +43,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
- * This class will calculate the elemental maps. It is separated from the plugin for reason of clarity.
+ * This class will calculate the elemental maps. It is separated from the plugin
+ * for reason of clarity.
  * 
  * @author Michael Epping <michael.epping@uni-muenster.de>
  * 
@@ -51,13 +52,15 @@ import java.util.concurrent.TimeUnit;
 public class ElementalMapping {
 
     /**
-     * All fit methods that are available are listed at the {@link Enum}. Each method contains a full name that can be
-     * used to be displayed at the GUI.
+     * All fit methods that are available are listed at the {@link Enum}. Each
+     * method contains a full name that can be used to be displayed at the GUI.
      * 
      * @author Michael Entrup <michael.entrup@uni-muenster.de>
      */
     public static enum AVAILABLE_METHODS {
-	LSE("Least squares estimation"), MLE("Maximum-likelihood estimation"), WLSE("Weighted least squares estimation");
+	LSE("Least squares estimation"), MLE("Maximum-likelihood estimation"), WLSE(
+		"Weighted least squares estimation"), LMA(
+		"Levenberg–Marquardt algorithm");
 
 	/**
 	 * Full name of the method. Display this {@link String} at the GUI.
@@ -82,7 +85,8 @@ public class ElementalMapping {
 	}
 
 	/**
-	 * @return A {@link String} array that can be used to create a choice at a {@link GenericDialog}.
+	 * @return A {@link String} array that can be used to create a choice at
+	 *         a {@link GenericDialog}.
 	 */
 	public static String[] toStringArray() {
 	    String[] array = new String[values().length];
@@ -94,12 +98,14 @@ public class ElementalMapping {
     }
 
     /**
-     * This {@link Enum} lists all accuracy values (break conditions) that are available to the background fit.
+     * This {@link Enum} lists all accuracy values (break conditions) that are
+     * available to the background fit.
      * 
      * @author Michael Entrup <michael.entrup@uni-muenster.de>
      */
     public static enum AVAILABLE_EPSILONS {
-	VERY_LOW(1.0E-03), LOW(1.0E-06), MID(1.0E-09), HIGH(1.0E-12), VERRY_HIGH(1.0E-15);
+	VERY_LOW(1.0E-03), LOW(1.0E-06), MID(1.0E-09), HIGH(1.0E-12), VERRY_HIGH(
+		1.0E-15);
 
 	/**
 	 * A double value that represents the accuracy of the background fit.
@@ -108,7 +114,8 @@ public class ElementalMapping {
 
 	/**
 	 * @param epsilon
-	 *            A double value that represents the accuracy (break conditions).
+	 *            A double value that represents the accuracy (break
+	 *            conditions).
 	 */
 	private AVAILABLE_EPSILONS(double epsilon) {
 	    this.epsilon = epsilon;
@@ -126,7 +133,8 @@ public class ElementalMapping {
 	}
 
 	/**
-	 * @return A {@link String} array that can be used to create a choice at a {@link GenericDialog}.
+	 * @return A {@link String} array that can be used to create a choice at
+	 *         a {@link GenericDialog}.
 	 */
 	public static String[] toStringArray() {
 	    String[] array = new String[values().length];
@@ -139,31 +147,37 @@ public class ElementalMapping {
 
     /**
      * All energy losses that are lower than the selected edge energy loss.<br />
-     * The images with this energy losses will be used to fit the power law background signal.
+     * The images with this energy losses will be used to fit the power law
+     * background signal.
      */
     private float[] preEdgeEnergyLosses;
     /**
      * All energy losses that are higher than the selected edge energy loss.<br />
-     * The images with this energy losses will be used to extract the elemental signal.
+     * The images with this energy losses will be used to extract the elemental
+     * signal.
      */
     private float[] postEdgeEnergyLosses;
     /**
-     * The images at the stack will not be sorted. This indices are used to identify the pre-edge images.<br />
+     * The images at the stack will not be sorted. This indices are used to
+     * identify the pre-edge images.<br />
      * The indices start at 1 to match the indexing of {@link ImageStack}s.
      */
     private int[] preEdgeIndices;
     /**
-     * The images at the stack will not be sorted. This indices are used to identify the post-edge images.<br />
+     * The images at the stack will not be sorted. This indices are used to
+     * identify the post-edge images.<br />
      * The indices start at 1 to match the indexing of {@link ImageStack}s.
      */
     private int[] postEdgeIndices;
     /**
-     * This {@link String} represents the power law fit method that has been choosen.
+     * This {@link String} represents the power law fit method that has been
+     * choosen.
      */
     private AVAILABLE_METHODS method;
     /**
      * This is the break condition for iterative power law fit methods.<br />
-     * If the results of two iteration differ by less then this value the iteration will be stopped.
+     * If the results of two iteration differ by less then this value the
+     * iteration will be stopped.
      */
     private float epsilon;
     /**
@@ -171,11 +185,13 @@ public class ElementalMapping {
      */
     private ImagePlus impStack;
     /**
-     * A map of the parameter <strong>r</strong> ( power law: I(E) = a&sdot;E<sup>-r</sup> ).
+     * A map of the parameter <strong>r</strong> ( power law: I(E) =
+     * a&sdot;E<sup>-r</sup> ).
      */
     private FloatProcessor rMap;
     /**
-     * A map of the parameter <strong>a</strong> ( power law: I(E) = a&sdot;E<sup>-r</sup> ).
+     * A map of the parameter <strong>a</strong> ( power law: I(E) =
+     * a&sdot;E<sup>-r</sup> ).
      */
     private FloatProcessor aMap;
     /**
@@ -187,8 +203,9 @@ public class ElementalMapping {
      */
     private FloatProcessor[] elementalMaps;
     /**
-     * This field indicates the progress. A static method is used to increase the value by 1. It is necessary to use
-     * volatile because different {@link Thread}s call the related method.
+     * This field indicates the progress. A static method is used to increase
+     * the value by 1. It is necessary to use volatile because different
+     * {@link Thread}s call the related method.
      */
     private static volatile int progress;
     /**
@@ -204,12 +221,13 @@ public class ElementalMapping {
      * @param edgeEnergyLoss
      *            The onset energy of the considered ionisation edge.
      * @param epsilon
-     *            The accuracy of the power low fit (this is the break condition for the used fit method).
+     *            The accuracy of the power low fit (this is the break condition
+     *            for the used fit method).
      * @param method
      *            The method used for fitting the power law function.
      */
-    public ElementalMapping(float[] energyLossArray, ImagePlus stack, float edgeEnergyLoss, float epsilon,
-	    AVAILABLE_METHODS method) {
+    public ElementalMapping(float[] energyLossArray, ImagePlus stack,
+	    float edgeEnergyLoss, float epsilon, AVAILABLE_METHODS method) {
 	this.method = method;
 	this.epsilon = epsilon;
 	this.impStack = stack;
@@ -219,7 +237,8 @@ public class ElementalMapping {
 	errorMap = new ByteProcessor(stack.getWidth(), stack.getHeight());
 	elementalMaps = new FloatProcessor[postEdgeIndices.length];
 	for (int i = 0; i < elementalMaps.length; i++) {
-	    elementalMaps[i] = new FloatProcessor(stack.getWidth(), stack.getHeight());
+	    elementalMaps[i] = new FloatProcessor(stack.getWidth(),
+		    stack.getHeight());
 	    float[] pixels = (float[]) elementalMaps[i].getPixels();
 	    Arrays.fill(pixels, Float.NaN);
 	}
@@ -227,7 +246,8 @@ public class ElementalMapping {
     }
 
     /**
-     * {@link NormCrossCorrelationTask} will use this method to update the process.
+     * {@link NormCrossCorrelationTask} will use this method to update the
+     * process.
      */
     private static void updateProgress() {
 	progress++;
@@ -238,7 +258,8 @@ public class ElementalMapping {
      * Starts the calculation with parallel {@link Thread}s.
      */
     public void startCalculation() {
-	ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+	ExecutorService executorService = Executors.newFixedThreadPool(Runtime
+		.getRuntime().availableProcessors());
 	for (int j = 0; j < impStack.getHeight(); j++) {
 	    executorService.execute(new ElementalMappingTask(j));
 	}
@@ -251,7 +272,8 @@ public class ElementalMapping {
     }
 
     /**
-     * Shows an {@link ImagePlus}with the map of the parameter <strong>r</strong>.<br />
+     * Shows an {@link ImagePlus}with the map of the parameter
+     * <strong>r</strong>.<br />
      * All values are 0 if no calculation has been done before.
      * 
      * @param cal
@@ -266,15 +288,17 @@ public class ElementalMapping {
     }
 
     /**
-     * Shows an {@link ImagePlus} with the map of the parameter <strong>ln(a)</strong>. Using the logarithm makes it
-     * easier to review the map.<br />
+     * Shows an {@link ImagePlus} with the map of the parameter
+     * <strong>ln(a)</strong>. Using the logarithm makes it easier to review the
+     * map.<br />
      * All values are 0 if no calculation has been done before.
      * 
      * @param cal
      *            A {@link Calibration} object or <code>null</code>.
      */
     public void showLnAMap(Calibration cal) {
-	FloatProcessor lnAMap = new FloatProcessor(aMap.getWidth(), aMap.getHeight());
+	FloatProcessor lnAMap = new FloatProcessor(aMap.getWidth(),
+		aMap.getHeight());
 	lnAMap.copyBits(aMap, 0, 0, Blitter.COPY);
 	lnAMap.log();
 	ImagePlus impLnAMap = new ImagePlus("Map of parameter ln(a)", lnAMap);
@@ -285,8 +309,10 @@ public class ElementalMapping {
     }
 
     /**
-     * Shows an {@link ImagePlus} with the map of the all errors that occurred at the power law fit.<br />
-     * All values are 0 if no calculation has been done before, or no error occurred.
+     * Shows an {@link ImagePlus} with the map of the all errors that occurred
+     * at the power law fit.<br />
+     * All values are 0 if no calculation has been done before, or no error
+     * occurred.
      * 
      * @param cal
      *            A {@link Calibration} object or <code>null</code>.
@@ -308,8 +334,9 @@ public class ElementalMapping {
      */
     public void showElementalMap(Calibration cal) {
 	for (int z = 0; z < elementalMaps.length; z++) {
-	    ImagePlus impElementalMap = new ImagePlus(MessageFormat.format("Elemental map {0,number}eV",
-		    postEdgeEnergyLosses[z]), elementalMaps[z]);
+	    ImagePlus impElementalMap = new ImagePlus(MessageFormat.format(
+		    "Elemental map {0,number}eV", postEdgeEnergyLosses[z]),
+		    elementalMaps[z]);
 	    if (cal != null) {
 		impElementalMap.setCalibration(cal);
 	    }
@@ -318,12 +345,14 @@ public class ElementalMapping {
     }
 
     /**
-     * This method has to be called at the constructor. It will fill the arrays of pre-edge and post-edge energy losses.
+     * This method has to be called at the constructor. It will fill the arrays
+     * of pre-edge and post-edge energy losses.
      * 
      * @param allEnergyLosses
      *            An array of energy losses.
      * @param edgeEnergyLoss
-     *            All energy losses lower than this one are pre-edge energy losses.
+     *            All energy losses lower than this one are pre-edge energy
+     *            losses.
      */
     private void splitEnergyLosses(float[] allEnergyLosses, float edgeEnergyLoss) {
 	Vector<Float> preEdgeVector = new Vector<Float>();
@@ -356,9 +385,11 @@ public class ElementalMapping {
     }
 
     /**
-     * This Class implements {@link Runnable} to allow parallel calculation of power low fit functions. This is
-     * possible, because the calculation is independent for each pixel of the stack. To reduce the administrative
-     * workload, one task is created for each image row instead of one task for each pixel.
+     * This Class implements {@link Runnable} to allow parallel calculation of
+     * power low fit functions. This is possible, because the calculation is
+     * independent for each pixel of the stack. To reduce the administrative
+     * workload, one task is created for each image row instead of one task for
+     * each pixel.
      * 
      * @author Michael Epping <michael.epping@uni-muenster.de>
      * 
@@ -388,8 +419,12 @@ public class ElementalMapping {
 	    PowerLawFit fitMethod;
 	    switch (method) {
 	    case MLE:
-		fitMethod = new PowerLawFit_MLE(preEdgeEnergyLosses, counts, epsilon);
+		fitMethod = new PowerLawFit_MLE(preEdgeEnergyLosses, counts,
+			epsilon);
 		break;
+	    case LMA:
+		fitMethod = new PowerLawFit_LMA(preEdgeEnergyLosses, counts,
+			epsilon);
 	    default:
 		break;
 	    }
@@ -397,9 +432,11 @@ public class ElementalMapping {
 		float r;
 		float a;
 		for (int z = 0; z < preEdgeIndices.length; z++) {
-		    counts[z] = impStack.getStack().getProcessor(preEdgeIndices[z]).getf(x, y);
+		    counts[z] = impStack.getStack()
+			    .getProcessor(preEdgeIndices[z]).getf(x, y);
 		}
-		fitMethod = new PowerLawFit_MLE(preEdgeEnergyLosses, counts, epsilon);
+		fitMethod = new PowerLawFit_MLE(preEdgeEnergyLosses, counts,
+			epsilon);
 		fitMethod.doFit();
 		if (fitMethod.getErrorCode() == PowerLawFit_MLE.ERROR_NONE) {
 		    r = (float) fitMethod.getR();
@@ -418,8 +455,11 @@ public class ElementalMapping {
 			    errorMap.set(x, y, PowerLawFit_MLE.ERROR_NONE);
 			    aMap.setf(x, y, a);
 			    for (int z = 0; z < postEdgeIndices.length; z++) {
-				float value = impStack.getStack().getProcessor(postEdgeIndices[z]).getf(x, y);
-				float bg = (float) (a * Math.pow(postEdgeEnergyLosses[z], -r));
+				float value = impStack.getStack()
+					.getProcessor(postEdgeIndices[z])
+					.getf(x, y);
+				float bg = (float) (a * Math.pow(
+					postEdgeEnergyLosses[z], -r));
 				elementalMaps[z].setf(x, y, value - bg);
 			    }
 			}
