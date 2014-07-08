@@ -29,7 +29,7 @@ package tools;
 /**
  * This is a small utility class to measure times in milliseconds. Each method is available as static and non-static.
  * 
- * @author Michael Epping <michael.epping@uni-muenster.de>
+ * @author Michael Entrup b. Epping <entrup@arcor.de>
  * 
  */
 public class Timer {

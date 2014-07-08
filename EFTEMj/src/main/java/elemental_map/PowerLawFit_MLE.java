@@ -31,7 +31,7 @@ package elemental_map;
  * <strong>Maximum Likelihood Estimation (MLE)</strong>. The MLE is an iterative
  * method to do a parameter fit.
  * 
- * @author Michael Epping <michael.epping@uni-muenster.de>
+ * @author Michael Entrup b. Epping <entrup@arcor.de>
  * 
  */
 public class PowerLawFit_MLE extends PowerLawFit {

@@ -57,7 +57,7 @@ import java.util.Arrays;
  * with the energy loss direction at the x-axis will be rotated during
  * processing.
  * 
- * @author Michael Epping <michael.epping@uni-muenster.de>
+ * @author Michael Entrup b. Epping <entrup@arcor.de>
  * 
  */
 public class SR_EELS_CorrectionOnlyPlugin implements ExtendedPlugInFilter {

@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * This class will calculate the elemental maps. It is separated from the plugin for reason of clarity.
  * 
- * @author Michael Epping <michael.epping@uni-muenster.de>
+ * @author Michael Entrup b. Epping <entrup@arcor.de>
  * 
  */
 public class ElementalMapping {
@@ -361,7 +361,7 @@ public class ElementalMapping {
      * possible, because the calculation is independent for each pixel of the stack. To reduce the administrative
      * workload, one task is created for each image row instead of one task for each pixel.
      * 
-     * @author Michael Epping <michael.epping@uni-muenster.de>
+     * @author Michael Entrup b. Epping <entrup@arcor.de>
      * 
      */
     private class ElementalMappingTask implements Runnable {

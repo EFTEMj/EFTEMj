@@ -55,7 +55,7 @@ import elemental_map.ElementalMapping.AVAILABLE_METHODS;
  * Several methods are available to make a power law fit to the background signal. All methods are optimised for
  * parallel processing.
  * 
- * @author Michael Epping <michael.epping@uni-muenster.de>
+ * @author Michael Entrup b. Epping <entrup@arcor.de>
  * 
  */
 public class ElementalMappingPlugin implements ExtendedPlugInFilter {

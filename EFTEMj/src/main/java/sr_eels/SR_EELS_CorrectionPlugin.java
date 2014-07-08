@@ -64,7 +64,7 @@ import tools.EFTEMjLogTool;
  * processing. To satisfy the NO_CHANGES flag a copy of the input image is
  * Rotated. The resulting image has always the orientation of the input image.
  * 
- * @author Michael Epping <michael.epping@uni-muenster.de>
+ * @author Michael Entrup b. Epping <entrup@arcor.de>
  * 
  */
 public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {

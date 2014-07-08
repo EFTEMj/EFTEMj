@@ -46,7 +46,7 @@ import ij.gui.WaitForUserDialog;
  * I implement {@link ContainerListener} to add the possibility to close the dialog by pressing [Esc]. I found this
  * method at http://www.devx.com/tips/Tip/13547 (22.04.2013).
  * 
- * @author Michael Epping <michael.epping@uni-muenster.de>
+ * @author Michael Entrup b. Epping <entrup@arcor.de>
  * 
  */
 @SuppressWarnings("serial")
