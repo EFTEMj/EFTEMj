@@ -41,7 +41,7 @@ import java.util.Vector;
  * A small tool to collect log messages. A {@link GenericDialog} is used to display all messages and the user can decide
  * to save them as a txt-file.
  * 
- * @author Michael Epping <michael.epping@uni-muenster.de>
+ * @author Michael Entrup b. Epping <entrup@arcor.de>
  * 
  */
 public class EFTEMjLogTool {

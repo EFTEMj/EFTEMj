@@ -41,7 +41,7 @@ import ij.process.ImageProcessor;
  * map is calculated in a separate task. You can switch to the calculation of the normalised cross-correlation by using
  * <code>useCoefficient(false)</code>.
  * 
- * @author Michael Epping <michael.epping@uni-muenster.de>
+ * @author Michael Entrup b. Epping <entrup@arcor.de>
  */
 public class NormCrossCorrelation {
 

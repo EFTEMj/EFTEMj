@@ -59,7 +59,7 @@ import tools.ExtendedStackToImage;
  * <p />
  * The manual method uses overlay techniques to help the user determining the drift manually.
  * 
- * @author Michael Epping <michael.epping@uni-muenster.de>
+ * @author Michael Entrup b. Epping <entrup@arcor.de>
  * 
  */
 public class DriftDetectionPlugin implements ExtendedPlugInFilter {

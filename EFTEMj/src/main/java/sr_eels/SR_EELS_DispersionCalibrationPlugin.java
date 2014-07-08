@@ -49,7 +49,7 @@ import tools.EFTEMjLogTool;
  * {@link SR_EELS_DispersionConfigurationPlugin}) that is used to setup predefined values. The offset (origin) can be
  * set by different methods.
  * 
- * @author Michael Epping <michael.epping@uni-muenster.de>
+ * @author Michael Entrup b. Epping <entrup@arcor.de>
  * 
  */
 public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter {

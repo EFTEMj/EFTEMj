@@ -31,7 +31,7 @@ package eftemj;
  * 
  * Maybe there will be some other things this class is used for.
  * 
- * @author Michael Epping <michael.epping@uni-muenster.de>
+ * @author Michael Entrup b. Epping <entrup@arcor.de>
  * 
  */
 public class EFTEMj {

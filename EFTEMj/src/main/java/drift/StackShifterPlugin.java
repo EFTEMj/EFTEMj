@@ -45,7 +45,7 @@ import java.awt.TextField;
  * enter the shift values (x- and y-direction) for each image of the stack. Then he can select to apply the given values
  * or let the plugin optimise the shift values and afterwards apply them.
  * 
- * @author Michael Epping <michael.epping@uni-muenster.de>
+ * @author Michael Entrup b. Epping <entrup@arcor.de>
  * 
  */
 public class StackShifterPlugin implements ExtendedPlugInFilter {

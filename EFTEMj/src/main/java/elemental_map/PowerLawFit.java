@@ -30,7 +30,7 @@ package elemental_map;
  * This is a blueprint for a power law fit method ( y(x) = a&sdot;x<sup>-r</sup> ). It is used by EFTEMj, but it can be
  * used for other tasks as well. That is why no classes from ImageJ are used.
  * 
- * @author Michael Epping <michael.epping@uni-muenster.de>
+ * @author Michael Entrup b. Epping <entrup@arcor.de>
  * 
  */
 public abstract class PowerLawFit {

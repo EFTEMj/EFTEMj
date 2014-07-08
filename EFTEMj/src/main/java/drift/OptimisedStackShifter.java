@@ -36,7 +36,7 @@ import java.awt.Point;
 /**
  * This class is used to shift all images of an {@link ImagePlus} that contains a stack.
  * 
- * @author Michael Epping <michael.epping@uni-muenster.de>
+ * @author Michael Entrup b. Epping <entrup@arcor.de>
  * 
  */
 public class OptimisedStackShifter {

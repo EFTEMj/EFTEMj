@@ -29,7 +29,7 @@ package tools;
 import java.util.LinkedHashMap;
 
 /**
- * @author Michael Epping <michael.epping@uni-muenster.de>
+ * @author Michael Entrup b. Epping <entrup@arcor.de>
  * 
  */
 public class IonisationEdges {

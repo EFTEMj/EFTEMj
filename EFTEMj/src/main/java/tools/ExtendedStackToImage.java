@@ -44,7 +44,7 @@ import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
 
 /**
- * @author Michael Epping <michael.epping@uni-muenster.de>
+ * @author Michael Entrup b. Epping <entrup@arcor.de>
  * 
  */
 public class ExtendedStackToImage implements PlugIn {
