@@ -18,7 +18,7 @@ public class Test_ElementalMappingPlugin {
 	new ImageJ();
 
 	// open the Clown sample
-	ImagePlus image = IJ.openImage("C:\\Temp\\Stack2.tif");
+	ImagePlus image = IJ.openImage("C:\\Temp\\Stack.tif");
 	image.show();
 
 	// run the plugin

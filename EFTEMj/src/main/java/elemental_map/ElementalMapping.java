@@ -435,6 +435,5 @@ public class ElementalMapping {
 	    }
 	    ElementalMapping.updateProgress();
 	}
-
     }
 }
