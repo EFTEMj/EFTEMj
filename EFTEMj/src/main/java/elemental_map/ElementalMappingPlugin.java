@@ -125,19 +125,20 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
 	    IJ.showMessage(method + " is not available", "The method has not yet been implemented.\n"
 		    + "Check if a newer version of EFTEMj includes this feature.");
 	    break;
-	case MLE:
-	    ElementalMapping mle = new ElementalMapping(energyLossArray, impStack, edgeEnergyLoss, epsilon, method);
-	    mle.startCalculation();
-	    // TODO Move all show-methods to the final processing
-	    mle.showRMap(calibration);
-	    mle.showLnAMap(calibration);
-	    mle.showErrorMap(calibration);
-	    mle.showElementalMap(calibration);
-	    break;
 	case WLSE:
 	    IJ.showStatus(method + " has been selected.");
 	    IJ.showMessage(method + " is not available", "The method has not yet been implemented.\n"
 		    + "Check if a newer version of EFTEMj includes this feature.");
+	    break;
+	case LMA:
+	case MLE:
+	    ElementalMapping mapping = new ElementalMapping(energyLossArray, impStack, edgeEnergyLoss, epsilon, method);
+	    mapping.startCalculation();
+	    // TODO Move all show-methods to the final processing
+	    mapping.showRMap(calibration);
+	    mapping.showLnAMap(calibration);
+	    mapping.showErrorMap(calibration);
+	    mapping.showElementalMap(calibration);
 	    break;
 	default:
 	    break;
@@ -180,7 +181,8 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
      */
     private int showParameterDialog(String title) {
 	GenericDialog gd = new GenericDialog(title + " - set parameters", IJ.getInstance());
-	// TODO Add a button to show a text window with all detected energy losses.
+	// TODO Add a button to show a text window with all detected energy
+	// losses.
 	gd.addSlider("Edge energy loss:", getMinELoss(), getMaxELoss(), getPredictedEdgeELoss());
 	Panel panel = new Panel(new FlowLayout());
 	panel.add(new Label("Predicted edge:"));
@@ -238,7 +240,8 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
 	Arrays.sort(sortedELossArray);
 	float eLossHigh = sortedELossArray[energyLossArray.length - 1];
 	float eLossLow = sortedELossArray[energyLossArray.length - 2];
-	// TODO enhance the code to detect edges if there are 2 or more post-edge images.
+	// TODO enhance the code to detect edges if there are 2 or more
+	// post-edge images.
 	if (findEdge(eLossLow, eLossHigh) == false) {
 	    edgeEnergyLoss = (eLossHigh + eLossLow) / 2;
 	}

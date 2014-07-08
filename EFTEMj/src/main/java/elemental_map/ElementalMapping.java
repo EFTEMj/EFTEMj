@@ -57,7 +57,8 @@ public class ElementalMapping {
      * @author Michael Entrup <michael.entrup@uni-muenster.de>
      */
     public static enum AVAILABLE_METHODS {
-	LSE("Least squares estimation"), MLE("Maximum-likelihood estimation"), WLSE("Weighted least squares estimation");
+	LSE("Least squares estimation"), MLE("Maximum-likelihood estimation"), WLSE("Weighted least squares estimation"), LMA(
+		"Levenberg-Marquardt algorithm");
 
 	/**
 	 * Full name of the method. Display this {@link String} at the GUI.
@@ -386,36 +387,38 @@ public class ElementalMapping {
 	    float[] counts = new float[preEdgeIndices.length];
 	    // A power low fit method has to extend PowerLawFit.
 	    PowerLawFit fitMethod;
-	    switch (method) {
-	    case MLE:
-		fitMethod = new PowerLawFit_MLE(preEdgeEnergyLosses, counts, epsilon);
-		break;
-	    default:
-		break;
-	    }
 	    for (int x = 0; x < impStack.getWidth(); x++) {
 		float r;
 		float a;
 		for (int z = 0; z < preEdgeIndices.length; z++) {
 		    counts[z] = impStack.getStack().getProcessor(preEdgeIndices[z]).getf(x, y);
 		}
-		fitMethod = new PowerLawFit_MLE(preEdgeEnergyLosses, counts, epsilon);
+		switch (method) {
+		case MLE:
+		    fitMethod = new PowerLawFit_MLE(preEdgeEnergyLosses, counts, epsilon);
+		    break;
+		case LMA:
+		    fitMethod = new PowerLawFit_LMA(preEdgeEnergyLosses, counts, epsilon);
+		    break;
+		default:
+		    return;
+		}
 		fitMethod.doFit();
-		if (fitMethod.getErrorCode() == PowerLawFit_MLE.ERROR_NONE) {
+		if (fitMethod.getErrorCode() == PowerLawFit.ERROR_NONE) {
 		    r = (float) fitMethod.getR();
 		    if (Float.isInfinite(r)) {
-			errorMap.set(x, y, PowerLawFit_MLE.ERROR_R_INFINITE);
+			errorMap.set(x, y, PowerLawFit.ERROR_R_INFINITE);
 			rMap.setf(x, y, Float.NaN);
 			aMap.setf(x, y, Float.NaN);
 		    } else {
 			rMap.setf(x, y, r);
 			a = (float) fitMethod.getA();
 			if (Float.isInfinite(a)) {
-			    errorMap.set(x, y, PowerLawFit_MLE.ERROR_A_INFINITE);
+			    errorMap.set(x, y, PowerLawFit.ERROR_A_INFINITE);
 			    rMap.setf(x, y, Float.NaN);
 			    aMap.setf(x, y, Float.NaN);
 			} else {
-			    errorMap.set(x, y, PowerLawFit_MLE.ERROR_NONE);
+			    errorMap.set(x, y, PowerLawFit.ERROR_NONE);
 			    aMap.setf(x, y, a);
 			    for (int z = 0; z < postEdgeIndices.length; z++) {
 				float value = impStack.getStack().getProcessor(postEdgeIndices[z]).getf(x, y);

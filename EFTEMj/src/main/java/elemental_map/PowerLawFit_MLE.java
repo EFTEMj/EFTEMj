@@ -27,8 +27,9 @@
 package elemental_map;
 
 /**
- * This is an implementation of {@link PowerLawFit} that uses the <strong>Maximum Likelihood Estimation (MLE)</strong>.
- * The MLE is an iterative method to do a parameter fit.
+ * This is an implementation of {@link PowerLawFit} that uses the
+ * <strong>Maximum Likelihood Estimation (MLE)</strong>. The MLE is an iterative
+ * method to do a parameter fit.
  * 
  * @author Michael Epping <michael.epping@uni-muenster.de>
  * 
@@ -51,7 +52,8 @@ public class PowerLawFit_MLE extends PowerLawFit {
     }
 
     /**
-     * A constructor that uses the same parameters as the constructor of {@link PowerLawFit}.
+     * A constructor that uses the same parameters as the constructor of
+     * {@link PowerLawFit}.
      * 
      * @param xValues
      * @param yValues
@@ -63,15 +65,17 @@ public class PowerLawFit_MLE extends PowerLawFit {
     }
 
     /**
-     * The constructor of {@link PowerLawFit} is called. Additionally you can define a starting value for the iterative
-     * calculation of <strong>r</strong>.
+     * The constructor of {@link PowerLawFit} is called. Additionally you can
+     * define a starting value for the iterative calculation of
+     * <strong>r</strong>.
      * 
      * @param xValues
      * @param yValues
      * @param epsilon
      * @param rStart
      */
-    public PowerLawFit_MLE(float[] xValues, float[] yValues, float epsilon, float rStart) {
+    public PowerLawFit_MLE(float[] xValues, float[] yValues, float epsilon,
+	    float rStart) {
 	super(xValues, yValues, epsilon);
 	r = rStart;
     }
@@ -81,7 +85,8 @@ public class PowerLawFit_MLE extends PowerLawFit {
 	double rn = r;
 	double rn_prev = rn + 2 * epsilon;
 	int convergenceCounter = 0;
-	// this variable saves rn-r of the previous iteration. The initial value is a random one. To trigger no
+	// this variable saves rn-r of the previous iteration. The initial value
+	// is a random one. To trigger no
 	// convergence error the value is such huge.
 	double diff = 10.0;
 	double num;
@@ -105,7 +110,8 @@ public class PowerLawFit_MLE extends PowerLawFit {
 		errorCode += ERROR_R_INFINITE;
 		return;
 	    }
-	    // Checks for a convergence error. The combination of the 2. and 3. if statement prevents an infinite number
+	    // Checks for a convergence error. The combination of the 2. and 3.
+	    // if statement prevents an infinite number
 	    // of iterations.
 	    if (Math.abs(rn_prev - rn) == diff) {
 		r = Double.NaN;
@@ -158,7 +164,8 @@ public class PowerLawFit_MLE extends PowerLawFit {
     }
 
     /**
-     * Sums the counts of all pre-edge images at the currently processed pixel position.
+     * Sums the counts of all pre-edge images at the currently processed pixel
+     * position.
      * 
      * @return Sum of the counts.
      */
@@ -182,7 +189,8 @@ public class PowerLawFit_MLE extends PowerLawFit {
     private double sumExp(double rn, int exponent) {
 	double value = 0;
 	for (int i = 0; i < xValues.length; i++) {
-	    value += (Math.pow(Math.log(xValues[i]), exponent)) * Math.exp(-1 * rn * Math.log(xValues[i]));
+	    value += (Math.pow(Math.log(xValues[i]), exponent))
+		    * Math.exp(-1 * rn * Math.log(xValues[i]));
 	}
 	return value;
     }
