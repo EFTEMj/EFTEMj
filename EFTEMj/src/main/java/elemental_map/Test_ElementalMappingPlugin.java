@@ -17,8 +17,13 @@ public class Test_ElementalMappingPlugin {
 	// start ImageJ
 	new ImageJ();
 
-	// open the Clown sample
-	ImagePlus image = IJ.openImage("C:\\Temp\\Stack.tif");
+	// open the sample stack
+	String path = IJ.getDirectory("imagej");
+	// the string is shortened by 2 to remove the tailing '\\'
+	path = path.substring(0, path.substring(0, path.length() - 2).lastIndexOf("\\"))
+		+ "\\test-images\\EFTEM-Stack_Fe_50counts.tif";
+	System.out.println(path);
+	ImagePlus image = IJ.openImage(path);
 	image.show();
 
 	// run the plugin
