@@ -5,11 +5,15 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import javax.swing.JFileChooser;
 
+import lma.JAMAMatrix;
 import lma.LMA;
+import lma.LMAMatrix;
 import lma.LMAMultiDimFunction;
+import lma.LMAMatrix.InvertException;
 
 /**
  * An example fit which fits a plane to some data points and prints out the resulting fit parameters.
@@ -102,8 +106,11 @@ public class MultiDimExampleFit {
 	} catch (IOException e) {
 	    System.exit(0);
 	}
-	LMA lma = new LMA(new MultiDimExampleFunction(), new double[] { 300, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001,
-		0.001, 0.001 }, values);
+	double[] parameters = new double[] { 300, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001 };
+	double[] weights = new double[values.length];
+	Arrays.fill(weights, 1.0);
+	LMAMatrix matrix = new JAMAMatrix(parameters.length, parameters.length);
+	LMA lma = new LMA(new MultiDimExampleFunction(), parameters, values, weights, matrix);
 	lma.fit();
 	System.out.println("iterations: " + lma.iterationCount);
 	System.out.println("chi2: " + lma.chi2 + ",\n" + "param0: " + lma.parameters[0] + ",\n" + "param1: "
