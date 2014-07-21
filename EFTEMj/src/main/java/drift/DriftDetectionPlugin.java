@@ -445,7 +445,7 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	// start ImageJ
 	new ImageJ();
 
-	// open the Clown sample
+	// open the sample stack
 	ImagePlus image = IJ.openImage("http://EFTEMj.entrup.com.de/Drift-Stack_max64px.tif");
 	image.setRoi(64, 64, 128, 128);
 	image.getStack().setSliceLabel(null, 1);
