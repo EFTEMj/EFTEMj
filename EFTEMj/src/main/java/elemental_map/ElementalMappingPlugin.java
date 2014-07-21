@@ -27,6 +27,7 @@
 package elemental_map;
 
 import ij.IJ;
+import ij.ImageJ;
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
 import ij.measure.Calibration;
@@ -344,5 +345,18 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
      */
     private void canceled() {
 	IJ.showStatus("Elemental mapping has been canceled.");
+    }
+
+    public static void main(String[] args) {
+	// start ImageJ
+	new ImageJ();
+
+	// open the sample stack
+	ImagePlus image = IJ.openImage("http://EFTEMj.entrup.com.de/EFTEM-Stack_Fe_50counts.tif");
+	image.show();
+
+	// run the plugin
+	Class<?> clazz = ElementalMappingPlugin.class;
+	IJ.runPlugIn(clazz.getName(), "");
     }
 }
