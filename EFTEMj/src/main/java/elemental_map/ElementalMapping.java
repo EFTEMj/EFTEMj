@@ -400,6 +400,12 @@ public class ElementalMapping {
 		case LMA:
 		    fitMethod = new PowerLawFit_LMA(preEdgeEnergyLosses, counts, epsilon);
 		    break;
+		case LSE:
+		    fitMethod = new PowerLawFit_LSE(preEdgeEnergyLosses, counts, epsilon);
+		    break;
+		case WLSE:
+		    fitMethod = new PowerLawFit_WLSE(preEdgeEnergyLosses, counts, epsilon);
+		    break;
 		default:
 		    return;
 		}

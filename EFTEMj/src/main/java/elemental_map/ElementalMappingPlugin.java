@@ -121,18 +121,10 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
     @Override
     public void run(ImageProcessor ip) {
 	switch (method) {
-	case LSE:
-	    IJ.showStatus(method + " has been selected.");
-	    IJ.showMessage(method + " is not available", "The method has not yet been implemented.\n"
-		    + "Check if a newer version of EFTEMj includes this feature.");
-	    break;
-	case WLSE:
-	    IJ.showStatus(method + " has been selected.");
-	    IJ.showMessage(method + " is not available", "The method has not yet been implemented.\n"
-		    + "Check if a newer version of EFTEMj includes this feature.");
-	    break;
 	case LMA:
 	case MLE:
+	case LSE:
+	case WLSE:
 	    ElementalMapping mapping = new ElementalMapping(energyLossArray, impStack, edgeEnergyLoss, epsilon, method);
 	    mapping.startCalculation();
 	    // TODO Move all show-methods to the final processing
@@ -142,6 +134,9 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
 	    mapping.showElementalMap(calibration);
 	    break;
 	default:
+	    IJ.showStatus(method + " has been selected.");
+	    IJ.showMessage(method + " is not available", "The method has not yet been implemented.\n"
+		    + "Check if a newer version of EFTEMj includes this feature.");
 	    break;
 	}
     }
