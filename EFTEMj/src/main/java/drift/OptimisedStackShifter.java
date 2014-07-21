@@ -83,8 +83,11 @@ public class OptimisedStackShifter {
 	}
 	for (int i = 0; i < shift.length; i++) {
 	    correctedStack.getStack().getProcessor(i + 1).translate(shift[i].x, shift[i].y);
-	    correctedStack.getStack().setSliceLabel(prefix.concat(correctedStack.getStack().getSliceLabel(i + 1)),
-		    i + 1);
+	    String sliceLabel = correctedStack.getStack().getSliceLabel(i + 1);
+	    if (sliceLabel != null) {
+		correctedStack.getStack().setSliceLabel(prefix.concat(sliceLabel), i + 1);
+	    }
+
 	}
 	processBorder(correctedStack, shift, mode);
 	return correctedStack;

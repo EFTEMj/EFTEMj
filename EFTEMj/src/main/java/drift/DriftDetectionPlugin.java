@@ -28,6 +28,7 @@ package drift;
 
 import gui.ExtendedWaitForUserDialog;
 import ij.IJ;
+import ij.ImageJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.GenericDialog;
@@ -375,8 +376,11 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 		Math.min(Math.max(maxDeltaY / 10 * 10, 10), maxDeltaY) / 2);
 	String[] stackLabels = new String[stack.getStackSize()];
 	for (int i = 0; i < stack.getStackSize(); i++) {
-	    stackLabels[i] = String.format("%s/%s (%s)", i + 1, stack.getStackSize(), stack.getStack()
-		    .getShortSliceLabel(i + 1));
+	    String label = stack.getStack().getShortSliceLabel(i + 1);
+	    if (label == null) {
+		label = String.format("slice %d", i + 1);
+	    }
+	    stackLabels[i] = String.format("%s/%s (%s)", i + 1, stack.getStackSize(), label);
 	}
 	gd.addChoice("Select_reference slice", stackLabels, stackLabels[referenceIndex - 1]);
 	// begin - CheckboxGroup
@@ -426,5 +430,29 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	if (spacingBot < dist.y)
 	    dist.y = spacingBot;
 	return dist;
+    }
+
+    /**
+     * Main method for debugging.
+     *
+     * For debugging, it is convenient to have a method that starts ImageJ, loads an image and calls the plugin, e.g.
+     * after setting breakpoints.
+     *
+     * @param args
+     *            unused
+     */
+    public static void main(String[] args) {
+	// start ImageJ
+	new ImageJ();
+
+	// open the Clown sample
+	ImagePlus image = IJ.openImage("http://EFTEMj.entrup.com.de/Drift-Stack_max64px.tif");
+	image.setRoi(64, 64, 128, 128);
+	image.getStack().setSliceLabel(null, 1);
+	image.show();
+
+	// run the plugin
+	Class<?> clazz = DriftDetectionPlugin.class;
+	IJ.runPlugIn(clazz.getName(), "");
     }
 }
