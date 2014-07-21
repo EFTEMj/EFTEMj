@@ -27,6 +27,7 @@
 package sr_eels;
 
 import ij.IJ;
+import ij.ImageJ;
 import ij.Prefs;
 import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
@@ -199,5 +200,23 @@ public class SR_EELS_DispersionConfigurationPlugin implements PlugIn {
 	    }
 	}
 	return false;
+    }
+
+    /**
+     * Main method for debugging.
+     *
+     * For debugging, it is convenient to have a method that starts ImageJ, loads an image and calls the plugin, e.g.
+     * after setting breakpoints.
+     *
+     * @param args
+     *            unused
+     */
+    public static void main(String[] args) {
+	// start ImageJ
+	new ImageJ();
+
+	// run the plugin
+	Class<?> clazz = SR_EELS_DispersionConfigurationPlugin.class;
+	IJ.runPlugIn(clazz.getName(), "");
     }
 }

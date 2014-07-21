@@ -28,6 +28,7 @@ package sr_eels;
 
 import gui.ExtendedWaitForUserDialog;
 import ij.IJ;
+import ij.ImageJ;
 import ij.ImagePlus;
 import ij.Prefs;
 import ij.gui.GenericDialog;
@@ -373,5 +374,27 @@ public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter
     @Override
     public void setNPasses(int nPasses) {
 	// This method is not used.
+    }
+
+    /**
+     * Main method for debugging.
+     *
+     * For debugging, it is convenient to have a method that starts ImageJ, loads an image and calls the plugin, e.g.
+     * after setting breakpoints.
+     *
+     * @param args
+     *            unused
+     */
+    public static void main(String[] args) {
+	// start ImageJ
+	new ImageJ();
+
+	// open the sample
+	ImagePlus image = IJ.openImage("http://imagej.net/images/clown.jpg");
+	image.show();
+
+	// run the plugin
+	Class<?> clazz = SR_EELS_DispersionCalibrationPlugin.class;
+	IJ.runPlugIn(clazz.getName(), "");
     }
 }
