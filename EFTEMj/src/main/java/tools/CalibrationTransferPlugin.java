@@ -27,6 +27,7 @@
 package tools;
 
 import ij.IJ;
+import ij.ImageJ;
 import ij.ImagePlus;
 import ij.WindowManager;
 import ij.gui.GenericDialog;
@@ -133,6 +134,37 @@ public class CalibrationTransferPlugin implements ExtendedPlugInFilter {
     @Override
     public void setNPasses(int nPasses) {
 	// this method is not used.
+    }
+
+    /**
+     * Main method for debugging.
+     *
+     * For debugging, it is convenient to have a method that starts ImageJ, loads an image and calls the plugin, e.g.
+     * after setting breakpoints.
+     *
+     * @param args
+     *            unused
+     */
+    public static void main(String[] args) {
+	// start ImageJ
+	new ImageJ();
+
+	// open the sample
+	ImagePlus input = IJ.createImage("input", 256, 256, 1, 32);
+	IJ.run(input, "Properties...",
+		"channels=1 slices=1 frames=1 unit=unit pixel_width=0.001 pixel_height=1.234 voxel_depth=1 origin=127,127");
+	ImagePlus output = IJ.createImage("output", 256, 256, 1, 32);
+	input.show();
+	output.show();
+
+	// run the plugin
+	Class<?> clazz = CalibrationTransferPlugin.class;
+	IJ.runPlugIn(clazz.getName(), "");
+	if (output.getCalibration().equals(input.getCalibration())) {
+	    IJ.showMessage("Test: Ok");
+	} else {
+	    IJ.showMessage("Test: Failed");
+	}
     }
 
 }

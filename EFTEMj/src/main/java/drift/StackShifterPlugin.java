@@ -27,6 +27,7 @@
 package drift;
 
 import ij.IJ;
+import ij.ImageJ;
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
 import ij.measure.Calibration;
@@ -159,7 +160,11 @@ public class StackShifterPlugin implements ExtendedPlugInFilter {
 	TextField[] xFields = new TextField[initialImp.getStackSize()];
 	TextField[] yFields = new TextField[initialImp.getStackSize()];
 	for (int i = 0; i < initialImp.getStackSize(); i++) {
-	    gd.addMessage(initialImp.getStack().getShortSliceLabel(i + 1));
+	    String label = initialImp.getStack().getShortSliceLabel(i + 1);
+	    if (label == null) {
+		label = String.format("slice %d", i+1);
+	    }
+	    gd.addMessage(label);
 	    Panel cont = new Panel(new FlowLayout());
 	    cont.add(new Label("x:"));
 	    TextField tf1 = new TextField(IJ.d2s(defaultValue, digits));
@@ -209,5 +214,29 @@ public class StackShifterPlugin implements ExtendedPlugInFilter {
      */
     private void canceled() {
 	IJ.showStatus("Stack shift has been canceled.");
+    }
+
+    /**
+     * Main method for debugging.
+     *
+     * For debugging, it is convenient to have a method that starts ImageJ, loads an image and calls the plugin, e.g.
+     * after setting breakpoints.
+     *
+     * @param args
+     *            unused
+     */
+    public static void main(String[] args) {
+	// start ImageJ
+	new ImageJ();
+
+	// open the Clown sample
+	ImagePlus image = IJ.openImage("http://EFTEMj.entrup.com.de/Drift-Stack_max64px.tif");
+	image.setRoi(64, 64, 128, 128);
+	image.getStack().setSliceLabel(null, 1);
+	image.show();
+
+	// run the plugin
+	Class<?> clazz = StackShifterPlugin.class;
+	IJ.runPlugIn(clazz.getName(), "");
     }
 }
