@@ -1,8 +1,8 @@
-package lma;
+package elemental_map.lma;
 
 /**
- * The matrix to be used in LMA. Implement this to make LMA operational if you
- * don't or can't use jama or flanagan math libraries.
+ * The matrix to be used in LMA. Implement this to make LMA operational if you don't or can't use jama or flanagan math
+ * libraries.
  */
 public interface LMAMatrix {
     @SuppressWarnings("serial")
@@ -28,8 +28,8 @@ public interface LMAMatrix {
     public double getElement(int row, int col);
 
     /**
-     * Multiplies this matrix with an array (result = this * vector). The
-     * lengths of the arrays must be equal to the number of rows in the matrix.
+     * Multiplies this matrix with an array (result = this * vector). The lengths of the arrays must be equal to the
+     * number of rows in the matrix.
      * 
      * @param vector
      *            The array to be multiplied with the matrix.

@@ -1,4 +1,4 @@
-package lma;
+package elemental_map.lma;
 
 public class ArrayConverter {
     public static class SeparatedData {
@@ -34,8 +34,7 @@ public class ArrayConverter {
     }
 
     /**
-     * Separates data from dataPoints[N][K+1] to yDataPoints[N] and
-     * xDatapoints[N][K].
+     * Separates data from dataPoints[N][K+1] to yDataPoints[N] and xDatapoints[N][K].
      * <p>
      * dataPoints[j] = yj xj0 xj1 xj2 ... xj[K-1]<br>
      * =><br>
@@ -63,8 +62,7 @@ public class ArrayConverter {
      * =><br>
      * result[j] = yj xj0 xj1 xj2 ... xj[K-1]<br>
      */
-    public static double[][] combineMultiDimDataPoints(double[] yDataPoints,
-	    double[][] xDataPoints) {
+    public static double[][] combineMultiDimDataPoints(double[] yDataPoints, double[][] xDataPoints) {
 	double[][] result = new double[yDataPoints.length][xDataPoints.length + 1];
 	for (int i = 0; i < result.length; i++) {
 	    result[i][0] = yDataPoints[i];
@@ -83,8 +81,7 @@ public class ArrayConverter {
      * =><br>
      * result[j] = yj xj0 xj1 xj2 ... xj[K-1]<br>
      */
-    public static double[][] combineMultiDimDataPoints(float[] yDataPoints,
-	    float[][] xDataPoints) {
+    public static double[][] combineMultiDimDataPoints(float[] yDataPoints, float[][] xDataPoints) {
 	double[][] result = new double[yDataPoints.length][xDataPoints.length + 1];
 	for (int i = 0; i < result.length; i++) {
 	    result[i][0] = yDataPoints[i];

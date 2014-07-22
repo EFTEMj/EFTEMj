@@ -1,4 +1,4 @@
-package lma;
+package elemental_map.lma;
 
 import java.util.Arrays;
 
@@ -19,24 +19,19 @@ public abstract class LMAFunction {
     public abstract double getY(double x, double[] a);
 
     /**
-     * The method which gives the partial derivates used in the LMA fit. If you
-     * can't calculate the derivate, use a small <code>a</code>-step (e.g.,
-     * <i>da</i> = 1e-20) and return <i>dy/da</i> at the given <i>x</i> for each
-     * fit parameter.
+     * The method which gives the partial derivates used in the LMA fit. If you can't calculate the derivate, use a
+     * small <code>a</code>-step (e.g., <i>da</i> = 1e-20) and return <i>dy/da</i> at the given <i>x</i> for each fit
+     * parameter.
      * 
-     * @return The partial derivate of the function with respect to parameter
-     *         <code>parameterIndex</code> at <i>x</i>.
+     * @return The partial derivate of the function with respect to parameter <code>parameterIndex</code> at <i>x</i>.
      * @param x
-     *            The <i>x</i>-value for which the partial derivate is
-     *            calculated.
+     *            The <i>x</i>-value for which the partial derivate is calculated.
      * @param a
      *            The fitting parameters.
      * @param parameterIndex
-     *            The parameter index for which the partial derivate is
-     *            calculated.
+     *            The parameter index for which the partial derivate is calculated.
      */
-    public abstract double getPartialDerivate(double x, double[] a,
-	    int parameterIndex);
+    public abstract double getPartialDerivate(double x, double[] a, int parameterIndex);
 
     /**
      * @return Calculated function values with the given x- and parameter-values.
@@ -68,8 +63,7 @@ public abstract class LMAFunction {
     }
 
     public float[] generateData(float[] x, float[] a) {
-	return ArrayConverter.asFloatArray(generateData(
-		ArrayConverter.asDoubleArray(x),
+	return ArrayConverter.asFloatArray(generateData(ArrayConverter.asDoubleArray(x),
 		ArrayConverter.asDoubleArray(a)));
     }
 

@@ -1,4 +1,4 @@
-package lma;
+package elemental_map.lma;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -20,8 +20,7 @@ public class JAMAMatrix extends Matrix implements LMAMatrix {
     public void invert() throws LMAMatrix.InvertException {
 	try {
 	    Matrix m = inverse();
-	    setMatrix(0, this.getRowDimension() - 1, 0,
-		    getColumnDimension() - 1, m);
+	    setMatrix(0, this.getRowDimension() - 1, 0, getColumnDimension() - 1, m);
 	} catch (RuntimeException e) {
 	    StringWriter s = new StringWriter();
 	    PrintWriter p = new PrintWriter(s);
