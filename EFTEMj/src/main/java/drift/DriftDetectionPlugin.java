@@ -1,7 +1,7 @@
 /**
  * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
  * 
- * Copyright (c) 2013, Michael Entrup b. Epping <entrup@arcor.de>
+ * Copyright (c) 2014, Michael Entrup b. Epping <entrup@arcor.de>
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -53,26 +53,16 @@ import tools.ExtendedStackToImage;
 
 /**
  * This plugin can measure the drift between all images of a stack. The output is the drift of all other images compared
- * to the selected reference image. Two modes are available - an automatic and a manual one.
+ * to the selected reference image.
  * <p />
- * The automatic mode calculates the normalised cross-correlation coefficients for all possible shifts (can be limited
- * for faster processing) to determine the drift.
- * <p />
- * The manual method uses overlay techniques to help the user determining the drift manually.
+ * The automatic drift detection calculates the normalised cross-correlation coefficients for all possible shifts (can
+ * be limited for faster processing) to determine the drift.
  * 
  * @author Michael Entrup b. Epping <entrup@arcor.de>
  * 
  */
 public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 
-    /**
-     * The automatic mode will be used.
-     */
-    private final int AUTOMATIC = 2;
-    /**
-     * The manual mode will be used.
-     */
-    private final int MANUAL = 4;
     /**
      * The plugin will be aborted.
      */
@@ -117,7 +107,7 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
     private int deltaY;
     /**
      * A copy of the {@link Roi}s bounding {@link Rectangle}, that has been placed during the preparation of the
-     * automatic mode.
+     * automatic drift detection.
      */
     private Rectangle roi;
     /**
@@ -222,40 +212,20 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	}
 	stack = imp;
 	calibration = imp.getCalibration();
-	// Select automatic or manual mode.
-	switch (showModeDialog(command)) {
-	case AUTOMATIC:
-	    IJ.showStatus("Automatic drift detection has been selected.");
+	if (imp.getRoi() == null) {
 	    /*
-	     * Only show a ROI dialog if there is no ROI. This will improve the usage of this plugin in a macro.
+	     * Show the ROI dialog again until the user cancels it or places a ROI.
 	     */
-	    if (imp.getRoi() == null) {
-		/*
-		 * Show the ROI dialog again until the user cancels it or places a ROI.
-		 */
-		do {
-		    referenceIndex = showRoiDialog(command);
-		} while (referenceIndex != CANCEL & imp.getRoi() == null);
-	    }
-	    if (referenceIndex == CANCEL) {
-		canceled();
-		return NO_CHANGES | DONE;
-	    }
-	    roi = (Rectangle) imp.getRoi().getBounds().clone();
-	    if (showParameterDialog(command) == CANCEL) {
-		canceled();
-		return NO_CHANGES | DONE;
-	    }
-	    break;
-	case MANUAL:
-	    IJ.showStatus("Manual drift detection has been selected.");
-	    IJ.showMessage("Manual mode is not available", "The manual mode has not yet been implemented.\n"
-		    + "Check if a newer version of EFTEMj includes this feature.");
-	    // TODO copy the input stack
-	    // TODO implement manual drift detection
+	    do {
+		referenceIndex = showRoiDialog(command);
+	    } while (referenceIndex != CANCEL & imp.getRoi() == null);
+	}
+	if (referenceIndex == CANCEL) {
 	    canceled();
 	    return NO_CHANGES | DONE;
-	default:
+	}
+	roi = (Rectangle) imp.getRoi().getBounds().clone();
+	if (showParameterDialog(command) == CANCEL) {
 	    canceled();
 	    return NO_CHANGES | DONE;
 	}
@@ -311,31 +281,6 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
     @Override
     public void setNPasses(int nPasses) {
 	// This method is not used.
-    }
-
-    /**
-     * The user is asked to select the drift detection mode. A {@link GenericDialog} is used for this purpose. The
-     * Buttons <code>Ok</code> and <code>Cancel</code> are labelled <code>Automatic</code> and <code>Manual</code>.
-     * 
-     * @param title
-     * @return the selected mode for drift detection
-     */
-    private int showModeDialog(String title) {
-	GenericDialog gd = new GenericDialog(title + " - detection mode", IJ.getInstance());
-	gd.addMessage("Select mode of drift detection.");
-	gd.setOKLabel("Automatic");
-	gd.setCancelLabel("Manual");
-	// TODO write the description
-	String help = "<html><h3>Automatic mode</h3>" + "<p>description</p>" + "<h3>Manual mode</h3>"
-		+ "<p>description</p></html>";
-	gd.addHelp(help);
-	gd.showDialog();
-	if (gd.wasOKed()) {
-	    return AUTOMATIC;
-	} else if (gd.wasCanceled()) {
-	    return MANUAL;
-	}
-	return CANCEL;
     }
 
     /**
