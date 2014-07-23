@@ -1,16 +1,32 @@
-a00            = 0.000924797;
-a10            = 0.0719424:
-a20            = -3.6496e-006:
-a01            = 0.999999:
-a11            = -3.21945e-005:
-a21            = 2.2795e-009:
-a02            = 5.45902e-011:
-a12            = 4.08705e-010:
-a22            = -1.56416e-014:
+a00 = -1.437557e+002
+a01 = 1.069277e+000
+a02 = -6.310422e-006
+a03 = 8.692455e-010
+a04 = -3.661683e-015
+a10 = 7.756970e-002
+a11 = -3.659638e-005
+a12 = 1.580518e-009
+a13 = -4.548626e-014
+a14 = -2.698064e-017
+a20 = -3.602745e-006
+a21 = 1.371994e-009
+a22 = 7.374924e-013
+a23 = -1.965998e-016
+a24 = 1.629919e-020
 
-c = 549.883120731574;
-b = 0.0854331764757123;
-a = -2.06003501147918e-005;
+b00 = 5.511134e+002
+b01 = 8.341164e-002
+b02 = -2.012854e-005
+b10 = -2.366382e-002
+b11 = 2.686017e-006
+b12 = -5.035751e-010
+b20 = 6.712013e-007
+b21 = 7.107207e-010
+b22 = -1.434486e-013
+
+c = b00;
+b = b01;
+a = b02;
 
 width = 4096;
 height = 4096;
@@ -40,7 +56,7 @@ if (y_stop > height) y_stop = height;
 path = getDirectory("Input directory");
 
 Dialog.create("File type");
-Dialog.addString("File suffix: ", ".dm3", 5);
+Dialog.addString("File suffix: ", ".tif", 5);
 Dialog.show();
 suffix = Dialog.getString();
 
@@ -63,7 +79,6 @@ function processFolder(path) {
 function processFile(input, output, file) {
 	open(input + file);
 	tempImg = getImageID();
-	run("Rotate 90 Degrees Left");
 	title = getTitle();
 	run("Scale...", "x=- y=- width="+width+" height="+height+" interpolation=None average create title="+substring(title, 0, lengthOf(title) - 4)+".tif");
 	inImg = getImageID();
@@ -94,11 +109,13 @@ function processFile(input, output, file) {
 	}
 	selectImage(resultImg);
 	run("Enhance Contrast", "saturated=0.35");
+	run("Flip Vertically");
 	save(output + substring(title, 0, lengthOf(title) - 4)+"_corrected.tif");
 	saveAs("png", output + substring(title, 0, lengthOf(title) - 4)+"_corrected.png");
 	close();
 	selectImage(resultImgSimple);
 	run("Enhance Contrast", "saturated=0.35");
+	run("Flip Vertically");
 	save(output + substring(title, 0, lengthOf(title) - 4)+"_corrected_simple.tif");
 	saveAs("png", output + substring(title, 0, lengthOf(title) - 4)+"_corrected_simple.png");
 	close();
