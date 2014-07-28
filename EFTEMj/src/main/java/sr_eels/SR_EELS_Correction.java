@@ -26,9 +26,11 @@
  */
 package sr_eels;
 
+import ij.IJ;
 import ij.ImagePlus;
 import ij.process.FloatProcessor;
 
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -45,6 +47,15 @@ public class SR_EELS_Correction {
     private SR_EELS_CorrectionFunction function;
     private int subdivision;
     private int oversampling;
+    /**
+     * This field indicates the progress. A static method is used to increase the value by 1. It is necessary to use
+     * volatile because different {@link Thread}s call the related method.
+     */
+    private static volatile int progress;
+    /**
+     * Number of steps until the correction is finished.
+     */
+    private static int progressSteps;
 
     /**
      * @param function
@@ -60,21 +71,30 @@ public class SR_EELS_Correction {
 	this.oversampling = oversampling;
 	output = new ImagePlus(input.getTitle() + "_corrected", new FloatProcessor(input.getWidth(), input.getHeight(),
 		new double[input.getWidth() * input.getHeight()]));
+	progressSteps = input.getHeight();
     }
 
     /**
      * Starts the calculation with parallel {@link Thread}s.
      */
     public void startCalculation() {
-	ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-	for (int x2 = 0; x2 < output.getHeight(); x2++) {
-	    executorService.execute(new SR_EELS_CorrectionTask(x2));
-	}
-	executorService.shutdown();
-	try {
-	    executorService.awaitTermination(5, TimeUnit.MINUTES);
-	} catch (InterruptedException e) {
-	    e.printStackTrace();
+	boolean debug = false;
+	if (debug) {
+	    for (int x2 = 0; x2 < output.getHeight(); x2++) {
+		SR_EELS_CorrectionTask task = new SR_EELS_CorrectionTask(x2);
+		task.run();
+	    }
+	} else {
+	    ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+	    for (int x2 = 0; x2 < output.getHeight(); x2++) {
+		executorService.execute(new SR_EELS_CorrectionTask(x2));
+	    }
+	    executorService.shutdown();
+	    try {
+		executorService.awaitTermination(60, TimeUnit.MINUTES);
+	    } catch (InterruptedException e) {
+		e.printStackTrace();
+	    }
 	}
     }
 
@@ -86,6 +106,14 @@ public class SR_EELS_Correction {
 
     }
 
+    /**
+     * {@link SR_EELS_CorrectionTask} will use this method to update the process.
+     */
+    private static void updateProgress() {
+	progress++;
+	IJ.showProgress(progress, progressSteps);
+    }
+
     private class SR_EELS_CorrectionTask implements Runnable {
 
 	/**
@@ -93,6 +121,8 @@ public class SR_EELS_Correction {
 	 */
 	private int x2;
 	private int bin;
+	private int width = 4096;
+	private int height = 4096;
 
 	/**
 	 * A default constructor that only sets one field.
@@ -113,18 +143,52 @@ public class SR_EELS_Correction {
 	 */
 	@Override
 	public void run() {
-	    // TODO Extend this method to correct the intensity.
 	    for (int x1 = 0; x1 < input.getWidth(); x1++) {
-		double[] point = function.transform(bin * x1, bin * x2);
-		int y1 = (int) Math.floor(point[0] / bin);
-		int y2 = (int) Math.floor(point[1] / bin);
-		if (y1 >= 0 & y2 >= 0 & y1 < bin * input.getWidth() & y2 < bin * input.getHeight()) {
-		    output.getProcessor().setf(x1, x2, input.getProcessor().getf(y1, y2));
-		} else {
-		    output.getProcessor().setf(x1, x2, 0f);
-		}
+		output.getProcessor().setf(x1, x2, (float) getCorrectetIntensity(x1 * bin, x2 * bin));
 	    }
+	    SR_EELS_Correction.updateProgress();
 	}
 
+	private double getCorrectetIntensity(int x1, int x2) {
+	    double intensity = 0.0;
+	    double[] point00 = function.transform(x1, x2);
+	    double[] point01 = function.transform(x1, x2 + bin);
+	    double[] point10 = function.transform(x1 + bin, x2);
+	    double[] point11 = function.transform(x1 + bin, x2 + bin);
+	    double rectangle_l = Math.floor(subdivision * Math.min(point00[0], point01[0])) / subdivision;
+	    double rectangle_b = Math.ceil(subdivision * Math.max(point01[1], point11[1])) / subdivision;
+	    double rectangle_r = Math.ceil(subdivision * Math.max(point10[0], point11[0])) / subdivision;
+	    double rectangle_t = Math.floor(subdivision * Math.min(point00[1], point10[1])) / subdivision;
+	    if (rectangle_l < 0 | rectangle_t < 0 | rectangle_r >= width | rectangle_b >= height)
+		return intensity;
+	    double rectangle_width = rectangle_r - rectangle_l;
+	    double rectangle_height = rectangle_b - rectangle_t;
+	    int temp_width = (int) Math.ceil(rectangle_width / bin * subdivision) + 1;
+	    int temp_height = (int) Math.ceil(rectangle_height / bin * subdivision) + 1;
+	    int[] pixels_temp = new int[temp_width * temp_height];
+	    Arrays.fill(pixels_temp, 0);
+	    for (int z2 = 0; z2 < oversampling * subdivision; z2++) {
+		double z2d = 1.0 * z2 / (oversampling * subdivision);
+		for (int z1 = 0; z1 < oversampling * subdivision; z1++) {
+		    double z1d = 1.0 * z1 / (oversampling * subdivision);
+		    double[] point = function.transform(x1 + bin * z1d, x2 + bin * z2d);
+		    double y1 = Math.round(subdivision * (point[0] - rectangle_l) / bin);
+		    double y2 = Math.round(subdivision * (point[1] - rectangle_t) / bin);
+		    int index = (int) (y1 + y2 * temp_width);
+		    pixels_temp[index] = 1;
+		}
+	    }
+	    for (int y2i = 0; y2i < temp_height; y2i++) {
+		double y2 = y2i / subdivision + rectangle_t / bin;
+		for (int y1i = 0; y1i < temp_width; y1i++) {
+		    double y1 = y1i / subdivision + rectangle_l / bin;
+		    if (pixels_temp[y1i + y2i * temp_width] == 1) {
+			int index = (int) (Math.floor(y1) + Math.floor(y2) * input.getWidth());
+			intensity += input.getProcessor().getf(index) / Math.pow(subdivision, 2);
+		    }
+		}
+	    }
+	    return intensity;
+	}
     }
 }
