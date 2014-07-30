@@ -62,6 +62,8 @@ public class SR_EELS_Correction {
      * @param oversampling
      * @param subdivision
      */
+    private static long startTime;
+
     public SR_EELS_Correction(ImagePlus imp, int binning, SR_EELS_CorrectionFunction function, int subdivision,
 	    int oversampling) {
 	input = imp;
@@ -85,6 +87,9 @@ public class SR_EELS_Correction {
 		task.run();
 	    }
 	} else {
+	    IJ.showProgress(0, progressSteps);
+	    progress = 0;
+	    startTime = System.currentTimeMillis();
 	    ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 	    for (int x2 = 0; x2 < output.getHeight(); x2++) {
 		executorService.execute(new SR_EELS_CorrectionTask(x2));
@@ -112,6 +117,10 @@ public class SR_EELS_Correction {
     private static void updateProgress() {
 	progress++;
 	IJ.showProgress(progress, progressSteps);
+	IJ.showStatus(String.format(
+		"About %ds remaining...",
+		(int) Math.ceil((1. / 1000 * (progressSteps - progress) / progress)
+			* (System.currentTimeMillis() - startTime))));
     }
 
     private class SR_EELS_CorrectionTask implements Runnable {
@@ -144,27 +153,46 @@ public class SR_EELS_Correction {
 	@Override
 	public void run() {
 	    for (int x1 = 0; x1 < input.getWidth(); x1++) {
-		output.getProcessor().setf(x1, x2, (float) getCorrectetIntensity(x1 * bin, x2 * bin));
+		try {
+		    output.getProcessor().setf(x1, x2, (float) getCorrectetIntensity(x1 * bin, x2 * bin));
+		} catch (SR_EELS_Exception e) {
+		    output.getProcessor().setf(x1, x2, Float.NaN);
+		}
 	    }
 	    SR_EELS_Correction.updateProgress();
 	}
 
-	private double getCorrectetIntensity(int x1, int x2) {
+	private double getCorrectetIntensity(int x1, int x2) throws SR_EELS_Exception {
 	    double intensity = 0.0;
 	    double[] point00 = function.transform(x1, x2);
 	    double[] point01 = function.transform(x1, x2 + bin);
 	    double[] point10 = function.transform(x1 + bin, x2);
 	    double[] point11 = function.transform(x1 + bin, x2 + bin);
-	    double rectangle_l = Math.floor(subdivision * Math.min(point00[0], point01[0])) / subdivision;
-	    double rectangle_b = Math.ceil(subdivision * Math.max(point01[1], point11[1])) / subdivision;
-	    double rectangle_r = Math.ceil(subdivision * Math.max(point10[0], point11[0])) / subdivision;
-	    double rectangle_t = Math.floor(subdivision * Math.min(point00[1], point10[1])) / subdivision;
+	    /*
+	     * As the origin is at the top, left corner of an image, the top of the rectangle has the lowest y2 value
+	     * and the bottom of the rectangle has the highest y2 value.
+	     */
+	    double rectangle_l = Math.floor(subdivision
+		    * Math.min(point00[0], Math.min(point01[0], Math.min(point10[0], point11[0]))))
+		    / subdivision;
+	    double rectangle_b = Math.ceil(subdivision
+		    * Math.max(point00[1], Math.max(point01[1], Math.max(point10[1], point11[1]))))
+		    / subdivision;
+	    double rectangle_r = Math.ceil(subdivision
+		    * Math.max(point00[0], Math.max(point01[0], Math.max(point10[0], point11[0]))))
+		    / subdivision;
+	    double rectangle_t = Math.floor(subdivision
+		    * Math.min(point00[1], Math.min(point01[1], Math.min(point10[1], point11[1]))))
+		    / subdivision;
 	    if (rectangle_l < 0 | rectangle_t < 0 | rectangle_r >= width | rectangle_b >= height)
 		return intensity;
 	    double rectangle_width = rectangle_r - rectangle_l;
 	    double rectangle_height = rectangle_b - rectangle_t;
 	    int temp_width = (int) Math.ceil(rectangle_width / bin * subdivision) + 1;
 	    int temp_height = (int) Math.ceil(rectangle_height / bin * subdivision) + 1;
+	    if (temp_height * temp_width <= 0) {
+		System.out.println("Array Länge kleiner als 0!");
+	    }
 	    int[] pixels_temp = new int[temp_width * temp_height];
 	    Arrays.fill(pixels_temp, 0);
 	    for (int z2 = 0; z2 < oversampling * subdivision; z2++) {

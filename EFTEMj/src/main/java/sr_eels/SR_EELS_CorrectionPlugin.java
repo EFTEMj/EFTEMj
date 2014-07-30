@@ -43,6 +43,7 @@ import ij.process.ImageProcessor;
  */
 public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 
+    private static final int FULL_WIDTH = 4096;
     /**
      * The plugin will be aborted.
      */
@@ -59,7 +60,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     private int subdivision;
     private int oversampling;
     private ImagePlus imp;
-    private int binning = 4;
+    private int binning;
 
     /*
      * (non-Javadoc)
@@ -109,6 +110,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	    }
 	}
 	this.imp = imp;
+	binning = FULL_WIDTH / imp.getWidth();
 	return FLAGS;
     }
 

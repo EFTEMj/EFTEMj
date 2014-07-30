@@ -55,7 +55,7 @@ public class SR_EELS_CorrectionFunction {
 	readParameters(path);
     }
 
-    public double[] transform(double x1, double x2) {
+    public double[] transform(double x1, double x2) throws SR_EELS_Exception {
 	double y1 = calc_y1(x1, x2);
 	double y2 = calc_y2(x1, x2);
 	double[] point = { y1, y2 };
@@ -67,7 +67,7 @@ public class SR_EELS_CorrectionFunction {
      * @param x2
      * @return
      */
-    private double calc_y1(double x1, double x2) {
+    private double calc_y1(double x1, double x2) throws SR_EELS_Exception {
 	double yn = calc_yn(x2);
 	return arcsinh(a[1][0] + 2 * a[2][0] * x1 + yn * (a[1][1] + a[1][2] * yn + 2 * x1 * (a[2][1] + a[2][2] * yn)))
 		/ (2 * (a[2][0] + yn * (a[2][1] + a[2][2] * yn))) - arcsinh(a[1][0] + yn * (a[1][1] + a[1][2] * yn))
@@ -79,7 +79,7 @@ public class SR_EELS_CorrectionFunction {
      * @param x2
      * @return
      */
-    private double calc_y2(double x1, double x2) {
+    private double calc_y2(double x1, double x2) throws SR_EELS_Exception {
 	double yn = calc_yn(x2);
 	return a[0][0] + a[1][0] * x1 + a[2][0] * x1 * x1 + yn
 		* (a[0][1] + a[0][2] * yn + x1 * (a[1][1] + a[2][1] * x1 + a[1][2] * yn + a[2][2] * x1 * yn));
@@ -89,8 +89,11 @@ public class SR_EELS_CorrectionFunction {
      * @param x2
      * @return
      */
-    private double calc_yn(double x2) {
+    private double calc_yn(double x2) throws SR_EELS_Exception {
 	// TODO optimise this method by using the full 3d polynomial.
+	if (x2 * x2 * b[0][2] + x2 * b[0][1] + b[0][0] < 0) {
+	    throw new SR_EELS_Exception();
+	}
 	return (x2 * x2 * x2 * b[0][2] / 3 + x2 * x2 * b[0][1] / 2 + x2 * b[0][0]) - offset;
     }
 
@@ -116,15 +119,17 @@ public class SR_EELS_CorrectionFunction {
 	String line;
 	String[] splitItems;
 	while ((line = data.readLine()) != null) {
-	    line = line.replace(" ", "");
-	    splitItems = line.split("=");
-	    int i = Integer.parseInt(splitItems[0].substring(1, 2));
-	    int j = Integer.parseInt(splitItems[0].substring(2, 3));
-	    if (splitItems[0].startsWith("a")) {
-		a[i][j] = Double.parseDouble(splitItems[1]);
-	    }
-	    if (splitItems[0].startsWith("b")) {
-		b[i][j] = Double.parseDouble(splitItems[1]);
+	    if (line.indexOf("#") == -1) {
+		line = line.replace(" ", "");
+		splitItems = line.split("=");
+		int i = Integer.parseInt(splitItems[0].substring(1, 2));
+		int j = Integer.parseInt(splitItems[0].substring(2, 3));
+		if (splitItems[0].startsWith("a")) {
+		    a[i][j] = Double.parseDouble(splitItems[1]);
+		}
+		if (splitItems[0].startsWith("b")) {
+		    b[i][j] = Double.parseDouble(splitItems[1]);
+		}
 	    }
 	}
 	data.close();
