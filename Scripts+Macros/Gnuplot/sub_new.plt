@@ -73,13 +73,13 @@ filename_3D = path.'3D.txt'
 set table filename_3D
 splot for [i=index_start:index_stop:index_inc] filename_input(i) using (bin*$2):(bin*$3):(bin*abs($5-$4))
 
-filename_cod3D = path.'cod3D.txt'
+filename_pseudo3D = path.'pseudo3D.txt'
 
 print 'filename_T(N) = path.sprintf("spec_%dT.txt", N)'
 print 'filename_C(N) = path.sprintf("spec_%dC.txt", N)'
 print 'filename_B(N) = path.sprintf("spec_%dB.txt", N)'
 print 'filename_3D = path."3D.txt"'
-print 'filename_cod3D = path."cod3D.txt"'
+print 'filename_pseudo3D = path."pseudo3D.txt"'
 
 unset table
 unset print

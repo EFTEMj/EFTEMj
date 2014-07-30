@@ -1,8 +1,8 @@
 /*
  * file:	SR-EELS_characterisation.ijm
  * author:	Michael Entrup (entrup@arcor.de)
- * version:	20140417
- * date:	17.04.2014
+ * version:	20140730
+ * date:	30.07.2014
  * info:	This macro is used to characterise the  aberrations of an Zeiss in-column energy filter when using SR-EELS. A series of calibration datasets is necessary  to run the characterisation. Place all datasets (images) at a folder that contains no other images.
  * You can find an example SR-EELS series at https://github.com/EFTEMj/EFTEMj/tree/master/Scripts+Macros/examples/SR-EELS_characterisation. There you will find a instruction on how to record such a series, too.
  */
@@ -18,10 +18,10 @@
   */
 var step_size = -1;	// choose '-1' for automatic mode 'abs(height / 64)'
 /*
- * border_top and border_bot are used to limit the energy range that is used. This is useful to cut off the ZLP or to ignore low counts at high energy losses.
+ * border_left and border_right are used to limit the energy range that is used. This is useful to cut off the ZLP or to ignore low counts at high energy losses.
  */
-var border_top = -1;	// choose '-1' for automatic mode 'abs(height / 16)'
-var border_bot = -1;	// choose '-1' for automatic mode 'abs(height / 16)'
+var border_left = -1;	// choose '-1' for automatic mode 'abs(height / 16)'
+var border_right = -1;	// choose '-1' for automatic mode 'abs(height / 16)'
 /*
  * This value is used when applying different filters, like remove outliers or median.
  */
@@ -35,7 +35,7 @@ var energy_pos = 0.5;	// choose a value between 0 and 1; 0.5 is the centre of th
 /*
  * Select some methods used for threshold. The following options are available:
  * Default, Huang, Intermodes, IsoData, Li, MaxEntropy, Mean, MinError, Minimum, Moments, Otsu, Percentile, RenyiEntropy, Shanbhag, Triangle and Yen
- * 
+ *
  * With 'Li' the borders match best.
  * Other methods perform better at low counts, but they underestimate the width of the spectrum at higher counts.
  * If you want to test other threshold methods, just add them to the array 'thresholds'. A seperate folder with results is created for each method.
@@ -62,7 +62,7 @@ sigma_weighting = 3;	// 1 = 68.27%, 2 = 95.45%, 3 = 99.73%
 /*
  * Global variables
  */
-var doRotate; var result_dirs; var skip_threshold; var dir; var datapoints; var list; var width; var height;	// global variables for use in 'load_images()'
+var doRotate; var input_dir; var result_dirs; var skip_threshold; var datapoints; var list; var width; var height;	// global variables for use in 'load_images()'
 var array_pos_all; var array_width_all; var array_pos_all_calc; var array_width_all_calc;	// global variables for use in 'save_pos_and_width()'
 var threshold;	// global variables for use in 'analyse_dataset()'
 
@@ -73,6 +73,10 @@ load_images();
  *  Start a timer and switch to Batch mode.
  */
 start = getTime();
+/*
+ * I have to remove the option 'save_column'. Otherwise gnuplot would try to process the header, because there is no # in front of it.
+ */
+run("Input/Output...", "jpeg=85 gif=-1 file=.txt use_file copy_row save_row");
 setBatchMode(true);	// Batch mode will speed up the macro
 
 /*
@@ -117,9 +121,25 @@ function analyse_dataset() {
 		open(list[i]);
 		id = getImageID();	// id will be used to close the image
 		img_name = File.nameWithoutExtension;
-		if (doRotate) {
+		/*
+		 * since 20140620: The default configuration is energy loss on the x-axis, but the fastes processing (of this macro) is achieved when the lateral axis is on the x-axis. That is why we rotate if doRotate == false. If the input images contain the lateral axis on the x-axis, we save an image that shows the energy loss on the x-axis (see else branch).
+		 */
+		if (!doRotate) {
 			run("Rotate 90 Degrees Right");
+		} else {
+			run("Duplicate...", "title=temp.tif");
+			run("Rotate 90 Degrees Left");
+			if (!File.isDirectory(input_dir + "rotated")) {
+				File.makeDirectory(input_dir + "rotated");
+				if (!File.exists(input_dir + "rotated")) {
+					exit("Unable to create the directory:\n" + result_dirs[m]);
+				}
+			}
+			saveAs("tiff", input_dir + "rotated" + File.separator + img_name + "_rot.tif");
+			close();
+			selectImage(id);
 		}
+		run("Flip Horizontally");	// I need the top right corner to have the coordinates 0,0. This is achieved by flipping the image horizontally.
 		run("Properties...", "unit=[] pixel_width=1 pixel_height=1 origin=0,0");	// use pixel as coordinates
 		run("Clear Results");	// we need an empty results table
 		/*
@@ -132,8 +152,8 @@ function analyse_dataset() {
 		y_pos = 0;
 		x_offset = 0;
 		roi_width = width;
-		while (y_pos < getHeight - border_top - border_bot) {
-			makeRectangle(x_offset, y_pos + border_top, roi_width, step_size);
+		while (y_pos < getHeight - border_left - border_right) {
+			makeRectangle(x_offset, y_pos + border_left, roi_width, step_size);
 			/*
 			 * A gaussian fit is used to limit the region used for thresholding:
 			 * The profile is no gaussian distribution, but the gaussian fit estimates centre and width well. For more presice results thresholding is needed.
@@ -152,7 +172,7 @@ function analyse_dataset() {
 			sigma_weighed = sigma_weighting * gauss_sigma / pow(Fit.rSquared(), 2);	// if the fit has a low r², sigma will be increased
 			x_offset = maxOf(x_offset + round(gauss_centre - sigma_weighed), 0);	// all further measurements use the coordinates of the duplicated selection and this value is used to transform them to coordinates of the full image
 			roi_width = round(2 * sigma_weighed);
-			makeRectangle(x_offset, y_pos + border_top, roi_width, step_size);
+			makeRectangle(x_offset, y_pos + border_left, roi_width, step_size);
 			run("Duplicate...", "temp");	// create a temporary image: only the rectangle selection gets duplicated
 			setAutoThreshold(threshold + " dark");	// threshold with...
 			run("NaN Background");	// ..set background to NaN
@@ -163,7 +183,7 @@ function analyse_dataset() {
 			array_width[result_pos] = spec_width;
 			XM = getResult("XM", result_pos);	// the centre of mass in x-direction
 			array_pos_x[result_pos] = XM + x_offset;
-			YM = getResult("YM", result_pos) + y_pos + border_top; // the centre of mass in y-direction; we need to add 'y_pos', because the measurement is done on a cropped image with the height 'step_size'
+			YM = getResult("YM", result_pos) + y_pos + border_left; // the centre of mass in y-direction; we need to add 'y_pos', because the measurement is done on a cropped image with the height 'step_size'
 			array_pos_y[result_pos] = YM;
 			/*
 			 * Detect left and right border:
@@ -201,6 +221,8 @@ function analyse_dataset() {
 		addPointsToOverlay(array_pos_x, array_pos_y, 1);
 		addPointsToOverlay(array_right, array_pos_y, 2);
 		run("Flatten");
+		run("Flip Horizontally");
+		run("Rotate 90 Degrees Left");
 		saveAs("Jpeg", result_dirs[m] + img_name + ".jpg");
 		close();	// close the image that contains the overlay
 		selectImage(id);	// select and...
@@ -229,14 +251,14 @@ function analyse_dataset() {
 		 */
 		Fit.doFit("2nd Degree Polynomial", array_pos_y, array_left);
 		Fit.plot;
-		saveAs("PNG", result_dirs[m] + "left_" + img_name + ".png");
+		saveAs("PNG", result_dirs[m] + "bottom_" + img_name + ".png");
 		close();
 		/*
 		 * Position of right border:
 		 */
 		Fit.doFit("2nd Degree Polynomial", array_pos_y, array_right);
 		Fit.plot;
-		saveAs("PNG", result_dirs[m] + "right_" + img_name + ".png");
+		saveAs("PNG", result_dirs[m] + "top_" + img_name + ".png");
 		close();
 		/*
 		 * Create a table containing the results:
@@ -257,14 +279,14 @@ function analyse_dataset() {
  * This macro requires at least two images (SR-EELS datasets) to run properly. You have to select a folder and ImageJ will load all tif and dm3 images that are stored at the selected folder. Sub-folders are not considered.
  */
 function load_images() {
-	dir = getDirectory("Choose a Directory ");
-	if (dir == "") exit();	// if cancel was selected, the script will stop
-	list = getFileList(dir);
+	input_dir = getDirectory("Choose a Directory ");
+	if (input_dir == "") exit();	// if cancel was selected, the script will stop
+	list = getFileList(input_dir);
 	list = filter_images(list);	// only select tif and dm3 files; ignore sub-folders
 	open(list[0]);
 	id = getImageID();	// id will be used to close the image
 	draw_axes_as_overlay(); 	// create an overlay to simplify the next user choice
-	doRotate = getBoolean("The macro requires the following configuration:\nx: lateral axis\ny: energy axis\n\nRotate the images?");
+	doRotate = getBoolean("The macro requires the following configuration:\nx: energy axis\ny: lateral axis\n\nRotate the images?");	// This name is a bit stange. We will rotate the image  if doRotate == false. This is because the energy axis on the x-axis is best for further processing and theoretical description, but this macro runs fastes with the lateral axis on the x-axis.
 	run("Remove Overlay");
 	if (!doRotate) {
 		width = getWidth;
@@ -280,25 +302,25 @@ function load_images() {
 	if (step_size == -1) {
 		step_size = abs(height / 64);
 	}
-	if (border_top == -1) {
-		border_top = abs(height / 16);
+	if (border_left == -1) {
+		border_left = abs(height / 16);
 	}
-	if (border_bot == -1) {
-		border_bot = abs(height / 16);
+	if (border_right == -1) {
+		border_right = abs(height / 16);
 	}
 	if (filter_radius == -1) {
 		filter_radius = round(sqrt(step_size));
 	}
-	datapoints = ceil((height - border_top - border_bot) / step_size);
+	datapoints = ceil((height - border_left - border_right) / step_size);
 	/*
 	 * For each set of parameters (currently only threshold can include different values) it is checked, if there are already some result. The user is asked, if he wants to overwrite these previous results.
 	 */
 	result_dirs = newArray(thresholds.length);
 	skip_threshold = newArray(thresholds.length);
 	for(m=0; m<thresholds.length; m++) {
-		result_dirs[m] = dir + "results_" +  toString(step_size) + toString(border_top) + toString(border_bot) + toString(filter_radius) + thresholds[m] + File.separator;	// the folder name contains the parameters
+		result_dirs[m] = input_dir + "results_" +  toString(step_size) + toString(border_left) + toString(border_right) + toString(filter_radius) + thresholds[m] + File.separator;	// the folder name contains the parameters
 		if (File.isDirectory(result_dirs[m])) {
-			if (!getBoolean("There are previous results for the selected parameters.\nstep size: "+ step_size +"\ntop border: " + border_top + "\nbottom border: " + border_bot + "\nfilter radius: " + filter_radius + "\nthreshold method: " + thresholds[m] + "\nDo you want to overwrite these results?")) {
+			if (!getBoolean("There are previous results for the selected parameters.\nstep size: "+ step_size +"\ntop border: " + border_left + "\nbottom border: " + border_right + "\nfilter radius: " + filter_radius + "\nthreshold method: " + thresholds[m] + "\nDo you want to overwrite these results?")) {
 				skip_threshold[m] = true;
 			}
 		} else {
@@ -314,11 +336,12 @@ function load_images() {
 /*
  * function: filter_images
  * description: Keep tif and dm3 files only. Ignore subdirectories.
+ * since 20140620: A dialog is presented to select the files for the characterization. By default all files are selected and you have to deselect all files that are not necassary.
  */
 function filter_images(array_str) {
 	temp = -1;
 	for (i=0; i<list.length; i++) {
-		path = dir + list[i];
+		path = input_dir + list[i];
 		if (!endsWith(path,"/") && (endsWith(path,".tif") || endsWith(path,".dm3"))) {
 			 if (temp == -1) {
 			 	temp = newArray(1);
@@ -328,7 +351,25 @@ function filter_images(array_str) {
 			 }
 		}
 	}
-	return temp;
+	Dialog.create("Select files");
+	for (i=0; i<temp.length; i++) {
+		Dialog.addCheckbox(File.getName(temp[i]), true);
+	}
+	var selected_files;
+	init = true;
+	Dialog.show();
+	for (i=0; i<temp.length; i++) {
+		if (Dialog.getCheckbox()) {
+			if (init) {
+				selected_files = newArray(1);
+				selected_files[0] = temp[i];
+				init = false;
+			} else {
+				selected_files = Array.concat(selected_files, temp[i]);
+			}
+		}
+	}
+	return selected_files;
 }
 
 /*
@@ -371,8 +412,8 @@ function save_pos_and_width(index, pos, width, left, right) {
 function draw_axes_as_overlay() {
 	setFont("SansSerif", getHeight/32, " antialiased");
 	setColor("white");
-	Overlay.drawString("lateral axis", getWidth*0.7, getHeight*0.2, 0.0);
-	Overlay.drawString("energy axis", getWidth*0.12, getHeight*0.7, 0.0);
+	Overlay.drawString("energy axis", getWidth*0.7, getHeight*0.2, 0.0);
+	Overlay.drawString("lateral axis", getWidth*0.12, getHeight*0.7, 0.0);
 	Overlay.show();
 	makeLine(getWidth*0.7, getHeight*0.1, getWidth*0.9, getHeight*0.1);
 	run("Add Selection...");
