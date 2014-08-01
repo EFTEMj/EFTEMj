@@ -28,9 +28,11 @@ package sr_eels;
 
 import ij.IJ;
 import ij.ImagePlus;
+import ij.gui.ProgressBar;
+import ij.process.BinaryProcessor;
+import ij.process.ByteProcessor;
 import ij.process.FloatProcessor;
 
-import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -46,7 +48,6 @@ public class SR_EELS_Correction {
     private ImagePlus output;
     private SR_EELS_CorrectionFunction function;
     private int subdivision;
-    private int oversampling;
     /**
      * This field indicates the progress. A static method is used to increase the value by 1. It is necessary to use
      * volatile because different {@link Thread}s call the related method.
@@ -63,16 +64,18 @@ public class SR_EELS_Correction {
      * @param subdivision
      */
     private static long startTime;
+    private static long intervalTime;
+    private static ImagePlus pixelSize;
 
-    public SR_EELS_Correction(ImagePlus imp, int binning, SR_EELS_CorrectionFunction function, int subdivision,
-	    int oversampling) {
+    public SR_EELS_Correction(ImagePlus imp, int binning, SR_EELS_CorrectionFunction function, int subdivision) {
 	input = imp;
 	this.binning = binning;
 	this.function = function;
 	this.subdivision = subdivision;
-	this.oversampling = oversampling;
 	output = new ImagePlus(input.getTitle() + "_corrected", new FloatProcessor(input.getWidth(), input.getHeight(),
 		new double[input.getWidth() * input.getHeight()]));
+	pixelSize = new ImagePlus(input.getTitle() + "pixel size", new FloatProcessor(input.getWidth(),
+		input.getHeight(), new double[input.getWidth() * input.getHeight()]));
 	progressSteps = input.getHeight();
     }
 
@@ -90,6 +93,11 @@ public class SR_EELS_Correction {
 	    IJ.showProgress(0, progressSteps);
 	    progress = 0;
 	    startTime = System.currentTimeMillis();
+	    intervalTime = startTime;
+	    /*
+	     * One SR_EELS_CorrectionTask is created for each image line. The ExecutorService will process several of
+	     * them in parallel. The main Thread will wait until all tasks are finished.
+	     */
 	    ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 	    for (int x2 = 0; x2 < output.getHeight(); x2++) {
 		executorService.execute(new SR_EELS_CorrectionTask(x2));
@@ -108,30 +116,37 @@ public class SR_EELS_Correction {
      */
     public void showResult() {
 	output.show();
+	pixelSize.show();
 
     }
 
     /**
-     * {@link SR_EELS_CorrectionTask} will use this method to update the process.
+     * {@link SR_EELS_CorrectionTask} will use this method to update the process and to estimate the remaining time.
+     * <p />
+     * The {@link ProgressBar} is updated each time. The time estimation is only updated every second to prevent
+     * flickering when more than 1 {@link Thread} is used.
      */
     private static void updateProgress() {
 	progress++;
 	IJ.showProgress(progress, progressSteps);
-	IJ.showStatus(String.format(
-		"About %ds remaining...",
-		(int) Math.ceil((1. / 1000 * (progressSteps - progress) / progress)
-			* (System.currentTimeMillis() - startTime))));
+	if ((System.currentTimeMillis() - startTime) > 5000 & (System.currentTimeMillis() - intervalTime) > 1000) {
+	    IJ.showStatus(String.format(
+		    "About %ds remaining...",
+		    (int) Math.ceil((1. / 1000 * (progressSteps - progress) / progress)
+			    * (System.currentTimeMillis() - startTime))));
+	    intervalTime = System.currentTimeMillis();
+	}
     }
 
     private class SR_EELS_CorrectionTask implements Runnable {
 
+	private static final int WIDTH = SR_EELS_CorrectionPlugin.FULL_WIDTH;
+	private static final int HEIGHT = SR_EELS_CorrectionPlugin.FULL_HEIGHT;
 	/**
 	 * The image row to process.
 	 */
 	private int x2;
 	private int bin;
-	private int width = 4096;
-	private int height = 4096;
 
 	/**
 	 * A default constructor that only sets one field.
@@ -184,8 +199,10 @@ public class SR_EELS_Correction {
 	    double rectangle_t = Math.floor(subdivision
 		    * Math.min(point00[1], Math.min(point01[1], Math.min(point10[1], point11[1]))))
 		    / subdivision;
-	    if (rectangle_l < 0 | rectangle_t < 0 | rectangle_r >= width | rectangle_b >= height)
-		return intensity;
+	    if (rectangle_l < 0 | rectangle_t < 0 | rectangle_r >= WIDTH | rectangle_b >= HEIGHT) {
+		pixelSize.getProcessor().setf(x1 / bin, x2 / bin, Float.NaN);
+		return intensity = Double.NaN;
+	    }
 	    double rectangle_width = rectangle_r - rectangle_l;
 	    double rectangle_height = rectangle_b - rectangle_t;
 	    int temp_width = (int) Math.ceil(rectangle_width / bin * subdivision) + 1;
@@ -193,29 +210,34 @@ public class SR_EELS_Correction {
 	    if (temp_height * temp_width <= 0) {
 		System.out.println("Array Länge kleiner als 0!");
 	    }
-	    int[] pixels_temp = new int[temp_width * temp_height];
-	    Arrays.fill(pixels_temp, 0);
-	    for (int z2 = 0; z2 < oversampling * subdivision; z2++) {
-		double z2d = 1.0 * z2 / (oversampling * subdivision);
-		for (int z1 = 0; z1 < oversampling * subdivision; z1++) {
-		    double z1d = 1.0 * z1 / (oversampling * subdivision);
+	    ByteProcessor ip = new ByteProcessor(temp_width, temp_height);
+	    BinaryProcessor bp = new BinaryProcessor(ip);
+	    bp.set(0);
+	    for (int z2 = 0; z2 < subdivision; z2++) {
+		double z2d = 1.0 * z2 / subdivision;
+		for (int z1 = 0; z1 < subdivision; z1++) {
+		    double z1d = 1.0 * z1 / subdivision;
 		    double[] point = function.transform(x1 + bin * z1d, x2 + bin * z2d);
-		    double y1 = Math.round(subdivision * (point[0] - rectangle_l) / bin);
-		    double y2 = Math.round(subdivision * (point[1] - rectangle_t) / bin);
-		    int index = (int) (y1 + y2 * temp_width);
-		    pixels_temp[index] = 1;
+		    int y1 = (int) Math.round(subdivision * (point[0] - rectangle_l) / bin);
+		    int y2 = (int) Math.round(subdivision * (point[1] - rectangle_t) / bin);
+		    bp.putPixel(y1, y2, 255);
 		}
 	    }
+	    bp.dilate();
+	    bp.erode();
+	    int count = 0;
 	    for (int y2i = 0; y2i < temp_height; y2i++) {
 		double y2 = y2i / subdivision + rectangle_t / bin;
 		for (int y1i = 0; y1i < temp_width; y1i++) {
 		    double y1 = y1i / subdivision + rectangle_l / bin;
-		    if (pixels_temp[y1i + y2i * temp_width] == 1) {
+		    if (bp.getPixel(y1i, y2i) > 0) {
 			int index = (int) (Math.floor(y1) + Math.floor(y2) * input.getWidth());
 			intensity += input.getProcessor().getf(index) / Math.pow(subdivision, 2);
+			count++;
 		    }
 		}
 	    }
+	    pixelSize.getProcessor().setf(x1 / bin, x2 / bin, count);
 	    return intensity;
 	}
     }

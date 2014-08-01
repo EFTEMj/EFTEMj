@@ -26,8 +26,6 @@
  */
 package sr_eels;
 
-import java.io.IOException;
-
 import gui.GenericDialogPlus;
 import ij.IJ;
 import ij.ImageJ;
@@ -37,13 +35,16 @@ import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
 import ij.process.ImageProcessor;
 
+import java.io.IOException;
+
 /**
  * @author Michael Entrup b. Epping <entrup@arcor.de>
  *
  */
 public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 
-    private static final int FULL_WIDTH = 4096;
+    public static final int FULL_WIDTH = 4096;
+    public static final int FULL_HEIGHT = 4096;
     /**
      * The plugin will be aborted.
      */
@@ -58,7 +59,6 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     private final int FLAGS = DOES_32 | NO_CHANGES | FINAL_PROCESSING;
     private String path = "No file selected.";
     private int subdivision;
-    private int oversampling;
     private ImagePlus imp;
     private int binning;
 
@@ -85,7 +85,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     public void run(ImageProcessor ip) {
 	try {
 	    SR_EELS_CorrectionFunction func = new SR_EELS_CorrectionFunction(path);
-	    SR_EELS_Correction correction = new SR_EELS_Correction(imp, binning, func, subdivision, oversampling);
+	    SR_EELS_Correction correction = new SR_EELS_Correction(imp, binning, func, subdivision);
 	    correction.startCalculation();
 	    correction.showResult();
 
@@ -111,6 +111,11 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	}
 	this.imp = imp;
 	binning = FULL_WIDTH / imp.getWidth();
+	if (binning != FULL_HEIGHT / imp.getHeight()) {
+	    IJ.showMessage(String.format("This plugin does not support images of the size %d,%d.", imp.getWidth(),
+		    imp.getHeight()));
+	    return NO_CHANGES | DONE;
+	}
 	return FLAGS;
     }
 
@@ -124,7 +129,6 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	GenericDialogPlus gd = new GenericDialogPlus(title + " - set parameters", IJ.getInstance());
 	gd.addFileField("Parameters_file (*.txt)", path);
 	gd.addNumericField("Pixel_subdivision", 10, 0);
-	gd.addNumericField("Oversampling", 3, 0);
 	gd.setResizable(false);
 	gd.showDialog();
 	if (gd.wasCanceled()) {
@@ -132,7 +136,6 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	}
 	path = gd.getNextString();
 	subdivision = (int) gd.getNextNumber();
-	oversampling = (int) gd.getNextNumber();
 	return OK;
     }
 
