@@ -55,10 +55,10 @@ public class SR_EELS_CorrectionFunction {
 	readParameters(path);
     }
 
-    public double[] transform(double x1, double x2) throws SR_EELS_Exception {
-	double y1 = calc_y1(x1, x2);
-	double y2 = calc_y2(x1, x2);
-	double[] point = { y1, y2 };
+    public double[] transform(double x1, double x2, int binning) throws SR_EELS_Exception {
+	double y1 = calc_y1(x1 * binning, x2 * binning);
+	double y2 = calc_y2(x1 * binning, x2 * binning);
+	double[] point = { y1 / binning, y2 / binning };
 	return point;
     }
 

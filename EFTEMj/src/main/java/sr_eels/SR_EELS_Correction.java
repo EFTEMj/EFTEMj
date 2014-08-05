@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class SR_EELS_Correction {
 
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
     private ImagePlus input;
     private FloatProcessor input_float;
     private int binning;
@@ -163,7 +163,6 @@ public class SR_EELS_Correction {
 	 * The image row to process.
 	 */
 	private int x2;
-	private int bin;
 
 	/**
 	 * A default constructor that only sets one field.
@@ -174,7 +173,6 @@ public class SR_EELS_Correction {
 	public SR_EELS_CorrectionTask(int x2) {
 	    super();
 	    this.x2 = x2;
-	    bin = binning;
 	}
 
 	/*
@@ -186,7 +184,7 @@ public class SR_EELS_Correction {
 	public void run() {
 	    for (int x1 = 0; x1 < input.getWidth(); x1++) {
 		try {
-		    output.getProcessor().setf(x1, x2, (float) getCorrectetIntensity(x1 * bin, x2 * bin));
+		    output.getProcessor().setf(x1, x2, (float) getCorrectetIntensity(x1, x2));
 		} catch (SR_EELS_Exception e) {
 		    output.getProcessor().setf(x1, x2, Float.NaN);
 		}
@@ -196,10 +194,10 @@ public class SR_EELS_Correction {
 
 	private double getCorrectetIntensity(int x1, int x2) throws SR_EELS_Exception {
 	    double intensity = 0.0;
-	    double[] point00 = function.transform(x1, x2);
-	    double[] point01 = function.transform(x1, x2 + bin);
-	    double[] point10 = function.transform(x1 + bin, x2);
-	    double[] point11 = function.transform(x1 + bin, x2 + bin);
+	    double[] point00 = function.transform(x1, x2, binning);
+	    double[] point01 = function.transform(x1, x2 + 1, binning);
+	    double[] point10 = function.transform(x1 + 1, x2, binning);
+	    double[] point11 = function.transform(x1 + 1, x2 + 1, binning);
 	    /*
 	     * As the origin is at the top, left corner of an image, the top of the rectangle has the lowest y2 value
 	     * and the bottom of the rectangle has the highest y2 value.
@@ -218,24 +216,24 @@ public class SR_EELS_Correction {
 		    / subdivision;
 	    if (rectangle_l < 0 | rectangle_t < 0 | rectangle_r >= WIDTH | rectangle_b >= HEIGHT) {
 		if (DEBUG) {
-		    pixelSize.getProcessor().setf(x1 / bin, x2 / bin, Float.NaN);
-		    pixelWidth.getProcessor().setf(x1 / bin, x2 / bin, Float.NaN);
-		    pixelHeight.getProcessor().setf(x1 / bin, x2 / bin, Float.NaN);
+		    pixelSize.getProcessor().setf(x1, x2, Float.NaN);
+		    pixelWidth.getProcessor().setf(x1, x2, Float.NaN);
+		    pixelHeight.getProcessor().setf(x1, x2, Float.NaN);
 		}
 		return intensity = Double.NaN;
 	    }
-	    double border = 3.0 * bin / subdivision;
+	    double border = 2.0 / subdivision;
 	    rectangle_l = rectangle_l - border;
 	    rectangle_r = rectangle_r + border;
 	    rectangle_t = rectangle_t - border;
 	    rectangle_b = rectangle_b + border;
 	    double rectangle_width = rectangle_r - rectangle_l;
 	    double rectangle_height = rectangle_b - rectangle_t;
-	    int temp_width = (int) Math.ceil(rectangle_width / bin * subdivision) + 1;
-	    int temp_height = (int) Math.ceil(rectangle_height / bin * subdivision) + 1;
+	    int temp_width = (int) Math.ceil(rectangle_width * subdivision) + 1;
+	    int temp_height = (int) Math.ceil(rectangle_height * subdivision) + 1;
 	    if (DEBUG) {
-		pixelWidth.getProcessor().setf(x1 / bin, x2 / bin, temp_width);
-		pixelHeight.getProcessor().setf(x1 / bin, x2 / bin, temp_height);
+		pixelWidth.getProcessor().setf(x1, x2, temp_width);
+		pixelHeight.getProcessor().setf(x1, x2, temp_height);
 	    }
 	    if (temp_height * temp_width <= 0) {
 		System.out.println("Array Länge kleiner als 0!");
@@ -246,9 +244,9 @@ public class SR_EELS_Correction {
 		double z2d = 1.0 * z2 / subdivision;
 		for (int z1 = 0; z1 < subdivision; z1++) {
 		    double z1d = 1.0 * z1 / subdivision;
-		    double[] point = function.transform(x1 + bin * z1d, x2 + bin * z2d);
-		    int y1 = (int) Math.round(subdivision * (point[0] - rectangle_l) / bin);
-		    int y2 = (int) Math.round(subdivision * (point[1] - rectangle_t) / bin);
+		    double[] point = function.transform(x1 + z1d, x2 + z2d, binning);
+		    int y1 = (int) Math.round(subdivision * (point[0] - rectangle_l));
+		    int y2 = (int) Math.round(subdivision * (point[1] - rectangle_t));
 		    byteP.set(y1, y2, 255);
 		}
 	    }
@@ -256,24 +254,24 @@ public class SR_EELS_Correction {
 	    dilate(binaryP);
 	    erode(binaryP);
 	    if (DEBUG) {
-		if (x2 == 2048 & x1 % 128 == 0) {
-		    new ImagePlus("pixel" + x1 / bin, binaryP).show();
+		if (x2 == input.getHeight() / 2 & x1 % 128 == 0) {
+		    new ImagePlus("pixel" + x1, binaryP).show();
 		}
 	    }
 	    pixelSizeCount = 0;
-	    int borderInt = (int) Math.round(border * subdivision / bin);
+	    int borderInt = (int) Math.round(border * subdivision);
 	    for (int y2i = borderInt; y2i < temp_height - 2 * borderInt; y2i++) {
 		for (int y1i = borderInt; y1i < temp_width - 2 * borderInt; y1i++) {
 		    if (binaryP.getPixel(y1i, y2i) > 0) {
-			int y1 = (int) Math.floor(y1i / subdivision + rectangle_l / bin);
-			int y2 = (int) Math.floor(y2i / subdivision + rectangle_t / bin);
+			int y1 = (int) Math.floor(y1i / subdivision + rectangle_l);
+			int y2 = (int) Math.floor(y2i / subdivision + rectangle_t);
 			intensity += input_float.getf(y1, y2) / Math.pow(subdivision, 2);
 			pixelSizeCount++;
 		    }
 		}
 	    }
 	    if (DEBUG) {
-		pixelSize.getProcessor().setf(x1 / bin, x2 / bin, pixelSizeCount);
+		pixelSize.getProcessor().setf(x1, x2, pixelSizeCount);
 	    }
 	    return intensity;
 	}
