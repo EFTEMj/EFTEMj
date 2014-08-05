@@ -30,8 +30,10 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.ProgressBar;
 import ij.process.BinaryProcessor;
+import ij.process.Blitter;
 import ij.process.ByteProcessor;
 import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -43,7 +45,9 @@ import java.util.concurrent.TimeUnit;
  */
 public class SR_EELS_Correction {
 
+    private static final boolean DEBUG = false;
     private ImagePlus input;
+    private FloatProcessor input_float;
     private int binning;
     private ImagePlus output;
     private SR_EELS_CorrectionFunction function;
@@ -66,16 +70,26 @@ public class SR_EELS_Correction {
     private static long startTime;
     private static long intervalTime;
     private static ImagePlus pixelSize;
+    private static ImagePlus pixelWidth;
+    private static ImagePlus pixelHeight;
+    private int pixelSizeCount;
 
     public SR_EELS_Correction(ImagePlus imp, int binning, SR_EELS_CorrectionFunction function, int subdivision) {
 	input = imp;
+	input_float = (FloatProcessor) imp.getProcessor();
 	this.binning = binning;
 	this.function = function;
 	this.subdivision = subdivision;
 	output = new ImagePlus(input.getTitle() + "_corrected", new FloatProcessor(input.getWidth(), input.getHeight(),
 		new double[input.getWidth() * input.getHeight()]));
-	pixelSize = new ImagePlus(input.getTitle() + "pixel size", new FloatProcessor(input.getWidth(),
-		input.getHeight(), new double[input.getWidth() * input.getHeight()]));
+	if (DEBUG) {
+	    pixelSize = new ImagePlus(input.getTitle() + "pixel size", new FloatProcessor(input.getWidth(),
+		    input.getHeight(), new double[input.getWidth() * input.getHeight()]));
+	    pixelWidth = new ImagePlus(input.getTitle() + "pixel width", new FloatProcessor(input.getWidth(),
+		    input.getHeight(), new double[input.getWidth() * input.getHeight()]));
+	    pixelHeight = new ImagePlus(input.getTitle() + "pixel height", new FloatProcessor(input.getWidth(),
+		    input.getHeight(), new double[input.getWidth() * input.getHeight()]));
+	}
 	progressSteps = input.getHeight();
     }
 
@@ -83,17 +97,16 @@ public class SR_EELS_Correction {
      * Starts the calculation with parallel {@link Thread}s.
      */
     public void startCalculation() {
-	boolean debug = false;
-	if (debug) {
+	IJ.showProgress(0, progressSteps);
+	progress = 0;
+	startTime = System.currentTimeMillis();
+	intervalTime = startTime;
+	if (DEBUG) {
 	    for (int x2 = 0; x2 < output.getHeight(); x2++) {
 		SR_EELS_CorrectionTask task = new SR_EELS_CorrectionTask(x2);
 		task.run();
 	    }
 	} else {
-	    IJ.showProgress(0, progressSteps);
-	    progress = 0;
-	    startTime = System.currentTimeMillis();
-	    intervalTime = startTime;
 	    /*
 	     * One SR_EELS_CorrectionTask is created for each image line. The ExecutorService will process several of
 	     * them in parallel. The main Thread will wait until all tasks are finished.
@@ -116,7 +129,11 @@ public class SR_EELS_Correction {
      */
     public void showResult() {
 	output.show();
-	pixelSize.show();
+	if (DEBUG) {
+	    pixelSize.show();
+	    pixelWidth.show();
+	    pixelHeight.show();
+	}
 
     }
 
@@ -200,19 +217,31 @@ public class SR_EELS_Correction {
 		    * Math.min(point00[1], Math.min(point01[1], Math.min(point10[1], point11[1]))))
 		    / subdivision;
 	    if (rectangle_l < 0 | rectangle_t < 0 | rectangle_r >= WIDTH | rectangle_b >= HEIGHT) {
-		pixelSize.getProcessor().setf(x1 / bin, x2 / bin, Float.NaN);
+		if (DEBUG) {
+		    pixelSize.getProcessor().setf(x1 / bin, x2 / bin, Float.NaN);
+		    pixelWidth.getProcessor().setf(x1 / bin, x2 / bin, Float.NaN);
+		    pixelHeight.getProcessor().setf(x1 / bin, x2 / bin, Float.NaN);
+		}
 		return intensity = Double.NaN;
 	    }
+	    double border = 3.0 * bin / subdivision;
+	    rectangle_l = rectangle_l - border;
+	    rectangle_r = rectangle_r + border;
+	    rectangle_t = rectangle_t - border;
+	    rectangle_b = rectangle_b + border;
 	    double rectangle_width = rectangle_r - rectangle_l;
 	    double rectangle_height = rectangle_b - rectangle_t;
 	    int temp_width = (int) Math.ceil(rectangle_width / bin * subdivision) + 1;
 	    int temp_height = (int) Math.ceil(rectangle_height / bin * subdivision) + 1;
+	    if (DEBUG) {
+		pixelWidth.getProcessor().setf(x1 / bin, x2 / bin, temp_width);
+		pixelHeight.getProcessor().setf(x1 / bin, x2 / bin, temp_height);
+	    }
 	    if (temp_height * temp_width <= 0) {
 		System.out.println("Array Länge kleiner als 0!");
 	    }
-	    ByteProcessor ip = new ByteProcessor(temp_width, temp_height);
-	    BinaryProcessor bp = new BinaryProcessor(ip);
-	    bp.set(0);
+	    ByteProcessor byteP = new ByteProcessor(temp_width, temp_height);
+	    byteP.set(0);
 	    for (int z2 = 0; z2 < subdivision; z2++) {
 		double z2d = 1.0 * z2 / subdivision;
 		for (int z1 = 0; z1 < subdivision; z1++) {
@@ -220,25 +249,56 @@ public class SR_EELS_Correction {
 		    double[] point = function.transform(x1 + bin * z1d, x2 + bin * z2d);
 		    int y1 = (int) Math.round(subdivision * (point[0] - rectangle_l) / bin);
 		    int y2 = (int) Math.round(subdivision * (point[1] - rectangle_t) / bin);
-		    bp.putPixel(y1, y2, 255);
+		    byteP.set(y1, y2, 255);
 		}
 	    }
-	    bp.dilate();
-	    bp.erode();
-	    int count = 0;
-	    for (int y2i = 0; y2i < temp_height; y2i++) {
-		double y2 = y2i / subdivision + rectangle_t / bin;
-		for (int y1i = 0; y1i < temp_width; y1i++) {
-		    double y1 = y1i / subdivision + rectangle_l / bin;
-		    if (bp.getPixel(y1i, y2i) > 0) {
-			int index = (int) (Math.floor(y1) + Math.floor(y2) * input.getWidth());
-			intensity += input.getProcessor().getf(index) / Math.pow(subdivision, 2);
-			count++;
+	    BinaryProcessor binaryP = new BinaryProcessor(byteP);
+	    dilate(binaryP);
+	    erode(binaryP);
+	    if (DEBUG) {
+		if (x2 == 2048 & x1 % 128 == 0) {
+		    new ImagePlus("pixel" + x1 / bin, binaryP).show();
+		}
+	    }
+	    pixelSizeCount = 0;
+	    int borderInt = (int) Math.round(border * subdivision / bin);
+	    for (int y2i = borderInt; y2i < temp_height - 2 * borderInt; y2i++) {
+		for (int y1i = borderInt; y1i < temp_width - 2 * borderInt; y1i++) {
+		    if (binaryP.getPixel(y1i, y2i) > 0) {
+			int y1 = (int) Math.floor(y1i / subdivision + rectangle_l / bin);
+			int y2 = (int) Math.floor(y2i / subdivision + rectangle_t / bin);
+			intensity += input_float.getf(y1, y2) / Math.pow(subdivision, 2);
+			pixelSizeCount++;
 		    }
 		}
 	    }
-	    pixelSize.getProcessor().setf(x1 / bin, x2 / bin, count);
+	    if (DEBUG) {
+		pixelSize.getProcessor().setf(x1 / bin, x2 / bin, pixelSizeCount);
+	    }
 	    return intensity;
 	}
+    }
+
+    private void dilate(BinaryProcessor bp) {
+	int[][] H = { { 0, 1, 0 }, { 0, 1, 0 }, { 0, 1, 0 } };
+	int ic = (H[0].length - 1) / 2;
+	int jc = (H.length - 1) / 2;
+
+	ImageProcessor np = bp.createProcessor(bp.getWidth(), bp.getHeight());
+
+	for (int j = 0; j < H.length; j++) {
+	    for (int i = 0; i < H[j].length; i++) {
+		if (H[j][i] == 1) {
+		    np.copyBits(bp, i - ic, j - jc, Blitter.MAX);
+		}
+	    }
+	}
+	bp.copyBits(np, 0, 0, Blitter.COPY);
+    }
+
+    private void erode(BinaryProcessor bp) {
+	bp.invert();
+	dilate(bp);
+	bp.invert();
     }
 }
