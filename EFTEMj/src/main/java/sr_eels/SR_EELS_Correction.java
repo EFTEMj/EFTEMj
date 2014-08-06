@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class SR_EELS_Correction {
 
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
     private ImagePlus input;
     private FloatProcessor input_float;
     private int binning;
@@ -117,7 +117,7 @@ public class SR_EELS_Correction {
 	    }
 	    executorService.shutdown();
 	    try {
-		executorService.awaitTermination(60, TimeUnit.MINUTES);
+		executorService.awaitTermination(24, TimeUnit.HOURS);
 	    } catch (InterruptedException e) {
 		e.printStackTrace();
 	    }
@@ -263,8 +263,8 @@ public class SR_EELS_Correction {
 	    for (int y2i = borderInt; y2i < temp_height - 2 * borderInt; y2i++) {
 		for (int y1i = borderInt; y1i < temp_width - 2 * borderInt; y1i++) {
 		    if (binaryP.getPixel(y1i, y2i) > 0) {
-			int y1 = (int) Math.floor(y1i / subdivision + rectangle_l);
-			int y2 = (int) Math.floor(y2i / subdivision + rectangle_t);
+			int y1 = (int) Math.floor(1.0 * y1i / subdivision + rectangle_l);
+			int y2 = (int) Math.floor(1.0 * y2i / subdivision + rectangle_t);
 			intensity += input_float.getf(y1, y2) / Math.pow(subdivision, 2);
 			pixelSizeCount++;
 		    }
