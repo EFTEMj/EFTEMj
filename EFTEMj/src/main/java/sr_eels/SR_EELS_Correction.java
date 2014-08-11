@@ -45,7 +45,27 @@ import java.util.concurrent.TimeUnit;
  */
 public class SR_EELS_Correction {
 
-    private static final boolean DEBUG = false;
+    /**
+     * <table>
+     * <tr>
+     * <td>64</td>
+     * <td>show images with width, height and size of each distorted pixel</td>
+     * </tr>
+     * <tr>
+     * <td>128</td>
+     * <td>show an output image, that uses only the pixel size to correct the intensity</td>
+     * </tr>
+     * <tr>
+     * <td>192</td>
+     * <td>show images that show the distorted pixels at selected positions</td>
+     * </tr>
+     * <tr>
+     * <td>256</td>
+     * <td>single thread mode</td>
+     * </tr>
+     * </table>
+     */
+    private static int debug_level = 0;
     private ImagePlus input;
     private FloatProcessor input_float;
     private int binning;
@@ -72,7 +92,7 @@ public class SR_EELS_Correction {
     private static ImagePlus pixelSize;
     private static ImagePlus pixelWidth;
     private static ImagePlus pixelHeight;
-    private int pixelSizeCount;
+    private ImagePlus output_distortion_only;
 
     public SR_EELS_Correction(ImagePlus imp, int binning, SR_EELS_CorrectionFunction function, int subdivision) {
 	input = imp;
@@ -80,15 +100,21 @@ public class SR_EELS_Correction {
 	this.binning = binning;
 	this.function = function;
 	this.subdivision = subdivision;
+	debug_level = SR_EELS_CorrectionPlugin.debug_level;
 	output = new ImagePlus(input.getTitle() + "_corrected", new FloatProcessor(input.getWidth(), input.getHeight(),
 		new double[input.getWidth() * input.getHeight()]));
-	if (DEBUG) {
-	    pixelSize = new ImagePlus(input.getTitle() + "pixel size", new FloatProcessor(input.getWidth(),
+	if (debug_level >= 64) {
+	    pixelSize = new ImagePlus(input.getShortTitle() + "_pixel size", new FloatProcessor(input.getWidth(),
 		    input.getHeight(), new double[input.getWidth() * input.getHeight()]));
-	    pixelWidth = new ImagePlus(input.getTitle() + "pixel width", new FloatProcessor(input.getWidth(),
+	    pixelWidth = new ImagePlus(input.getShortTitle() + "_pixel width", new FloatProcessor(input.getWidth(),
 		    input.getHeight(), new double[input.getWidth() * input.getHeight()]));
-	    pixelHeight = new ImagePlus(input.getTitle() + "pixel height", new FloatProcessor(input.getWidth(),
+	    pixelHeight = new ImagePlus(input.getShortTitle() + "_pixel height", new FloatProcessor(input.getWidth(),
 		    input.getHeight(), new double[input.getWidth() * input.getHeight()]));
+	}
+	if (debug_level >= 128) {
+	    output_distortion_only = new ImagePlus(input.getShortTitle() + "_corrected(pixel size only)",
+		    new FloatProcessor(input.getWidth(), input.getHeight(), new double[input.getWidth()
+			    * input.getHeight()]));
 	}
 	progressSteps = input.getHeight();
     }
@@ -101,7 +127,7 @@ public class SR_EELS_Correction {
 	progress = 0;
 	startTime = System.currentTimeMillis();
 	intervalTime = startTime;
-	if (DEBUG) {
+	if (debug_level >= 256) {
 	    for (int x2 = 0; x2 < output.getHeight(); x2++) {
 		SR_EELS_CorrectionTask task = new SR_EELS_CorrectionTask(x2);
 		task.run();
@@ -129,12 +155,14 @@ public class SR_EELS_Correction {
      */
     public void showResult() {
 	output.show();
-	if (DEBUG) {
+	if (debug_level >= 64) {
 	    pixelSize.show();
 	    pixelWidth.show();
 	    pixelHeight.show();
 	}
-
+	if (debug_level >= 128) {
+	    output_distortion_only.show();
+	}
     }
 
     /**
@@ -215,12 +243,16 @@ public class SR_EELS_Correction {
 		    * Math.min(point00[1], Math.min(point01[1], Math.min(point10[1], point11[1]))))
 		    / subdivision;
 	    if (rectangle_l < 0 | rectangle_t < 0 | rectangle_r >= WIDTH | rectangle_b >= HEIGHT) {
-		if (DEBUG) {
+		if (debug_level >= 64) {
 		    pixelSize.getProcessor().setf(x1, x2, Float.NaN);
 		    pixelWidth.getProcessor().setf(x1, x2, Float.NaN);
 		    pixelHeight.getProcessor().setf(x1, x2, Float.NaN);
 		}
 		return intensity = Double.NaN;
+	    }
+	    if (debug_level >= 128) {
+		output_distortion_only.getProcessor().setf(x1, x2,
+			input.getProcessor().getf((int) Math.floor(point00[0]), (int) Math.floor(point00[1])));
 	    }
 	    double border = 2.0 / subdivision;
 	    rectangle_l = rectangle_l - border;
@@ -231,7 +263,7 @@ public class SR_EELS_Correction {
 	    double rectangle_height = rectangle_b - rectangle_t;
 	    int temp_width = (int) Math.ceil(rectangle_width * subdivision) + 1;
 	    int temp_height = (int) Math.ceil(rectangle_height * subdivision) + 1;
-	    if (DEBUG) {
+	    if (debug_level >= 63) {
 		pixelWidth.getProcessor().setf(x1, x2, temp_width);
 		pixelHeight.getProcessor().setf(x1, x2, temp_height);
 	    }
@@ -253,12 +285,12 @@ public class SR_EELS_Correction {
 	    BinaryProcessor binaryP = new BinaryProcessor(byteP);
 	    dilate(binaryP);
 	    erode(binaryP);
-	    if (DEBUG) {
+	    if (debug_level >= 192) {
 		if (x2 == input.getHeight() / 2 & x1 % 128 == 0) {
 		    new ImagePlus("pixel" + x1, binaryP).show();
 		}
 	    }
-	    pixelSizeCount = 0;
+	    int pixelSizeCount = 0;
 	    int borderInt = (int) Math.round(border * subdivision);
 	    for (int y2i = borderInt; y2i < temp_height - 2 * borderInt; y2i++) {
 		for (int y1i = borderInt; y1i < temp_width - 2 * borderInt; y1i++) {
@@ -270,8 +302,8 @@ public class SR_EELS_Correction {
 		    }
 		}
 	    }
-	    if (DEBUG) {
-		pixelSize.getProcessor().setf(x1, x2, pixelSizeCount);
+	    if (debug_level >= 128) {
+		pixelSize.getProcessor().setf(x1, x2, (float) (pixelSizeCount / Math.pow(subdivision, 2)));
 	    }
 	    return intensity;
 	}

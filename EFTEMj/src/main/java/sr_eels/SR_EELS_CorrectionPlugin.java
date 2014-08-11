@@ -45,6 +45,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 
     public static final int FULL_WIDTH = 4096;
     public static final int FULL_HEIGHT = 4096;
+    public static int debug_level = 0;
     /**
      * The plugin will be aborted.
      */
@@ -129,6 +130,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	GenericDialogPlus gd = new GenericDialogPlus(title + " - set parameters", IJ.getInstance());
 	gd.addFileField("Parameters_file (*.txt)", path);
 	gd.addNumericField("Pixel_subdivision", 10, 0);
+	gd.addNumericField("Debug level", 0, 0);
 	gd.setResizable(false);
 	gd.showDialog();
 	if (gd.wasCanceled()) {
@@ -136,6 +138,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	}
 	path = gd.getNextString();
 	subdivision = (int) gd.getNextNumber();
+	debug_level = (int) gd.getNextNumber();
 	return OK;
     }
 
