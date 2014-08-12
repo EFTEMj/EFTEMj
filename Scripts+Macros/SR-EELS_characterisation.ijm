@@ -1,8 +1,8 @@
 /*
  * file:	SR-EELS_characterisation.ijm
  * author:	Michael Entrup (entrup@arcor.de)
- * version:	20140730
- * date:	30.07.2014
+ * version:	20140812
+ * date:	12.08.2014
  * info:	This macro is used to characterise the  aberrations of an Zeiss in-column energy filter when using SR-EELS. A series of calibration datasets is necessary  to run the characterisation. Place all datasets (images) at a folder that contains no other images.
  * You can find an example SR-EELS series at https://github.com/EFTEMj/EFTEMj/tree/master/Scripts+Macros/examples/SR-EELS_characterisation. There you will find a instruction on how to record such a series, too.
  */
@@ -10,8 +10,6 @@
 /*
  * Parameters:
  * Only this values should be changed by the user.
- *
- * ToDo: create a dialogue for parameter input.
  */
  /*
   *  step_size determines the number of energy channels that will result in one data point of the resulting dataset.
@@ -310,7 +308,22 @@ function load_images() {
 	}
 	if (filter_radius == -1) {
 		filter_radius = round(sqrt(step_size));
-	}
+	}	
+	/*
+	 * A dialogue will be created to modify the previous determined values.
+	 */
+	Dialog.create("SR-EELS Characterisation - Setup");
+	Dialog.addNumber("Step size:", step_size, 0, 4, "px");
+	Dialog.addNumber("Left border:", border_left, 0, 4, "px");
+	Dialog.addNumber("Right border:", border_right, 0, 4, "px");
+	Dialog.addNumber("Filter radius:", filter_radius, 0, 4, "px");
+	Dialog.addSlider("Energy Position:", 0, 1, 0.5);
+	Dialog.show();
+	step_size = Dialog.getNumber();
+	border_left = Dialog.getNumber();
+	border_right = Dialog.getNumber();
+	filter_radius = Dialog.getNumber();
+	energy_pos = Dialog.getNumber();
 	datapoints = ceil((height - border_left - border_right) / step_size);
 	/*
 	 * For each set of parameters (currently only threshold can include different values) it is checked, if there are already some result. The user is asked, if he wants to overwrite these previous results.
