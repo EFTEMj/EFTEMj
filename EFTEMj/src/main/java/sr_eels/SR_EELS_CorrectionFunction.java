@@ -90,11 +90,18 @@ public class SR_EELS_CorrectionFunction {
      * @return
      */
     private double calc_yn(double x2) throws SR_EELS_Exception {
-	// TODO optimise this method by using the full 3d polynomial.
-	if (x2 * x2 * b[0][2] + x2 * b[0][1] + b[0][0] < 0) {
+	if (x2 * x2 * calc_bj(2) + x2 * calc_bj(1) + calc_bj(0) < 0) {
 	    throw new SR_EELS_Exception();
 	}
-	return (x2 * x2 * x2 * b[0][2] / 3 + x2 * x2 * b[0][1] / 2 + x2 * b[0][0]) - offset;
+	return (x2 * x2 * x2 * calc_bj(2) / 3 + x2 * x2 * calc_bj(1) / 2 + x2 * calc_bj(0)) - offset;
+    }
+
+    private double calc_bj(int j) {
+	double value = 0;
+	for (int i = 0; i < b.length; i++) {
+	    value += b[i][j] * Math.pow(2048, i);
+	}
+	return value;
     }
 
     private double arcsinh(double x) {
@@ -139,13 +146,15 @@ public class SR_EELS_CorrectionFunction {
     }
 
     private void setOffset() {
-	double maximum = b[0][2] * Math.pow((-b[0][1] / (2 * b[0][2])), 2) + b[0][1] * (-b[0][1] / (2 * b[0][2]))
-		+ b[0][0];
-	b[0][2] = b[0][2] / maximum;
-	b[0][1] = b[0][1] / maximum;
-	b[0][0] = b[0][0] / maximum;
-	double x2c = -b[0][1] / (2 * b[0][2]);
-	offset = x2c * x2c * x2c * b[0][2] / 3 + x2c * x2c * b[0][1] / 2 + x2c * b[0][0] - x2c;
+	double maximum = calc_bj(2) * Math.pow((-calc_bj(1) / (2 * calc_bj(2))), 2) + calc_bj(1)
+		* (-calc_bj(1) / (2 * calc_bj(2))) + calc_bj(0);
+	for (int i = 0; i < b.length; i++) {
+	    for (int j = 0; j < b[i].length; j++) {
+		b[i][j] /= maximum;
+	    }
+	}
+	double x2c = -calc_bj(1) / (2 * calc_bj(2));
+	offset = x2c * x2c * x2c * calc_bj(2) / 3 + x2c * x2c * calc_bj(1) / 2 + x2c * calc_bj(0) - x2c;
     }
 
     /**
