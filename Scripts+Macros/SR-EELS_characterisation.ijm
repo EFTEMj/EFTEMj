@@ -213,8 +213,14 @@ function analyse_dataset() {
 			}
 			y_pos += step_size;
 		}
+		/*
+		 * The following code will create a jpg-version of the input image that shows the detected borders and the detected centre of the spectrum.
+		 * The image will be converted to logarithmic scale to enhance the visibility at regions with low signals.
+		 */
 		selectImage(id);
 		run("Select None");
+		run("Log");
+		run("Enhance Contrast", "saturated=0.35");
 		addPointsToOverlay(array_left, array_pos_y, 0);
 		addPointsToOverlay(array_pos_x, array_pos_y, 1);
 		addPointsToOverlay(array_right, array_pos_y, 2);
@@ -460,7 +466,7 @@ function ceil(value) {
  * description: This function is used to draw data points at the current image. The datapoints are added to the overlay.
  */
 function addPointsToOverlay(xPos, yPos, overlayColorIndex) {
-	color = newArray("Yellow", "Red", "Orange");
+	color = newArray("Green", "Red", "Blue");
 	markerSize = "Tiny";
 	if (maxOf(getHeight, getWidth) > 4000) {
 		markerSize = "Large";
