@@ -169,3 +169,6 @@ do for  [i=0:k] {
 	}
 }
 unset print
+set xrange[*:*]
+set yrange[*:*]
+set zrange[*:*]
