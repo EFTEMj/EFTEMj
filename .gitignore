@@ -5,3 +5,4 @@
 *.war
 *.ear
 Thumbs.db
+*.ffs_db

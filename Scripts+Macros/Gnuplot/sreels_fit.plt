@@ -99,8 +99,8 @@ set terminal wxt
 
 str_f_it = ''
 str_via =''
-do for  [i=0:n] {
-	do for [j=0:m] {
+do for  [i=0:m] {
+	do for [j=0:n] {
 		str_f_it = str_f_it.sprintf(' + a%d%d*x**%d*y**%d', i, j, i, j)
 		str_via = str_via.sprintf(',a%d%d',i,j)
 		eval(sprintf('a%d%d = %e', i, j, 100.0**(-i-j)))
@@ -115,8 +115,8 @@ eval('fit f(x,y) filename_pseudo3D using 1:2:(strcol(4) eq "u"?1/0:$3):(1) via '
 set print path.'parameters/pseudo3D.txt'
 print '# This file contains the parameters for "z(x,y) = "'.str_f_it.'.'
 set print path.'parameters/pseudo3D.txt' append
-do for  [i=0:n] {
-	do for [j=0:m] {		
+do for  [i=0:m] {
+	do for [j=0:n] {		
 		# "parameter = value('parameter')"
 		print sprintf('a%d%d = %e', i, j ,value(sprintf('a%d%d', i, j)))
 	}
@@ -125,8 +125,8 @@ do for  [i=0:n] {
 set print path.'parameters/EFTEMj_input.txt'
 print '# This file is used as input for the SR-EELS correction of EFTEMj.'
 set print path.'parameters/EFTEMj_input.txt' append
-do for  [i=0:n] {
-	do for [j=0:m] {		
+do for  [i=0:m] {
+	do for [j=0:n] {		
 		# "parameter = value('parameter')"
 		print sprintf('a%d%d = %e', i, j ,value(sprintf('a%d%d', i, j)))
 	}
