@@ -239,28 +239,28 @@ function analyse_dataset() {
 		/*
 		 * Spectrum width:
 		 */
-		Fit.doFit("2nd Degree Polynomial", array_pos_y, array_width);
+		Fit.doFit("3rd Degree Polynomial", array_pos_y, array_width);
 		Fit.plot;
 		saveAs("PNG", result_dirs[m] + "width_" + img_name + ".png");
 		close();
 		/*
 		 * Position of spectrum centre:
 		 */
-		Fit.doFit("2nd Degree Polynomial", array_pos_y, array_pos_x);
+		Fit.doFit("3rd Degree Polynomial", array_pos_y, array_pos_x);
 		Fit.plot;
 		saveAs("PNG", result_dirs[m] + "center_" + img_name + ".png");
 		close();
 		/*
 		 * Position of left border:
 		 */
-		Fit.doFit("2nd Degree Polynomial", array_pos_y, array_left);
+		Fit.doFit("3rd Degree Polynomial", array_pos_y, array_left);
 		Fit.plot;
 		saveAs("PNG", result_dirs[m] + "bottom_" + img_name + ".png");
 		close();
 		/*
 		 * Position of right border:
 		 */
-		Fit.doFit("2nd Degree Polynomial", array_pos_y, array_right);
+		Fit.doFit("3rd Degree Polynomial", array_pos_y, array_right);
 		Fit.plot;
 		saveAs("PNG", result_dirs[m] + "top_" + img_name + ".png");
 		close();
@@ -407,11 +407,11 @@ function save_pos_and_width(index, pos, width, left, right) {
 	array_pos_all_calc[index] = left + (right - left) / 2;
 	array_width_all_calc[index] = right - left;
 	if (index == list.length - 1) {
-		Fit.doFit("2nd Degree Polynomial", array_pos_all, array_width_all);
+		Fit.doFit("3rd Degree Polynomial", array_pos_all, array_width_all);
 		Fit.plot;
 		saveAs("PNG", result_dirs[m] + "width_vs_pos.png");
 		close();
-		Fit.doFit("2nd Degree Polynomial", array_pos_all_calc, array_width_all_calc);
+		Fit.doFit("3rd Degree Polynomial", array_pos_all_calc, array_width_all_calc);
 		Fit.plot;
 		saveAs("PNG", result_dirs[m] + "width_vs_pos_calc.png");
 		close();
