@@ -4,7 +4,7 @@
 - <del>[DriftDetectionPlugin.java][drift]: Implement the manual drift correction.</del><br />I removed the selection of the detection mode from [DriftDetectionPlugin.java][drift]. If I implement a manual detection, this will be done as an independent plugin.
 - <del>[ElementalMappingPlugin.java][map]: Implement new background fit methods (least squares & weighted least squares).</del><br />**Done**
 - <del>[SR_EELS_CorrectionPlugin.java][sr-eels.d]: Complete the correction by adding the intensity correction and the dispersion correction.</del><br />I will implement a new correction (see next task).
-- Implement the new correction method that is based on the characterization [SR-EELS_characterisation.ijm][sr-eels.ijm].
+- <del>Implement the new correction method that is based on the characterization [SR-EELS_characterisation.ijm][sr-eels.ijm].</del><br /> The implementation is finished, but I have to add additional Javadoc.
 - Complete the tutorials ([Tutorial_Drift.java][tutorial.drift], [Tutorial_ESI.java][tutorial.esi],...).
 
 [drift]: https://github.com/EFTEMj/EFTEMj/blob/master/EFTEMj/src/main/java/drift/DriftDetectionPlugin.java
