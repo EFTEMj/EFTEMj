@@ -4,7 +4,7 @@ Processing of Energy Filtering TEM images with ImageJ
 
 ## What is EFTEMj?
 
-EFTEMj is a plugin for [ImageJ][ij] that combines a drift correction and a flexible elemental mapping routine. It has been created in 2009 as a part of a diploma thesis. Until now (April the 11th, 2013) EFTEMj has not been finished, but it is planed to publish the source code under an open source license.
+EFTEMj is a plugin for [ImageJ][ij] that combines a drift correction and a flexible elemental mapping routine. It has been created in 2009 as a part of a diploma thesis. The current version is missing some elemental mapping features, but it is extended by tools for spacialy resolved electron energy loss spectroscopy (SR-EELS). SR-EELS is the main subject of my PhD thesis.
 
 ## LICENSING
 
@@ -26,6 +26,8 @@ An introduction to elemental mapping with Energy Filtering Transmission Electron
 
 SR-EELS is a method that preserves spatial information when recording [EEL spectra][eels] [[Reimer1988]]. The SR-EELS plugins included in EFTEMj are used to correct distortions that occur when applying SR-EELS with an in-column imaging energy filter of a Zeiss Libra 200FE.
 
+For more information you can have a look at my [presentation][slides] created with [impress.js][impress].
+
 ## References
 
 - [[Heil2012]] T. Heil et al., Ultramicroscopy **118** (2012), 11-16
@@ -38,3 +40,5 @@ SR-EELS is a method that preserves spatial information when recording [EEL spect
 [2]: http://www.electroiq.com/articles/sst/print/volume-43/issue-3/features/metrology-test/metrology-eftem-provides-elemental-mapping-at-nanometer-resolution.html
 [Heil2012]: http://dx.doi.org/10.1016/j.ultramic.2012.04.009
 [Reimer1988]: http://dx.doi.org/10.1016/0304-3991%2888%2990126-X 
+[slides]: https://eftemj.github.io
+[impress]: https://github.com/bartaz/impress.js
