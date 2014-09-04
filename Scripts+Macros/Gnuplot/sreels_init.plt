@@ -70,3 +70,10 @@ if (load_prev == -1) {
 		print ''
 	}
 }
+if (strstrt(GPVAL_PWD, "/")) {
+	# Unix
+	#ToDo: implement shell version
+} else {
+	# Windows
+	system 'del sub_init.plt'
+}

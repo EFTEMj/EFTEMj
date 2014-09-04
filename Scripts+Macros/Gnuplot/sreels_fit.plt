@@ -18,6 +18,8 @@ if (!exists('path')) {
 # Order of the polynomial of the pseudo3D fit:
 m = 2	# polynomial along the energy axis
 n = 2	# polynomial that describes the variation of the parameters of the polynomial
+# The energy channel that is used to calculate yn:
+yn_pos = 0
 
 # Order of the polynomial of the 3D fit:
 k = 2	# polynomial along the energy axis
@@ -84,7 +86,7 @@ set terminal unknown
 # As we only use 'replot' at a FOR-loop, we have to create an empty graph first.
 splot NaN
 
-plot_str_pseudo3D(N, S) = sprintf('replot filename_%s(%d) using ($1):(%s%d(2048)):($2) with points', S, N, S, N)
+plot_str_pseudo3D(N, S) = sprintf('replot filename_%s(%d) using ($1):(%s%d(yn_pos)):($2) with points', S, N, S, N)
 do for [i=index_start:index_stop:index_inc] {
 	do for [str in "T C B"] {
 		eval(plot_str_pseudo3D(i, str))
