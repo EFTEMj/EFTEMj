@@ -11,7 +11,7 @@ import ij.plugin.PlugIn;
  * This Plugin is a tutorial on how to use the drift correction.<br />
  * It will automatically create an example stack and instructs the user on how to correct the drift.
  * 
- * @author Michael Entrup b. Epping <entrup@arcor.de>
+ * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
  *
  */
 public class Tutorial_Drift implements PlugIn {

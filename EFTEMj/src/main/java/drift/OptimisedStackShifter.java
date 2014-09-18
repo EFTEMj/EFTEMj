@@ -1,7 +1,7 @@
 /**
  * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
  * 
- * Copyright (c) 2013, Michael Entrup b. Epping <entrup@arcor.de>
+ * Copyright (c) 2014, Michael Entrup b. Epping <michael.entrup@wwu.de>
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@ import java.awt.Point;
 /**
  * This class is used to shift all images of an {@link ImagePlus} that contains a stack.
  * 
- * @author Michael Entrup b. Epping <entrup@arcor.de>
+ * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
  * 
  */
 public class OptimisedStackShifter {

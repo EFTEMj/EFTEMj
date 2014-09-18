@@ -1,7 +1,7 @@
 /**
  * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
  * 
- * Copyright (c) 2013, Michael Entrup b. Epping <entrup@arcor.de>
+ * Copyright (c) 2014, Michael Entrup b. Epping <michael.entrup@wwu.de>
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -40,7 +40,7 @@ import sr_eels.SR_EELS.KEYS;
 /**
  * This plugin will setup the energy dispersion values used by {@link SR_EELS_DispersionCalibrationPlugin}.
  * 
- * @author Michael Entrup <michael.entrup@uni-muenster.de>
+ * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
  */
 public class SR_EELS_DispersionConfigurationPlugin implements PlugIn {
 

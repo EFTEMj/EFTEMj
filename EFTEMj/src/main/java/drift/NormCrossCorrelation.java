@@ -1,7 +1,7 @@
 /**
  * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
  * 
- * Copyright (c) 2013, Michael Entrup b. Epping <entrup@arcor.de>
+ * Copyright (c) 2014, Michael Entrup b. Epping <michael.entrup@wwu.de>
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@ import ij.process.ImageProcessor;
  * map is calculated in a separate task. You can switch to the calculation of the normalised cross-correlation by using
  * <code>useCoefficient(false)</code>.
  * 
- * @author Michael Entrup b. Epping <entrup@arcor.de>
+ * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
  */
 public class NormCrossCorrelation {
 

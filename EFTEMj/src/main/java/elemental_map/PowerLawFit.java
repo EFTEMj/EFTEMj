@@ -1,7 +1,7 @@
 /**
  * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
  * 
- * Copyright (c) 2013, Michael Entrup b. Epping <entrup@arcor.de>
+ * Copyright (c) 2014, Michael Entrup b. Epping <michael.entrup@wwu.de>
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@ package elemental_map;
  * ). It is used by EFTEMj, but it can be used for other tasks as well. That is
  * why no classes from ImageJ are used.
  * 
- * @author Michael Entrup b. Epping <entrup@arcor.de>
+ * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
  * 
  */
 public abstract class PowerLawFit {

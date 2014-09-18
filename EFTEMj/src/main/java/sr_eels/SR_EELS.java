@@ -1,7 +1,7 @@
 /**
  * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
  * 
- * Copyright (c) 2013, Michael Entrup b. Epping
+ * Copyright (c) 2014, Michael Entrup b. Epping
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -32,7 +32,7 @@ import eftemj.EFTEMj;
 /**
  * This class contains constants and utility methods for the sr_eels package.
  * 
- * @author Michael Entrup <michael.entrup@uni-muenster.de>
+ * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
  * 
  */
 public class SR_EELS {

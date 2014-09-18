@@ -1,7 +1,7 @@
 /**
  * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
  * 
- * Copyright (c) 2013, Michael Entrup b. Epping <entrup@arcor.de>
+ * Copyright (c) 2014, Michael Entrup b. Epping <michael.entrup@wwu.de>
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * This class will calculate the elemental maps. It is separated from the plugin for reason of clarity.
  * 
- * @author Michael Entrup b. Epping <entrup@arcor.de>
+ * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
  * 
  */
 public class ElementalMapping {
@@ -54,7 +54,7 @@ public class ElementalMapping {
      * All fit methods that are available are listed at the {@link Enum}. Each method contains a full name that can be
      * used to be displayed at the GUI.
      * 
-     * @author Michael Entrup <michael.entrup@uni-muenster.de>
+     * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
      */
     public static enum AVAILABLE_METHODS {
 	LSE("Least squares estimation"), MLE("Maximum-likelihood estimation"), WLSE("Weighted least squares estimation"), LMA(
@@ -97,7 +97,7 @@ public class ElementalMapping {
     /**
      * This {@link Enum} lists all accuracy values (break conditions) that are available to the background fit.
      * 
-     * @author Michael Entrup <michael.entrup@uni-muenster.de>
+     * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
      */
     public static enum AVAILABLE_EPSILONS {
 	VERY_LOW(1.0E-03), LOW(1.0E-06), MID(1.0E-09), HIGH(1.0E-12), VERRY_HIGH(1.0E-15);
@@ -361,7 +361,7 @@ public class ElementalMapping {
      * possible, because the calculation is independent for each pixel of the stack. To reduce the administrative
      * workload, one task is created for each image row instead of one task for each pixel.
      * 
-     * @author Michael Entrup b. Epping <entrup@arcor.de>
+     * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
      * 
      */
     private class ElementalMappingTask implements Runnable {

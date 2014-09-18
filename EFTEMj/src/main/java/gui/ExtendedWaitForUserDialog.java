@@ -1,7 +1,7 @@
 /**
  * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
  * 
- * Copyright (c) 2013, Michael Entrup b. Epping <entrup@arcor.de>
+ * Copyright (c) 2014, Michael Entrup b. Epping <michael.entrup@wwu.de>
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,7 @@ import ij.gui.WaitForUserDialog;
  * I implement {@link ContainerListener} to add the possibility to close the dialog by pressing [Esc]. I found this
  * method at http://www.devx.com/tips/Tip/13547 (22.04.2013).
  * 
- * @author Michael Entrup b. Epping <entrup@arcor.de>
+ * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
  * 
  */
 @SuppressWarnings("serial")

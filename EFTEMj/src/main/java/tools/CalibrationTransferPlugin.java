@@ -1,7 +1,7 @@
 /**
  * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
  * 
- * Copyright (c) 2013, Michael Entrup b. Epping
+ * Copyright (c) 2014, Michael Entrup b. Epping
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -39,7 +39,7 @@ import ij.process.ImageProcessor;
 /**
  * A simple plugin that will transfer the calibration of one image to another.
  * 
- * @author Michael Entrup <michael.entrup@uni-muenster.de>
+ * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
  * 
  */
 public class CalibrationTransferPlugin implements ExtendedPlugInFilter {

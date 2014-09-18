@@ -10,7 +10,7 @@ import java.io.InputStream;
  * This Plugin is a tutorial on how to create an elemental map from energy filtered images.<br />
  * It will automatically open example images/stacks and instruct the user on how to process them using EFTEMj.
  * 
- * @author Michael Entrup b. Epping <entrup@arcor.de>
+ * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
  *
  */
 public class Tutorial_ESI implements PlugIn {
