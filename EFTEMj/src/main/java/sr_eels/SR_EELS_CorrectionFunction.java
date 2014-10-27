@@ -32,6 +32,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.apache.commons.math3.util.FastMath;
+
 /**
  * @author Michael Entrup b. Epping <entrup@arcor.de>
  *
@@ -69,8 +71,10 @@ public class SR_EELS_CorrectionFunction {
      */
     private double calc_y1(double x1, double x2) throws SR_EELS_Exception {
 	double yn = calc_yn(x2);
-	return arcsinh(a[1][0] + 2 * a[2][0] * x1 + yn * (a[1][1] + a[1][2] * yn + 2 * x1 * (a[2][1] + a[2][2] * yn)))
-		/ (2 * (a[2][0] + yn * (a[2][1] + a[2][2] * yn))) - arcsinh(a[1][0] + yn * (a[1][1] + a[1][2] * yn))
+	return FastMath.asinh(a[1][0] + 2 * a[2][0] * x1 + yn
+		* (a[1][1] + a[1][2] * yn + 2 * x1 * (a[2][1] + a[2][2] * yn)))
+		/ (2 * (a[2][0] + yn * (a[2][1] + a[2][2] * yn)))
+		- FastMath.asinh(a[1][0] + yn * (a[1][1] + a[1][2] * yn))
 		/ (2 * (a[2][0] + yn * (a[2][1] + a[2][2] * yn)));
     }
 
@@ -102,10 +106,6 @@ public class SR_EELS_CorrectionFunction {
 	    value += b[i][j] * Math.pow(0, i);
 	}
 	return value;
-    }
-
-    private double arcsinh(double x) {
-	return Math.log(x + Math.sqrt(x * x + 1));
     }
 
     /**
