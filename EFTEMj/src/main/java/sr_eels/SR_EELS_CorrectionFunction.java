@@ -99,7 +99,7 @@ public class SR_EELS_CorrectionFunction {
     private double calc_bj(int j) {
 	double value = 0;
 	for (int i = 0; i < b.length; i++) {
-	    value += b[i][j] * Math.pow(2048, i);
+	    value += b[i][j] * Math.pow(0, i);
 	}
 	return value;
     }

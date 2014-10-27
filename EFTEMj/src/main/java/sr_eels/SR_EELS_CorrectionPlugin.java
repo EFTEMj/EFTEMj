@@ -60,7 +60,10 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     private final int FLAGS = DOES_32 | NO_CHANGES | FINAL_PROCESSING;
     private String path = "No file selected.";
     private int subdivision;
-    private ImagePlus imp;
+    /**
+     * The {@link ImagePlus} that contains the image to correct. The input image is not changed.
+     */
+    private ImagePlus input;
     private int binning;
 
     /*
@@ -86,7 +89,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     public void run(ImageProcessor ip) {
 	try {
 	    SR_EELS_CorrectionFunction func = new SR_EELS_CorrectionFunction(path);
-	    SR_EELS_Correction correction = new SR_EELS_Correction(imp, binning, func, subdivision);
+	    SR_EELS_Correction correction = new SR_EELS_Correction(input, binning, func, subdivision);
 	    correction.startCalculation();
 	    correction.showResult();
 
@@ -110,7 +113,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 		return NO_CHANGES | DONE;
 	    }
 	}
-	this.imp = imp;
+	this.input = imp;
 	binning = FULL_WIDTH / imp.getWidth();
 	if (binning != FULL_HEIGHT / imp.getHeight()) {
 	    IJ.showMessage(String.format("This plugin does not support images of the size %d,%d.", imp.getWidth(),

@@ -40,8 +40,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * This class is loaded by {@link SR_EELS_CorrectionPlugin} to perform the correction. It uses the class
+ * {@link SR_EELS_CorrectionTask}, which implements {@link Runnable}, to benefit from multicore processors.
+ * 
  * @author Michael Entrup b. Epping <entrup@arcor.de>
- *
  */
 public class SR_EELS_Correction {
 
@@ -66,10 +68,26 @@ public class SR_EELS_Correction {
      * </table>
      */
     private static int debug_level = 0;
+    /**
+     * The {@link ImagePlus} that contains the image to correct. The input image is not changed.
+     */
     private ImagePlus input;
+    /**
+     * The {@link FloatProcessor} of the input image.
+     */
     private FloatProcessor input_float;
+    /**
+     * The binning that was used to record the input image.
+     */
     private int binning;
+    /**
+     * A new {@link ImagePlus} that stores the result of the correction.
+     */
     private ImagePlus output;
+    /**
+     * This class represents the mathematical function that is used to perform the correction. It is possible to
+     * implement different childs of {@link SR_EELS_CorrectionFunction} to switch between the used functions.
+     */
     private SR_EELS_CorrectionFunction function;
     private int subdivision;
     /**
@@ -101,8 +119,8 @@ public class SR_EELS_Correction {
 	this.function = function;
 	this.subdivision = subdivision;
 	debug_level = SR_EELS_CorrectionPlugin.debug_level;
-	output = new ImagePlus(input.getTitle() + "_corrected", new FloatProcessor(input.getWidth(), input.getHeight(),
-		new double[input.getWidth() * input.getHeight()]));
+	output = new ImagePlus(input.getShortTitle() + "_corrected", new FloatProcessor(input.getWidth(),
+		input.getHeight(), new double[input.getWidth() * input.getHeight()]));
 	if (debug_level >= 64) {
 	    pixelSize = new ImagePlus(input.getShortTitle() + "_pixel size", new FloatProcessor(input.getWidth(),
 		    input.getHeight(), new double[input.getWidth() * input.getHeight()]));
