@@ -1,12 +1,11 @@
 package sr_eels.testing;
 
-import java.awt.Color;
-
 import ij.IJ;
 import ij.ImageJ;
 import ij.gui.Plot;
-import ij.gui.PlotWindow;
 import ij.plugin.PlugIn;
+
+import java.awt.Color;
 
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.analysis.ParametricUnivariateFunction;
@@ -57,7 +56,9 @@ public class Optimization_Example implements PlugIn {
 	    @Override
 	    public double value(double x, double... params) {
 		double a = params[0];
-		double b = params[1];
+		double b = 0;
+		if (params.length > 1)
+		    b = params[1];
 		return a * Math.log(x) + b;
 	    }
 	};
@@ -98,14 +99,14 @@ public class Optimization_Example implements PlugIn {
 	    yFit[i] = function.value(Math.exp(logXFit[i]), result);
 	}
 	// 3) show it
-	Plot plot = new Plot("Curve fit", "log(x)", "y",logXFit, yFit);
+	Plot plot = new Plot("Curve fit", "log(x)", "y", logXFit, yFit);
 	plot.setSize(1024, 768);
 	// Let's add some margin
 	plot.setLimits(logX[0] - xWindow / 10, logX[x.length - 1] + xWindow / 10, y[x.length - 1] - yWindow / 10, y[0]
 		+ yWindow / 10);
 	plot.draw();
 	plot.setColor(Color.RED);
-	plot.addPoints(logX, y, PlotWindow.CROSS);
+	plot.addPoints(logX, y, Plot.CROSS);
 	plot.show();
     }
 
