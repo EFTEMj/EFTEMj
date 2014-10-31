@@ -42,15 +42,12 @@
 // Improvements by:
 // dscherba  www.ncsa.uiuc.edu/~dscherba  
 // Jonathan Jackson   j.jackson # ucl.ac.uk
+// Michael Entrup	entrup@arcor.de
 
 package sr_eels.testing;
 
-import java.util.Arrays;
-
-import java.util.Random;
-
 // see comment above
-import Jama.*;
+import Jama.Matrix;
 
 /**
  * Levenberg-Marquardt, implemented from the general description in Numerical Recipes (NR), then tweaked slightly to
@@ -68,7 +65,7 @@ public final class LM {
      * calculate the current sum-squared-error (Chi-squared is the distribution of squared Gaussian errors, thus the
      * name)
      */
-    static double chiSquared(double[][] x, double[] a, double[] y, double[] s, LMfunc f) {
+    static double chiSquared(double[][] x, double[] a, double[] y, double[] s, LM_Function f) {
 	int npts = y.length;
 	double sum = 0.;
 
@@ -108,7 +105,7 @@ public final class LM {
      * @return the new lambda for future iterations. Can use this and maxiter to interleave the LM descent with some
      *         other task, setting maxiter to something small.
      */
-    public static double solve(double[][] x, double[] a, double[] y, double[] s, boolean[] vary, LMfunc f,
+    public static double solve(double[][] x, double[] a, double[] y, double[] s, boolean[] vary, LM_Function f,
 	    double lambda, double termepsilon, int maxiter, int verbose) throws Exception {
 	int npts = y.length;
 	int nparm = a.length;
@@ -165,16 +162,6 @@ public final class LM {
 		    g[r] += (oos2[i] * (y[i] - f.val(xi, a)) * f.grad(xi, a, r));
 		}
 	    } // npts
-
-	    // scale (for consistency with NR, not necessary)
-	    if (false) {
-		for (int r = 0; r < nparm; r++) {
-		    g[r] = -0.5 * g[r];
-		    for (int c = 0; c < nparm; c++) {
-			H[r][c] *= 0.5;
-		    }
-		}
-	    }
 
 	    // solve H d = -g, evaluate error at new location
 	    // double[] d = DoubleMatrix.solve(H, g);
@@ -243,9 +230,30 @@ public final class LM {
     // ----------------------------------------------------------------
 
     /**
+     * This methods were part of LMfunc.java. I moved them to a new interface, as they are only needed for testing.
+     * 
+     * @author Michael Entrup b. Epping <entrup@arcor.de>
+     *
+     */
+    private interface LM_TestFunction extends LM_Function {
+
+	/**
+	 * return an array[4] of x,a,y,s for a test case; a is the desired final answer.
+	 */
+	public Object[] testdata();
+
+	/**
+	 * return initial guess at a[]
+	 */
+	double[] initial();
+    }
+
+    // ----------------------------------------------------------------
+
+    /**
      * solve for phase, amplitude and frequency of a sinusoid
      */
-    static class LMSineTest implements LMfunc {
+    static class LMSineTest implements LM_TestFunction {
 	static final int PHASE = 0;
 	static final int AMP = 1;
 	static final int FREQ = 2;
@@ -310,81 +318,23 @@ public final class LM {
     /**
      * solve for phase, amplitude and frequency of a sinusoid
      */
-    static class LMPolyTest implements LMfunc {
-	boolean use_exp_results = false;
-	static final int ORDER_X = 2;
-	static final int ORDER_Y = 2;
-	static final int PARAS = (ORDER_X + 1) * (ORDER_Y + 1);
+    static class LMPolyTest implements LM_TestFunction {
 
 	public double[] initial() {
-	    if (use_exp_results == true) {
-		double[] a = { 1., 0.01, 0.0001, 0.01, 0.0001, 1e-6, 0.0001, 1e-6, 1e-8 };
-		return a;
-	    }
-	    double[] a = new double[PARAS];
-	    Arrays.fill(a, 1.0);
+	    double[] a = { 1., 0.01, 0.0001, 0.01, 0.0001, 1e-6, 0.0001, 1e-6, 1e-8 };
 	    return a;
 	} // initial
 
 	public double val(double[] x, double[] a) {
-	    assert x.length == 2;
-	    assert a.length == PARAS;
-	    double val = 0;
-	    for (int i = 0; i <= ORDER_X; i++) {
-		for (int j = 0; j <= ORDER_Y; j++) {
-		    val += a[(ORDER_Y + 1) * i + j] * Math.pow(x[0], i) * Math.pow(x[1], j);
-		}
-	    }
-	    return val;
+	    return Polynomial_2D.val(x, a, 2, 2);
 	} // val
 
 	public double grad(double[] x, double[] a, int a_k) {
-	    assert x.length == 2;
-	    assert a.length == PARAS;
-	    for (int i = 0; i <= ORDER_X; i++) {
-		for (int j = 0; j <= ORDER_Y; j++) {
-		    if (a_k == (ORDER_Y + 1) * i + j)
-			return Math.pow(x[0], i) * Math.pow(x[1], j);
-		}
-	    }
-	    return 0.;
+	    return Polynomial_2D.grad(x, a, 2, 2, a_k);
 	} // grad
 
 	public Object[] testdata() {
-	    if (use_exp_results == true)
-		return testdata(1);
-	    double[] a = new double[9];
-	    a[0] = 0.111;
-	    a[1] = 1.222;
-	    a[2] = 1.333;
-	    a[3] = 0.111;
-	    a[4] = 1.222;
-	    a[5] = 1.333;
-	    a[6] = 0.111;
-	    a[7] = 1.222;
-	    a[8] = 1.333;
-
-	    Random rand = new Random();
-	    int npts = 10;
-	    double[][] x = new double[npts * npts][2];
-	    double[] y = new double[npts * npts];
-	    double[] s = new double[npts * npts];
-	    for (int i = 0; i < npts; i++) {
-		for (int j = 0; j < npts; j++) {
-		    x[i * npts + j][0] = (double) 10. * i / npts;
-		    x[i * npts + j][1] = (double) 10. * j / npts;
-		    y[i * npts + j] = val(x[i * npts + j], a) * (1 + (rand.nextFloat() - 0.5) / 5);
-		    s[i * npts + j] = y[i * npts + j];
-		}
-	    }
-
-	    Object[] o = new Object[4];
-	    o[0] = x;
-	    o[1] = a;
-	    o[2] = y;
-	    o[3] = s;
-
-	    return o;
+	    return testdata(1);
 	} // test
 
 	public Object[] testdata(int n) {
@@ -482,7 +432,6 @@ public final class LM {
 	    o[3] = s;
 
 	    return o;
-
 	}
 
     } // PolyTest
@@ -492,7 +441,7 @@ public final class LM {
     /**
      * quadratic (p-o)'S'S(p-o) solve for o, S S is a single scale factor
      */
-    static class LMQuadTest implements LMfunc {
+    static class LMQuadTest implements LM_TestFunction {
 
 	public double val(double[] x, double[] a) {
 	    assert a.length == 3;
@@ -593,7 +542,7 @@ public final class LM {
      *
      * Works, results are close to those from the NR example code.
      */
-    static class LMGaussTest implements LMfunc {
+    static class LMGaussTest implements LM_TestFunction {
 	static double SPREAD = 0.001; // noise variance
 
 	public double val(double[] x, double[] a) {
@@ -713,7 +662,7 @@ public final class LM {
 	// LMfunc f = new LMQuadTest(); // works
 	// LMfunc f = new LMSineTest(); // works
 	// LMfunc f = new LMGaussTest(); // works
-	LMfunc f = new LMPolyTest();
+	LM_TestFunction f = new LMPolyTest(); // works
 
 	double[] aguess = f.initial();
 	Object[] test = f.testdata();
