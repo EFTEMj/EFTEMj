@@ -1,18 +1,18 @@
 /**
  * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
- * 
+ *
  * Copyright (c) 2014, Michael Entrup b. Epping <michael.entrup@wwu.de>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -49,7 +49,7 @@ import java.util.Arrays;
 
 import javax.naming.InitialContext;
 
-import tools.ExtendedStackToImage;
+import tools.ExtendedImagesToStack;
 
 /**
  * This plugin can measure the drift between all images of a stack. The output is the drift of all other images compared
@@ -57,9 +57,9 @@ import tools.ExtendedStackToImage;
  * <p />
  * The automatic drift detection calculates the normalised cross-correlation coefficients for all possible shifts (can
  * be limited for faster processing) to determine the drift.
- * 
+ *
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
- * 
+ *
  */
 public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 
@@ -129,13 +129,13 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see ij.plugin.filter.PlugInFilter#setup(java.lang.String, ij.ImagePlus)
      */
     @Override
-    public int setup(String arg, ImagePlus imp) {
+    public int setup(final String arg, final ImagePlus imp) {
 	if (arg == "final") {
-	    ResultsTable result = new ResultsTable();
+	    final ResultsTable result = new ResultsTable();
 	    // only integer values are used
 	    result.setPrecision(0);
 	    for (int i = 0; i < driftArray.length; i++) {
@@ -151,9 +151,8 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	    result.show("Drift of " + stack.getShortTitle());
 	    if (createNew == true) {
 		return NO_CHANGES | DONE;
-	    } else {
-		return DONE;
 	    }
+	    return DONE;
 	}
 	// No setup is done here. See showDialog() for the setup procedure.
 	return FLAGS;
@@ -161,12 +160,12 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see ij.plugin.filter.PlugInFilter#run(ij.process.ImageProcessor)
      */
     @Override
-    public void run(ImageProcessor ip) {
-	NormCrossCorrelation[] ccArray = prepareCC();
+    public void run(final ImageProcessor ip) {
+	final NormCrossCorrelation[] ccArray = prepareCC();
 	driftArray = new Point[ccArray.length];
 	for (int i = 0; i < ccArray.length; i++) {
 	    if (ccArray[i] != null) {
@@ -179,8 +178,8 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	// OptimisedStackShifter will modify the Array
 	shiftArray = Arrays.copyOf(driftArray, driftArray.length);
 	if (performShift == true) {
-	    ImagePlus correctedStack = OptimisedStackShifter.shiftImages(stack, shiftArray, mode, true, optimiseShift,
-		    createNew);
+	    final ImagePlus correctedStack = OptimisedStackShifter.shiftImages(stack, shiftArray, mode, true,
+		    optimiseShift, createNew);
 	    if (createNew == true) {
 		correctedStack.show();
 		correctedStack.setCalibration(calibration);
@@ -193,24 +192,24 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see ij.plugin.filter.ExtendedPlugInFilter#showDialog(ij.ImagePlus, java.lang.String,
      * ij.plugin.filter.PlugInFilterRunner)
      */
     @Override
-    public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
+    public int showDialog(final ImagePlus imp, final String command, final PlugInFilterRunner pfr) {
 	// Check if imp is a stack.
 	if (imp.getStackSize() <= 1) {
 	    // ExtendedStackToImage is a plugin
-	    new ExtendedStackToImage().convertImagesToStack();
+	    new ExtendedImagesToStack().convertImagesToStack();
 	    if (IJ.getImage().getStackSize() <= 1) {
 		canceled();
 		return NO_CHANGES | DONE;
-	    } else {
-		imp = IJ.getImage();
 	    }
+	    stack = IJ.getImage();
+	} else {
+	    stack = imp;
 	}
-	stack = imp;
 	calibration = imp.getCalibration();
 	if (imp.getRoi() == null) {
 	    /*
@@ -231,9 +230,8 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	}
 	if (createNew == true) {
 	    return FLAGS | NO_CHANGES;
-	} else {
-	    return FLAGS;
 	}
+	return FLAGS;
     }
 
     /**
@@ -241,7 +239,7 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
      * images are copied and cropped before committed to {@link NormCrossCorrelation}.
      */
     private NormCrossCorrelation[] prepareCC() {
-	NormCrossCorrelation[] ccArray = new NormCrossCorrelation[stack.getStackSize()];
+	final NormCrossCorrelation[] ccArray = new NormCrossCorrelation[stack.getStackSize()];
 	roi.x = roi.x - deltaX;
 	roi.y = roi.y - deltaY;
 	roi.width = roi.width + 2 * deltaX;
@@ -275,24 +273,24 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see ij.plugin.filter.ExtendedPlugInFilter#setNPasses(int)
      */
     @Override
-    public void setNPasses(int nPasses) {
+    public void setNPasses(final int nPasses) {
 	// This method is not used.
     }
 
     /**
      * A dialog that requests the user to set a ROI. This ROI is used to create a reference image for the
      * cross-correlation.
-     * 
+     *
      * @param title
      * @return the selected slice of the stack or CANCEL
      */
-    private int showRoiDialog(String title) {
+    private int showRoiDialog(final String title) {
 	IJ.setTool(Toolbar.RECTANGLE);
-	ExtendedWaitForUserDialog dialog = new ExtendedWaitForUserDialog(
+	final ExtendedWaitForUserDialog dialog = new ExtendedWaitForUserDialog(
 		title + " - set ROI",
 		"Set a ROI to define the reference image.\nThe ROI should contain a structure visable at all images of the stack.",
 		null);
@@ -304,22 +302,22 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 
     /**
      * This dialog is used to setup the parameter for the automatic drift detection.
-     * 
+     *
      * @param title
      * @return OK or CANCEL
      */
-    private int showParameterDialog(String title) {
-	GenericDialog gd = new GenericDialog(title + " - set parameters", IJ.getInstance());
+    private int showParameterDialog(final String title) {
+	final GenericDialog gd = new GenericDialog(title + " - set parameters", IJ.getInstance());
 	// The ROI defines the maximum of delta
-	Point maxDelta = getRoiBorderDist();
-	int maxDeltaX = maxDelta.x;
-	int maxDeltaY = maxDelta.y;
+	final Point maxDelta = getRoiBorderDist();
+	final int maxDeltaX = maxDelta.x;
+	final int maxDeltaY = maxDelta.y;
 	// maxValue is a multiple of 10, except when maxDelta is smaller than 10.
 	gd.addSlider("Set_delta_x", 0, Math.min(Math.max(maxDeltaX / 10 * 10, 10), maxDeltaX),
 		Math.min(Math.max(maxDeltaX / 10 * 10, 10), maxDeltaX) / 2);
 	gd.addSlider("Set_delta_y", 0, Math.min(Math.max(maxDeltaY / 10 * 10, 10), maxDeltaY),
 		Math.min(Math.max(maxDeltaY / 10 * 10, 10), maxDeltaY) / 2);
-	String[] stackLabels = new String[stack.getStackSize()];
+	final String[] stackLabels = new String[stack.getStackSize()];
 	for (int i = 0; i < stack.getStackSize(); i++) {
 	    String label = stack.getStack().getShortSliceLabel(i + 1);
 	    if (label == null) {
@@ -329,12 +327,12 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	}
 	gd.addChoice("Select_reference slice", stackLabels, stackLabels[referenceIndex - 1]);
 	// begin - CheckboxGroup
-	String[] labels = { "Perform_image_shift", "Optimise_image_shift", "Create_new_image" };
-	boolean[] defaults = { true, true, true };
-	String[] headings = { "Shift images" };
+	final String[] labels = { "Perform_image_shift", "Optimise_image_shift", "Create_new_image" };
+	final boolean[] defaults = { true, true, true };
+	final String[] headings = { "Shift images" };
 	gd.addCheckboxGroup(3, 1, labels, defaults, headings);
 	// end - checkboxGroup
-	String[] items = new String[OptimisedStackShifter.MODES.values().length];
+	final String[] items = new String[OptimisedStackShifter.MODES.values().length];
 	for (int i = 0; i < items.length; i++) {
 	    items[i] = OptimisedStackShifter.MODES.values()[i].toString();
 	}
@@ -362,16 +360,15 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
      * @return the distance between the {@link Roi} and the nearest image border
      */
     private Point getRoiBorderDist() {
-	Point dist = new Point(stack.getWidth(), stack.getHeight());
-	Rectangle roi = stack.getRoi().getBounds();
-	if (roi.x < dist.x)
-	    dist.x = roi.x;
-	if (roi.y < dist.y)
-	    dist.y = roi.y;
-	int spacingRight = stack.getWidth() - roi.x - roi.width;
+	final Point dist = new Point(stack.getWidth(), stack.getHeight());
+	if (stack.getRoi().getBounds().x < dist.x)
+	    dist.x = stack.getRoi().getBounds().x;
+	if (stack.getRoi().getBounds().y < dist.y)
+	    dist.y = stack.getRoi().getBounds().y;
+	final int spacingRight = stack.getWidth() - stack.getRoi().getBounds().x - stack.getRoi().getBounds().width;
 	if (spacingRight < dist.x)
 	    dist.x = spacingRight;
-	int spacingBot = stack.getHeight() - roi.y - roi.height;
+	final int spacingBot = stack.getHeight() - stack.getRoi().getBounds().y - stack.getRoi().getBounds().height;
 	if (spacingBot < dist.y)
 	    dist.y = spacingBot;
 	return dist;
@@ -386,18 +383,18 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
      * @param args
      *            unused
      */
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
 	// start ImageJ
 	new ImageJ();
 
 	// open the sample stack
-	ImagePlus image = IJ.openImage("http://EFTEMj.entrup.com.de/Drift-Stack_max64px.tif");
+	final ImagePlus image = IJ.openImage("http://EFTEMj.entrup.com.de/Drift-Stack_max64px.tif");
 	image.setRoi(64, 64, 128, 128);
 	image.getStack().setSliceLabel(null, 1);
 	image.show();
 
 	// run the plugin
-	Class<?> clazz = DriftDetectionPlugin.class;
+	final Class<?> clazz = DriftDetectionPlugin.class;
 	IJ.runPlugIn(clazz.getName(), "");
     }
 }

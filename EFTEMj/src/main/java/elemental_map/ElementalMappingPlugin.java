@@ -45,7 +45,7 @@ import java.util.LinkedHashMap;
 import javax.swing.JLabel;
 
 import tools.EnergyLossExtractor;
-import tools.ExtendedStackToImage;
+import tools.ExtendedImagesToStack;
 import tools.IonisationEdges;
 import elemental_map.ElementalMapping.AVAILABLE_METHODS;
 
@@ -152,7 +152,7 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
 	// Check if imp is a stack.
 	if (imp.getStackSize() <= 1) {
 	    // ExtendedStackToImage is a plugin
-	    new ExtendedStackToImage().convertImagesToStack();
+	    new ExtendedImagesToStack().convertImagesToStack();
 	    if (IJ.getImage().getStackSize() <= 1) {
 		canceled();
 		return NO_CHANGES | DONE;

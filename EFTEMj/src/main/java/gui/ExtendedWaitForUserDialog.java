@@ -89,7 +89,7 @@ public class ExtendedWaitForUserDialog extends WaitForUserDialog implements Cont
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see ij.gui.WaitForUserDialog#escPressed()
      */
     @Override
@@ -99,7 +99,7 @@ public class ExtendedWaitForUserDialog extends WaitForUserDialog implements Cont
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see java.awt.event.ContainerListener#componentAdded(java.awt.event.ContainerEvent)
      */
     @Override
@@ -127,7 +127,7 @@ public class ExtendedWaitForUserDialog extends WaitForUserDialog implements Cont
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see java.awt.event.ContainerListener#componentRemoved(java.awt.event.ContainerEvent)
      */
     @Override
@@ -155,7 +155,7 @@ public class ExtendedWaitForUserDialog extends WaitForUserDialog implements Cont
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see ij.gui.WaitForUserDialog#keyPressed(java.awt.event.KeyEvent)
      */
     @Override
@@ -167,23 +167,5 @@ public class ExtendedWaitForUserDialog extends WaitForUserDialog implements Cont
 	} else if (code == KeyEvent.VK_ENTER) {
 	    close();
 	}
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see ij.gui.WaitForUserDialog#keyReleased(java.awt.event.KeyEvent)
-     */
-    @Override
-    public void keyReleased(final KeyEvent e) {
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see ij.gui.WaitForUserDialog#keyTyped(java.awt.event.KeyEvent)
-     */
-    @Override
-    public void keyTyped(final KeyEvent e) {
     }
 }

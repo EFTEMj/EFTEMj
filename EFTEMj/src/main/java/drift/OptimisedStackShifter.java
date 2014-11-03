@@ -1,18 +1,18 @@
 /**
  * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
- * 
+ *
  * Copyright (c) 2014, Michael Entrup b. Epping <michael.entrup@wwu.de>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -35,9 +35,9 @@ import java.awt.Point;
 
 /**
  * This class is used to shift all images of an {@link ImagePlus} that contains a stack.
- * 
+ *
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
- * 
+ *
  */
 public class OptimisedStackShifter {
 
@@ -52,7 +52,7 @@ public class OptimisedStackShifter {
 
     /**
      * All images of an {@link ImagePlus} stack are shifted by the given shift values.
-     * 
+     *
      * @param initialStack
      *            {@link ImagePlus} containing a stack to be shifted
      * @param shift
@@ -66,8 +66,13 @@ public class OptimisedStackShifter {
      *            true to create a new {@link ImagePlus} and keep the initial one untouched
      * @return a new {@link ImagePlus} that contains the shifted images
      */
-    public static ImagePlus shiftImages(ImagePlus initialStack, Point[] shift, MODES mode, boolean optimise,
-	    boolean createNew) {
+    public static ImagePlus shiftImages(final ImagePlus initialStack, final Point[] shift, final MODES mode,
+	    final boolean optimise, final boolean createNew) {
+	Point[] appliedShift;
+	if (optimise == true) {
+	    appliedShift = optimizedImageShift(shift);
+	}
+	appliedShift = shift;
 	ImagePlus correctedStack;
 	if (createNew == true) {
 	    // you have to delete the roi otherwise only the roi is duplicated
@@ -78,25 +83,22 @@ public class OptimisedStackShifter {
 	    correctedStack = initialStack;
 	}
 	correctedStack.setTitle(prefix.concat(initialStack.getTitle()));
-	if (optimise == true) {
-	    shift = optimizedImageShift(shift);
-	}
-	for (int i = 0; i < shift.length; i++) {
-	    correctedStack.getStack().getProcessor(i + 1).translate(shift[i].x, shift[i].y);
-	    String sliceLabel = correctedStack.getStack().getSliceLabel(i + 1);
+	for (int i = 0; i < appliedShift.length; i++) {
+	    correctedStack.getStack().getProcessor(i + 1).translate(appliedShift[i].x, appliedShift[i].y);
+	    final String sliceLabel = correctedStack.getStack().getSliceLabel(i + 1);
 	    if (sliceLabel != null) {
 		correctedStack.getStack().setSliceLabel(prefix.concat(sliceLabel), i + 1);
 	    }
 
 	}
-	processBorder(correctedStack, shift, mode);
+	processBorder(correctedStack, appliedShift, mode);
 	return correctedStack;
     }
 
     /**
      * All images of an {@link ImagePlus} stack are shifted by the given shift values. This method should be used if
      * drift values instead of shift values are committed.
-     * 
+     *
      * @param initialStack
      *            {@link ImagePlus} containing a stack to be shifted
      * @param shift
@@ -112,8 +114,8 @@ public class OptimisedStackShifter {
      *            true to create a new {@link ImagePlus} and keep the initial one untouched
      * @return a new {@link ImagePlus} that contains the shifted images
      */
-    public static ImagePlus shiftImages(ImagePlus initialStack, Point[] shift, MODES mode, boolean invert,
-	    boolean optimise, boolean createNew) {
+    public static ImagePlus shiftImages(final ImagePlus initialStack, final Point[] shift, final MODES mode,
+	    final boolean invert, final boolean optimise, final boolean createNew) {
 	if (invert == true) {
 	    for (int i = 0; i < shift.length; i++) {
 		shift[i] = new Point(-shift[i].x, -shift[i].y);
@@ -126,7 +128,7 @@ public class OptimisedStackShifter {
      * The centroid of the shift values is calculated. The centroid is used to reduce to maximum drift to one direction.
      * For example (0/0), (10/10) and (20/20) will result in (-10/-10), (0/0) and (10/10).
      */
-    private static Point[] optimizedImageShift(Point[] shift) {
+    private static Point[] optimizedImageShift(final Point[] shift) {
 	IJ.showStatus("Using optimized image sift.");
 	int minX = 0;
 	int maxX = 0;
@@ -148,8 +150,8 @@ public class OptimisedStackShifter {
 		}
 	    }
 	}
-	int optimalX = Math.round((maxX - minX) / 2) + minX;
-	int optimalY = Math.round((maxY - minY) / 2) + minY;
+	final int optimalX = Math.round((maxX - minX) / 2) + minX;
+	final int optimalY = Math.round((maxY - minY) / 2) + minY;
 	for (int i = 0; i < shift.length; i++) {
 	    shift[i] = new Point(shift[i].x - optimalX, shift[i].y - optimalY);
 	}
@@ -158,7 +160,7 @@ public class OptimisedStackShifter {
 
     /**
      * This method will set the same border to all slices of a stack. Additionally it is possible to crop the stack.
-     * 
+     *
      * @param stack
      *            An {@link ImagePlus} containing an {@link ImageStack} to work with
      * @param shift
@@ -166,7 +168,7 @@ public class OptimisedStackShifter {
      * @param mode
      *            This defines the method that is used
      */
-    private static void processBorder(ImagePlus stack, Point[] shift, MODES mode) {
+    private static void processBorder(final ImagePlus stack, final Point[] shift, final MODES mode) {
 	/*
 	 * To crop the images or to set the same border for all slices one has to find the largest border for each side.
 	 */
@@ -193,7 +195,7 @@ public class OptimisedStackShifter {
 	case NAN_EQ:
 	case ZERO_EQ:
 	case SMALL_NEGATIV_EQ:
-	    Point[] border = new Point[shift.length];
+	    final Point[] border = new Point[shift.length];
 	    Point borderValues = new Point(lBorder, tBorder);
 	    for (int i = 0; i < shift.length; i++) {
 		border[i] = borderValues;
@@ -212,7 +214,7 @@ public class OptimisedStackShifter {
 
     /**
      * This method sets the pixel values of each border, created by translating the image, to a user defined value.
-     * 
+     *
      * @param stack
      *            An {@link ImagePlus} containing an {@link ImageStack} to work with
      * @param border
@@ -220,7 +222,7 @@ public class OptimisedStackShifter {
      * @param mode
      *            This defines the pixel value used to fill the border
      */
-    private static void setBorder(ImagePlus stack, Point[] border, MODES mode) {
+    private static void setBorder(final ImagePlus stack, final Point[] border, final MODES mode) {
 	Float value;
 	switch (mode) {
 	case NAN:

@@ -406,12 +406,4 @@ public class GenericDialogPlus extends GenericDialog {
 	    windowClosing(null);
     }
 
-    @Override
-    public void keyReleased(final KeyEvent e) {
-    }
-
-    @Override
-    public void keyTyped(final KeyEvent e) {
-    }
-
 }

@@ -47,7 +47,7 @@ import java.util.Arrays;
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
  *
  */
-public class ExtendedStackToImage implements PlugIn {
+public class ExtendedImagesToStack implements PlugIn {
 
     private static final int rgb = 33;
     private static final int COPY_CENTER = 0;
@@ -56,7 +56,7 @@ public class ExtendedStackToImage implements PlugIn {
     private static final int SCALE_LARGE = 3;
     // begin - new code of ExtendedImageToStack
     /**
-     * New in {@link ExtendedImageToStack}: The maximum number of images that allow an user defined order.
+     * New in {@link ExtendedImagesToStack}: The maximum number of images that allow an user defined order.
      */
     private static final int MAX_IMAGES = 10;
     // end - new code of ExtendedImageToStack
@@ -271,6 +271,9 @@ public class ExtendedStackToImage implements PlugIn {
 		    case rgb:
 			ip2 = new ColorProcessor(width, height);
 			break;
+		    default:
+			IJ.error("The stack is of an unknown type.");
+			return;
 		    }
 		    int xoff = 0,
 		    yoff = 0;

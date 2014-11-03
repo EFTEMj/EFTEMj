@@ -40,9 +40,9 @@ public class IonisationEdges {
     private static final IonisationEdges INSTANCE = new IonisationEdges();
 
     /**
-     * Instead of using the constructor you can get an instance of {@link PluginAPI} by using this method.
+     * Instead of using the constructor you can get an instance of {@link IonisationEdges} by using this method.
      *
-     * @return The only instance of {@link PluginAPI}
+     * @return The only instance of {@link IonisationEdges}
      */
     public static IonisationEdges getInstance() {
 	return INSTANCE;

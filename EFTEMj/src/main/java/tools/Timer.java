@@ -51,7 +51,9 @@ public class Timer {
      */
     public Timer(final boolean start) {
 	super();
-	start();
+	if (start) {
+	    start();
+	}
     }
 
     /**

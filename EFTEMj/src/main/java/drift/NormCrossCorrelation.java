@@ -1,18 +1,18 @@
 /**
  * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
- * 
+ *
  * Copyright (c) 2014, Michael Entrup b. Epping <michael.entrup@wwu.de>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -26,21 +26,22 @@
  */
 package drift;
 
-import java.awt.Point;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
+
+import java.awt.Point;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This class is used to calculate the normalised cross-correlation coefficients of two images. It uses multiple
  * {@link Thread}s to speed up the calculation. Each line of the resulting normalised cross-correlation (coefficient)
  * map is calculated in a separate task. You can switch to the calculation of the normalised cross-correlation by using
  * <code>useCoefficient(false)</code>.
- * 
+ *
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
  */
 public class NormCrossCorrelation {
@@ -100,7 +101,7 @@ public class NormCrossCorrelation {
     /**
      * Creates an instance of {@link NormCrossCorrelation} and prepares the calculation of the normalised
      * cross-correlation (coefficient) values.
-     * 
+     *
      * @param ip1
      *            The reference image
      * @param ip2
@@ -110,29 +111,29 @@ public class NormCrossCorrelation {
      * @param shiftY
      *            The maximum value that is tested as shift in y-direction
      */
-    public NormCrossCorrelation(ImageProcessor ip1, ImageProcessor ip2, int shiftX, int shiftY) {
+    public NormCrossCorrelation(final ImageProcessor ip1, final ImageProcessor ip2, final int shiftX, final int shiftY) {
 	init(ip1, ip2, shiftX, shiftY);
     }
 
     /**
      * Creates an instance of {@link NormCrossCorrelation} and prepares the calculation of the normalised
      * cross-correlation (coefficient) values.
-     * 
+     *
      * the maximum value of shift that is tested is 10% of the image width (x-direction) and image height (y-direction).
-     * 
+     *
      * @param ip1
      *            The reference image
      * @param ip2
      *            The target image
      */
-    public NormCrossCorrelation(ImageProcessor ip1, ImageProcessor ip2) {
+    public NormCrossCorrelation(final ImageProcessor ip1, final ImageProcessor ip2) {
 	init(ip1, ip2, (int) Math.ceil(0.1 * ip1.getWidth()), (int) Math.ceil(0.1 * ip1.getHeight()));
 
     }
 
     /**
      * The constructor calls this method to initialise all fields of the object.
-     * 
+     *
      * @param ip1
      *            The reference image
      * @param ip2
@@ -142,7 +143,7 @@ public class NormCrossCorrelation {
      * @param shiftY
      *            The maximum value that is tested as shift in y-direction
      */
-    private void init(ImageProcessor ip1, ImageProcessor ip2, int shiftX, int shiftY) {
+    private void init(final ImageProcessor ip1, final ImageProcessor ip2, final int shiftX, final int shiftY) {
 	image = ip2;
 	ip1.setRoi(shiftX, shiftY, ip1.getWidth() - 2 * shiftX, ip1.getHeight() - 2 * shiftY);
 	reference = ip1.crop();
@@ -158,11 +159,11 @@ public class NormCrossCorrelation {
     /**
      * Switch between the calculation of the normalised cross-correlation ( <code>false</code>) and the normalised
      * cross-correlation coefficient ( <code>true</code>).
-     * 
+     *
      * @param bool
-     * 
+     *
      */
-    public void useCoefficient(boolean bool) {
+    public void useCoefficient(final boolean bool) {
 	useCoefficient = bool;
     }
 
@@ -171,7 +172,8 @@ public class NormCrossCorrelation {
      * background task.
      */
     public void startCalculation() {
-	ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+	final ExecutorService executorService = Executors
+		.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 	if (useCoefficient == true) {
 	    calculateMeanAndSigma();
 	} else {
@@ -186,7 +188,7 @@ public class NormCrossCorrelation {
 	executorService.shutdown();
 	try {
 	    executorService.awaitTermination(5, TimeUnit.MINUTES);
-	} catch (InterruptedException e) {
+	} catch (final InterruptedException e) {
 	    e.printStackTrace();
 	}
     }
@@ -217,7 +219,7 @@ public class NormCrossCorrelation {
 		sum += value;
 	    }
 	}
-	int pixels = reference.getWidth() * reference.getHeight();
+	final int pixels = reference.getWidth() * reference.getHeight();
 	meanT = sum / pixels;
 	float sigmaSquare = 0;
 	for (int j = 0; j < reference.getHeight(); j++) {
@@ -254,8 +256,8 @@ public class NormCrossCorrelation {
      *            A map of normalised cross-correlation (coefficient) values.
      * @return The position of the maximum with consideration of the calibration (origin)
      */
-    public static Point findMax(ImagePlus map) {
-	FloatProcessor fp = (FloatProcessor) map.getProcessor();
+    public static Point findMax(final ImagePlus map) {
+	final FloatProcessor fp = (FloatProcessor) map.getProcessor();
 	Point p = new Point(0, 0);
 	float max = fp.getf(0, 0);
 	for (int j = 0; j < fp.getHeight(); j++) {
@@ -282,11 +284,11 @@ public class NormCrossCorrelation {
     /**
      * You only need this method if more than one instance of {@link NormCrossCorrelation} is used. The constructor will
      * set the right number of steps if only one instance is used. Call this method after creating all instances.
-     * 
+     *
      * @param steps
      *            for N instances of {@link NormCrossCorrelation} this is <code>N * (2 * shiftY + 1)</code>
      */
-    public static void setProgressSteps(int steps) {
+    public static void setProgressSteps(final int steps) {
 	progressSteps = steps;
 	progress = 0;
     }
@@ -300,22 +302,18 @@ public class NormCrossCorrelation {
 	/**
 	 * The column of the normalised cross-correlation (coefficient) map that is processed by this task.
 	 */
-	private int s;
-	/**
-	 * The current row of the normalised cross-correlation (coefficient) map.
-	 */
-	private int r;
+	private final int s;
 	/**
 	 * An array that is used for temporarily storing the calculated normalised cross-correlation (coefficient)
 	 * values.
 	 */
-	private float[] result;
+	private final float[] result;
 
 	/**
 	 * @param column
 	 *            that is processed by this new instance of {@link NormCrossCorrelationTask}
 	 */
-	public NormCrossCorrelationTask(int column) {
+	public NormCrossCorrelationTask(final int column) {
 	    super();
 	    s = column;
 	    result = new float[normCrossCorrelationMap.getWidth()];
@@ -332,13 +330,13 @@ public class NormCrossCorrelation {
 	}
 
 	private void calculateCorrelation() {
-	    for (r = 0; r < result.length; r++) {
+	    for (int r = 0; r < result.length; r++) {
 		double squareSumI = 0;
 		double covariance = 0;
 		for (int j = 0; j < reference.getHeight(); j++) {
 		    for (int i = 0; i < reference.getWidth(); i++) {
-			double valueI = image.getf(r + i, s + j);
-			double valueT = reference.getf(i, j);
+			final double valueI = image.getf(r + i, s + j);
+			final double valueT = reference.getf(i, j);
 			covariance += valueI * valueT;
 			squareSumI += Math.pow(valueI, 2);
 		    }
@@ -348,32 +346,32 @@ public class NormCrossCorrelation {
 		    result[r] = 0;
 		}
 	    }
-	    float[] coefficientMapArray = (float[]) normCrossCorrelationMap.getPixels();
+	    final float[] coefficientMapArray = (float[]) normCrossCorrelationMap.getPixels();
 	    for (int r = 0; r < result.length; r++) {
 		coefficientMapArray[r + s * normCrossCorrelationMap.getWidth()] = result[r];
 	    }
 	}
 
 	private void calculateCoefficient() {
-	    int pixels = reference.getWidth() * reference.getHeight();
-	    for (r = 0; r < result.length; r++) {
+	    final int pixels = reference.getWidth() * reference.getHeight();
+	    for (int r = 0; r < result.length; r++) {
 		double sum = 0;
 		double sumSquare = 0;
 		double covariance = 0;
 		for (int j = 0; j < reference.getHeight(); j++) {
 		    for (int i = 0; i < reference.getWidth(); i++) {
-			double valueI = image.getf(r + i, s + j);
-			double valueT = reference.getf(i, j);
+			final double valueI = image.getf(r + i, s + j);
+			final double valueT = reference.getf(i, j);
 			sum += valueI;
 			sumSquare += valueI * valueI;
 			covariance += valueI * valueT;
 		    }
 		}
-		double meanI = sum / pixels;
+		final double meanI = sum / pixels;
 		result[r] = (float) ((covariance - pixels * meanI * meanT) / (Math.sqrt(sumSquare
 			- (pixels * meanI * meanI)) * sigmaT));
 	    }
-	    float[] coefficientMapArray = (float[]) normCrossCorrelationMap.getPixels();
+	    final float[] coefficientMapArray = (float[]) normCrossCorrelationMap.getPixels();
 	    for (int r = 0; r < result.length; r++) {
 		coefficientMapArray[r + s * normCrossCorrelationMap.getWidth()] = result[r];
 	    }

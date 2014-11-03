@@ -90,16 +90,14 @@ public class EnergyLossExtractor {
 	    String eLossStr = label.substring(matcher1.start() + 1, matcher1.end() - 3);
 	    eLossStr = eLossStr.replace(",", ".");
 	    return stringToFloat(eLossStr);
-	} else {
-	    final Matcher matcher2 = Pattern.compile(PATTERN_ELOSS_SHORT).matcher(label);
-	    if (matcher2.find()) {
-		String eLossStr = label.substring(matcher2.start(), matcher2.end() - 2);
-		eLossStr = eLossStr.replace(",", ".");
-		return stringToFloat(eLossStr);
-	    } else {
-		return 0;
-	    }
 	}
+	final Matcher matcher2 = Pattern.compile(PATTERN_ELOSS_SHORT).matcher(label);
+	if (matcher2.find()) {
+	    String eLossStr = label.substring(matcher2.start(), matcher2.end() - 2);
+	    eLossStr = eLossStr.replace(",", ".");
+	    return stringToFloat(eLossStr);
+	}
+	return 0;
     }
 
     /**
