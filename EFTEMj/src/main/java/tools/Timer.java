@@ -1,18 +1,18 @@
 /**
  * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
- * 
+ *
  * Copyright (c) 2014, Michael Entrup b. Epping <michael.entrup@wwu.de>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -28,9 +28,9 @@ package tools;
 
 /**
  * This is a small utility class to measure times in milliseconds. Each method is available as static and non-static.
- * 
+ *
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
- * 
+ *
  */
 public class Timer {
 
@@ -49,7 +49,7 @@ public class Timer {
     /**
      * Creates a new instance of {@link Timer} and starts it.
      */
-    public Timer(boolean start) {
+    public Timer(final boolean start) {
 	super();
 	start();
     }
@@ -74,18 +74,18 @@ public class Timer {
      * @return the elapsed time of the current interval
      */
     public long interval() {
-	long temp = interval;
+	final long temp = interval;
 	interval = System.currentTimeMillis();
 	return System.currentTimeMillis() - temp;
     }
 
     /**
      * [static]
-     * 
+     *
      * @return the elapsed time of the current interval
      */
     public static long sInterval() {
-	long temp = sInterval;
+	final long temp = sInterval;
 	sInterval = System.currentTimeMillis();
 	return System.currentTimeMillis() - temp;
     }
@@ -99,7 +99,7 @@ public class Timer {
 
     /**
      * [static]
-     * 
+     *
      * @return the time elapsed since the call of start
      */
     public static long sStop() {

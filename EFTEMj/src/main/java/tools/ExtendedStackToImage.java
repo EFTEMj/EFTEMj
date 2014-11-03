@@ -1,18 +1,18 @@
 /**
  * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
- * 
+ *
  * Copyright (c) 2014, Michael Entrup b. Epping <michael.entrup@wwu.de>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -25,8 +25,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package tools;
-
-import java.util.Arrays;
 
 import ij.IJ;
 import ij.ImagePlus;
@@ -43,9 +41,11 @@ import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
 
+import java.util.Arrays;
+
 /**
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
- * 
+ *
  */
 public class ExtendedStackToImage implements PlugIn {
 
@@ -76,12 +76,13 @@ public class ExtendedStackToImage implements PlugIn {
     private ImagePlus[] image;
     private String name = "Stack";
 
-    public void run(String arg) {
+    @Override
+    public void run(final String arg) {
 	convertImagesToStack();
     }
 
     public void convertImagesToStack() {
-	int[] wList = WindowManager.getIDList();
+	final int[] wList = WindowManager.getIDList();
 	if (wList == null) {
 	    IJ.error("No images are open.");
 	    return;
@@ -89,7 +90,7 @@ public class ExtendedStackToImage implements PlugIn {
 	int count = 0;
 	image = new ImagePlus[wList.length];
 	for (int i = 0; i < wList.length; i++) {
-	    ImagePlus imp = WindowManager.getImage(wList[i]);
+	    final ImagePlus imp = WindowManager.getImage(wList[i]);
 	    if (imp.getStackSize() == 1)
 		image[count++] = imp;
 	}
@@ -105,9 +106,9 @@ public class ExtendedStackToImage implements PlugIn {
 	// end - new code of ExtendedImageToStack
 	filter = null;
 	count = findMinMaxSize(count);
-	boolean sizesDiffer = width != minWidth || height != minHeight;
+	final boolean sizesDiffer = width != minWidth || height != minHeight;
 	boolean showDialog = true;
-	String macroOptions = Macro.getOptions();
+	final String macroOptions = Macro.getOptions();
 	if (IJ.macroRunning() && macroOptions == null) {
 	    if (sizesDiffer) {
 		IJ.error("Images are not all the same size");
@@ -116,9 +117,9 @@ public class ExtendedStackToImage implements PlugIn {
 	    showDialog = false;
 	}
 	if (showDialog == true) {
-	    GenericDialog gd = new GenericDialog("Images to Stack");
+	    final GenericDialog gd = new GenericDialog("Images to Stack");
 	    // begin - new code of ExtendedImageToStack
-	    String help = "<html><h3>ExtendedImageToStack</h3><p>When combining 2 to "
+	    final String help = "<html><h3>ExtendedImageToStack</h3><p>When combining 2 to "
 		    + MAX_IMAGES
 		    + " images the user can define the order.</p>"
 		    + "<p>Images that are selected twice (or more often) will only be added once. The images that are not selected will then be added automaticaly.</p>"
@@ -126,7 +127,7 @@ public class ExtendedStackToImage implements PlugIn {
 	    gd.addHelp(help);
 	    // end - new code of ExtendedImageToStack
 	    if (sizesDiffer) {
-		String msg = "The " + count + " images differ in size (smallest=" + minWidth + "x" + minHeight
+		final String msg = "The " + count + " images differ in size (smallest=" + minWidth + "x" + minHeight
 			+ ",\nlargest=" + maxWidth + "x" + maxHeight
 			+ "). They will be converted\nto a stack using the specified method.";
 		gd.setInsets(0, 0, 5);
@@ -139,7 +140,7 @@ public class ExtendedStackToImage implements PlugIn {
 	    if (sortByUser == true) {
 		gd.addMessage("User defined order:");
 		// all images are identified by their titles
-		String[] titles = new String[count];
+		final String[] titles = new String[count];
 		for (int i = 0; i < count; i++) {
 		    titles[i] = image[i].getTitle();
 		}
@@ -164,12 +165,12 @@ public class ExtendedStackToImage implements PlugIn {
 	    // if an image is selected twice (or more often), the next image that is not selected will replace the
 	    // other occurrences
 	    if (sortByUser == true) {
-		int[] positionAtImage = new int[count];
-		boolean[] positionUsed = new boolean[count];
-		boolean[] imageUsed = new boolean[count];
+		final int[] positionAtImage = new int[count];
+		final boolean[] positionUsed = new boolean[count];
+		final boolean[] imageUsed = new boolean[count];
 		Arrays.fill(positionUsed, false);
 		Arrays.fill(imageUsed, false);
-		ImagePlus[] temp = new ImagePlus[count];
+		final ImagePlus[] temp = new ImagePlus[count];
 		for (int i = 0; i < count; i++) {
 		    positionAtImage[i] = gd.getNextChoiceIndex();
 		    if (imageUsed[positionAtImage[i]] == false) {
@@ -216,7 +217,7 @@ public class ExtendedStackToImage implements PlugIn {
 	}
 	double min = Double.MAX_VALUE;
 	double max = -Double.MAX_VALUE;
-	ImageStack stack = new ImageStack(width, height);
+	final ImageStack stack = new ImageStack(width, height);
 	FileInfo fi = image[0].getOriginalFileInfo();
 	if (fi != null && fi.directory == null)
 	    fi = null;
@@ -230,12 +231,12 @@ public class ExtendedStackToImage implements PlugIn {
 		max = ip.getMax();
 	    String label = titlesAsLabels ? image[i].getTitle() : null;
 	    if (label != null) {
-		String info = (String) image[i].getProperty("Info");
+		final String info = (String) image[i].getProperty("Info");
 		if (info != null)
 		    label += "\n" + info;
 	    }
 	    if (fi != null) {
-		FileInfo fi2 = image[i].getOriginalFileInfo();
+		final FileInfo fi2 = image[i].getOriginalFileInfo();
 		if (fi2 != null && !fi.directory.equals(fi2.directory))
 		    fi = null;
 	    }
@@ -297,7 +298,7 @@ public class ExtendedStackToImage implements PlugIn {
 	}
 	if (stack.getSize() == 0)
 	    return;
-	ImagePlus imp = new ImagePlus(name, stack);
+	final ImagePlus imp = new ImagePlus(name, stack);
 	if (stackType == 16 || stackType == 32)
 	    imp.getProcessor().setMinAndMax(min, max);
 	if (cal2 != null)
@@ -310,7 +311,7 @@ public class ExtendedStackToImage implements PlugIn {
 	imp.show();
     }
 
-    final int findMinMaxSize(int count) {
+    final int findMinMaxSize(final int count) {
 	int index = 0;
 	stackType = 8;
 	width = 0;
@@ -332,12 +333,12 @@ public class ExtendedStackToImage implements PlugIn {
 		type = rgb;
 	    if (type > stackType)
 		stackType = type;
-	    int w = image[i].getWidth(), h = image[i].getHeight();
+	    final int w = image[i].getWidth(), h = image[i].getHeight();
 	    if (w > width)
 		width = w;
 	    if (h > height)
 		height = h;
-	    int size = w * h;
+	    final int size = w * h;
 	    if (size < minSize) {
 		minSize = size;
 		minWidth = w;
@@ -355,7 +356,7 @@ public class ExtendedStackToImage implements PlugIn {
 	return index;
     }
 
-    final boolean exclude(String title) {
+    final boolean exclude(final String title) {
 	return filter != null && title != null && title.indexOf(filter) == -1;
     }
 

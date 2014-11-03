@@ -45,22 +45,22 @@ public class GenericDialogPlus extends GenericDialog {
     protected int[] windowIDs;
     protected String[] windowTitles;
 
-    public GenericDialogPlus(String title) {
+    public GenericDialogPlus(final String title) {
 	super(title);
     }
 
-    public GenericDialogPlus(String title, Frame parent) {
+    public GenericDialogPlus(final String title, final Frame parent) {
 	super(title, parent);
     }
 
-    public void addImageChoice(String label, String defaultImage) {
+    public void addImageChoice(final String label, final String defaultImage) {
 	if (windowTitles == null) {
 	    windowIDs = WindowManager.getIDList();
 	    if (windowIDs == null)
 		windowIDs = new int[0];
 	    windowTitles = new String[windowIDs.length];
 	    for (int i = 0; i < windowIDs.length; i++) {
-		ImagePlus image = WindowManager.getImage(windowIDs[i]);
+		final ImagePlus image = WindowManager.getImage(windowIDs[i]);
 		windowTitles[i] = image == null ? "" : image.getTitle();
 	    }
 	}
@@ -72,36 +72,36 @@ public class GenericDialogPlus extends GenericDialog {
     }
 
     @Override
-    public void addStringField(String label, String defaultString, int columns) {
+    public void addStringField(final String label, final String defaultString, final int columns) {
 	super.addStringField(label, defaultString, columns);
 	if (isHeadless())
 	    return;
 
-	TextField text = (TextField) stringField.lastElement();
+	final TextField text = (TextField) stringField.lastElement();
 	text.setDropTarget(null);
 	new DropTarget(text, new TextDropTarget(text));
     }
 
-    public void addDirectoryOrFileField(String label, String defaultPath) {
+    public void addDirectoryOrFileField(final String label, final String defaultPath) {
 	addDirectoryOrFileField(label, defaultPath, 20);
     }
 
-    public void addDirectoryOrFileField(String label, String defaultPath, int columns) {
+    public void addDirectoryOrFileField(final String label, final String defaultPath, final int columns) {
 	addStringField(label, defaultPath, columns);
 	if (isHeadless())
 	    return;
 
-	TextField text = (TextField) stringField.lastElement();
-	GridBagLayout layout = (GridBagLayout) getLayout();
-	GridBagConstraints constraints = layout.getConstraints(text);
+	final TextField text = (TextField) stringField.lastElement();
+	final GridBagLayout layout = (GridBagLayout) getLayout();
+	final GridBagConstraints constraints = layout.getConstraints(text);
 
-	Button button = new Button("Browse...");
-	DirectoryListener listener = new DirectoryListener("Browse for " + label, text,
+	final Button button = new Button("Browse...");
+	final DirectoryListener listener = new DirectoryListener("Browse for " + label, text,
 		JFileChooser.FILES_AND_DIRECTORIES);
 	button.addActionListener(listener);
 	button.addKeyListener(this);
 
-	Panel panel = new Panel();
+	final Panel panel = new Panel();
 	panel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
 	panel.add(text);
 	panel.add(button);
@@ -110,25 +110,25 @@ public class GenericDialogPlus extends GenericDialog {
 	add(panel);
     }
 
-    public void addDirectoryField(String label, String defaultPath) {
+    public void addDirectoryField(final String label, final String defaultPath) {
 	addDirectoryField(label, defaultPath, 20);
     }
 
-    public void addDirectoryField(String label, String defaultPath, int columns) {
+    public void addDirectoryField(final String label, final String defaultPath, final int columns) {
 	addStringField(label, defaultPath, columns);
 	if (isHeadless())
 	    return;
 
-	TextField text = (TextField) stringField.lastElement();
-	GridBagLayout layout = (GridBagLayout) getLayout();
-	GridBagConstraints constraints = layout.getConstraints(text);
+	final TextField text = (TextField) stringField.lastElement();
+	final GridBagLayout layout = (GridBagLayout) getLayout();
+	final GridBagConstraints constraints = layout.getConstraints(text);
 
-	Button button = new Button("Browse...");
-	DirectoryListener listener = new DirectoryListener("Browse for " + label, text);
+	final Button button = new Button("Browse...");
+	final DirectoryListener listener = new DirectoryListener("Browse for " + label, text);
 	button.addActionListener(listener);
 	button.addKeyListener(this);
 
-	Panel panel = new Panel();
+	final Panel panel = new Panel();
 	panel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
 	panel.add(text);
 	panel.add(button);
@@ -137,25 +137,25 @@ public class GenericDialogPlus extends GenericDialog {
 	add(panel);
     }
 
-    public void addFileField(String label, String defaultPath) {
+    public void addFileField(final String label, final String defaultPath) {
 	addFileField(label, defaultPath, 20);
     }
 
-    public void addFileField(String label, String defaultPath, int columns) {
+    public void addFileField(final String label, final String defaultPath, final int columns) {
 	addStringField(label, defaultPath, columns);
 	if (isHeadless())
 	    return;
 
-	TextField text = (TextField) stringField.lastElement();
-	GridBagLayout layout = (GridBagLayout) getLayout();
-	GridBagConstraints constraints = layout.getConstraints(text);
+	final TextField text = (TextField) stringField.lastElement();
+	final GridBagLayout layout = (GridBagLayout) getLayout();
+	final GridBagConstraints constraints = layout.getConstraints(text);
 
-	Button button = new Button("Browse...");
-	FileListener listener = new FileListener("Browse for " + label, text);
+	final Button button = new Button("Browse...");
+	final FileListener listener = new FileListener("Browse for " + label, text);
 	button.addActionListener(listener);
 	button.addKeyListener(this);
 
-	Panel panel = new Panel();
+	final Panel panel = new Panel();
 	panel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
 	panel.add(text);
 	panel.add(button);
@@ -166,17 +166,17 @@ public class GenericDialogPlus extends GenericDialog {
 
     /**
      * Add button to the dialog
-     * 
+     *
      * @param label
      *            button label
      * @param listener
      *            listener to handle the action when pressing the button
      */
-    public void addButton(String label, ActionListener listener) {
+    public void addButton(final String label, final ActionListener listener) {
 	if (isHeadless())
 	    return;
 
-	Button button = new Button(label);
+	final Button button = new Button(label);
 
 	button.addActionListener(listener);
 	button.addKeyListener(this);
@@ -184,21 +184,21 @@ public class GenericDialogPlus extends GenericDialog {
 	addComponent(button);
     }
 
-    public void addComponent(Component component) {
+    public void addComponent(final Component component) {
 	if (isHeadless())
 	    return;
 
-	GridBagLayout layout = (GridBagLayout) getLayout();
+	final GridBagLayout layout = (GridBagLayout) getLayout();
 	layout.setConstraints(component, getConstraints());
 	add(component);
     }
 
-    public void addComponent(Component component, int fill, double weightx) {
+    public void addComponent(final Component component, final int fill, final double weightx) {
 	if (isHeadless())
 	    return;
 
-	GridBagLayout layout = (GridBagLayout) getLayout();
-	GridBagConstraints constraints = getConstraints();
+	final GridBagLayout layout = (GridBagLayout) getLayout();
+	final GridBagConstraints constraints = getConstraints();
 	constraints.fill = fill;
 	constraints.weightx = weightx;
 	layout.setConstraints(component, constraints);
@@ -273,10 +273,10 @@ public class GenericDialogPlus extends GenericDialog {
 
     // Work around too many private restrictions (add a new panel and remove it right away)
     protected GridBagConstraints getConstraints() {
-	GridBagLayout layout = (GridBagLayout) getLayout();
-	Panel panel = new Panel();
+	final GridBagLayout layout = (GridBagLayout) getLayout();
+	final Panel panel = new Panel();
 	addPanel(panel);
-	GridBagConstraints constraints = layout.getConstraints(panel);
+	final GridBagConstraints constraints = layout.getConstraints(panel);
 	remove(panel);
 	return constraints;
     }
@@ -289,13 +289,13 @@ public class GenericDialogPlus extends GenericDialog {
 	String title;
 	TextField text;
 
-	public FileListener(String title, TextField text) {
+	public FileListener(final String title, final TextField text) {
 	    this.title = title;
 	    this.text = text;
 	}
 
 	@Override
-	public void actionPerformed(ActionEvent e) {
+	public void actionPerformed(final ActionEvent e) {
 	    String fileName = null;
 	    File dir = new File(text.getText());
 	    if (!dir.isDirectory()) {
@@ -311,7 +311,7 @@ public class GenericDialogPlus extends GenericDialog {
 		dialog = new OpenDialog(title, fileName);
 	    else
 		dialog = new OpenDialog(title, dir.getAbsolutePath(), fileName);
-	    String directory = dialog.getDirectory();
+	    final String directory = dialog.getDirectory();
 	    if (directory == null)
 		return;
 	    fileName = dialog.getFileName();
@@ -324,44 +324,44 @@ public class GenericDialogPlus extends GenericDialog {
 	TextField text;
 	int fileSelectionMode;
 
-	public DirectoryListener(String title, TextField text) {
+	public DirectoryListener(final String title, final TextField text) {
 	    this(title, text, JFileChooser.DIRECTORIES_ONLY);
 	}
 
-	public DirectoryListener(String title, TextField text, int fileSelectionMode) {
+	public DirectoryListener(final String title, final TextField text, final int fileSelectionMode) {
 	    this.title = title;
 	    this.text = text;
 	    this.fileSelectionMode = fileSelectionMode;
 	}
 
 	@Override
-	public void actionPerformed(ActionEvent e) {
+	public void actionPerformed(final ActionEvent e) {
 	    File directory = new File(text.getText());
 	    while (directory != null && !directory.exists())
 		directory = directory.getParentFile();
 
-	    JFileChooser fc = new JFileChooser(directory);
+	    final JFileChooser fc = new JFileChooser(directory);
 	    fc.setFileSelectionMode(fileSelectionMode);
 
 	    fc.showOpenDialog(null);
-	    File selFile = fc.getSelectedFile();
+	    final File selFile = fc.getSelectedFile();
 	    if (selFile != null)
 		text.setText(selFile.getAbsolutePath());
 	}
     }
 
-    static String stripSuffix(String s, String suffix) {
+    static String stripSuffix(final String s, final String suffix) {
 	return !s.endsWith(suffix) ? s : s.substring(0, s.length() - suffix.length());
     }
 
     @SuppressWarnings("unchecked")
-    static String getString(DropTargetDropEvent event) throws IOException, UnsupportedFlavorException {
+    static String getString(final DropTargetDropEvent event) throws IOException, UnsupportedFlavorException {
 	String text = null;
-	DataFlavor fileList = DataFlavor.javaFileListFlavor;
+	final DataFlavor fileList = DataFlavor.javaFileListFlavor;
 
 	if (event.isDataFlavorSupported(fileList)) {
 	    event.acceptDrop(DnDConstants.ACTION_COPY);
-	    List<File> list = (List<File>) event.getTransferable().getTransferData(fileList);
+	    final List<File> list = (List<File>) event.getTransferable().getTransferData(fileList);
 	    text = list.get(0).getAbsolutePath();
 	} else if (event.isDataFlavorSupported(DataFlavor.stringFlavor)) {
 	    event.acceptDrop(DnDConstants.ACTION_COPY);
@@ -382,23 +382,23 @@ public class GenericDialogPlus extends GenericDialog {
 	TextField text;
 	DataFlavor flavor = DataFlavor.stringFlavor;
 
-	public TextDropTarget(TextField text) {
+	public TextDropTarget(final TextField text) {
 	    this.text = text;
 	}
 
 	@Override
-	public void drop(DropTargetDropEvent event) {
+	public void drop(final DropTargetDropEvent event) {
 	    try {
 		text.setText(getString(event));
-	    } catch (Exception e) {
+	    } catch (final Exception e) {
 		e.printStackTrace();
 	    }
 	}
     }
 
     @Override
-    public void keyPressed(KeyEvent e) {
-	int keyCode = e.getKeyCode();
+    public void keyPressed(final KeyEvent e) {
+	final int keyCode = e.getKeyCode();
 	if (keyCode == KeyEvent.VK_ESCAPE
 		|| (keyCode == KeyEvent.VK_W && (e.getModifiers() & Toolkit.getDefaultToolkit()
 			.getMenuShortcutKeyMask()) != 0))
@@ -407,11 +407,11 @@ public class GenericDialogPlus extends GenericDialog {
     }
 
     @Override
-    public void keyReleased(KeyEvent e) {
+    public void keyReleased(final KeyEvent e) {
     }
 
     @Override
-    public void keyTyped(KeyEvent e) {
+    public void keyTyped(final KeyEvent e) {
     }
 
 }

@@ -1,18 +1,18 @@
 /**
  * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
- * 
+ *
  * Copyright (c) 2014, Michael Entrup b. Epping
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -38,9 +38,9 @@ import ij.process.ImageProcessor;
 
 /**
  * A simple plugin that will transfer the calibration of one image to another.
- * 
+ *
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
- * 
+ *
  */
 public class CalibrationTransferPlugin implements ExtendedPlugInFilter {
 
@@ -59,11 +59,11 @@ public class CalibrationTransferPlugin implements ExtendedPlugInFilter {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see ij.plugin.filter.PlugInFilter#setup(java.lang.String, ij.ImagePlus)
      */
     @Override
-    public int setup(String arg, ImagePlus imp) {
+    public int setup(final String arg, final ImagePlus imp) {
 	if (arg.equals("final")) {
 	    impTarget.updateAndRepaintWindow();
 	    impTarget.changes = true;
@@ -74,48 +74,48 @@ public class CalibrationTransferPlugin implements ExtendedPlugInFilter {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see ij.plugin.filter.PlugInFilter#run(ij.process.ImageProcessor)
      */
     @Override
-    public void run(ImageProcessor ip) {
-	Calibration cal = impSource.getCalibration();
+    public void run(final ImageProcessor ip) {
+	final Calibration cal = impSource.getCalibration();
 	impTarget.setCalibration(cal);
     }
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see ij.plugin.filter.ExtendedPlugInFilter#showDialog(ij.ImagePlus, java.lang.String,
      * ij.plugin.filter.PlugInFilterRunner)
      */
     @Override
-    public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
-	int[] wList = WindowManager.getIDList();
+    public int showDialog(final ImagePlus imp, final String command, final PlugInFilterRunner pfr) {
+	final int[] wList = WindowManager.getIDList();
 	if (wList.length == 1) {
 	    IJ.showMessage("Two or more images are necessary to use this tool.");
 	    return DONE;
 	}
-	String[] titles = new String[wList.length];
+	final String[] titles = new String[wList.length];
 	for (int i = 0; i < wList.length; i++) {
-	    ImagePlus temp = WindowManager.getImage(wList[i]);
+	    final ImagePlus temp = WindowManager.getImage(wList[i]);
 	    if (temp != null)
 		titles[i] = temp.getTitle();
 	    else
 		titles[i] = "";
 	}
-	GenericDialog gd = new GenericDialog(command + " - setup", IJ.getInstance());
+	final GenericDialog gd = new GenericDialog(command + " - setup", IJ.getInstance());
 	gd.addChoice("Source_image:", titles, titles[0]);
 	gd.addChoice("Target_image:", titles, titles[1]);
 	gd.setResizable(false);
-	String help = "<html><h3>Transfer calibration</h3><p>description</p></html>";
+	final String help = "<html><h3>Transfer calibration</h3><p>description</p></html>";
 	gd.addHelp(help);
 	gd.showDialog();
 	if (gd.wasCanceled()) {
 	    return DONE;
 	}
-	int index1 = gd.getNextChoiceIndex();
-	int index2 = gd.getNextChoiceIndex();
+	final int index1 = gd.getNextChoiceIndex();
+	final int index2 = gd.getNextChoiceIndex();
 	if (index1 == index2) {
 	    IJ.showMessage("It is not possible to transfer the calibration." + "\n"
 		    + "You have to choose two different images.");
@@ -128,11 +128,11 @@ public class CalibrationTransferPlugin implements ExtendedPlugInFilter {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see ij.plugin.filter.ExtendedPlugInFilter#setNPasses(int)
      */
     @Override
-    public void setNPasses(int nPasses) {
+    public void setNPasses(final int nPasses) {
 	// this method is not used.
     }
 
@@ -145,20 +145,20 @@ public class CalibrationTransferPlugin implements ExtendedPlugInFilter {
      * @param args
      *            unused
      */
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
 	// start ImageJ
 	new ImageJ();
 
 	// open the sample
-	ImagePlus input = IJ.createImage("input", 256, 256, 1, 32);
+	final ImagePlus input = IJ.createImage("input", 256, 256, 1, 32);
 	IJ.run(input, "Properties...",
 		"channels=1 slices=1 frames=1 unit=unit pixel_width=0.001 pixel_height=1.234 voxel_depth=1 origin=127,127");
-	ImagePlus output = IJ.createImage("output", 256, 256, 1, 32);
+	final ImagePlus output = IJ.createImage("output", 256, 256, 1, 32);
 	input.show();
 	output.show();
 
 	// run the plugin
-	Class<?> clazz = CalibrationTransferPlugin.class;
+	final Class<?> clazz = CalibrationTransferPlugin.class;
 	IJ.runPlugIn(clazz.getName(), "");
 	if (output.getCalibration().equals(input.getCalibration())) {
 	    IJ.showMessage("Test: Ok");
