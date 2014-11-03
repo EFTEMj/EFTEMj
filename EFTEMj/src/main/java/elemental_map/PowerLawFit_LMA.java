@@ -1,18 +1,18 @@
 /**
  * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
- * 
+ *
  * Copyright (c) 2014, Michael Entrup b. Epping <michael.entrup@wwu.de>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -35,22 +35,21 @@ import elemental_map.lma.LMAFunction;
  */
 public class PowerLawFit_LMA extends PowerLawFit {
 
-    private LMA lma;
+    private final LMA lma;
 
-    public PowerLawFit_LMA(float[] xValues, float[] yValues, float epsilon) {
+    public PowerLawFit_LMA(final double[] xValues, final double[] yValues, final double epsilon) {
 	super(xValues, yValues, epsilon);
-	lma = new LMA(new PowerLawFunction(), new float[] { (float) Math.exp(18), 2 },
-		new float[][] { xValues, yValues });
+	lma = new LMA(new PowerLawFunction(), new double[] { Math.exp(18), 2 }, new double[][] { xValues, yValues });
     }
 
     public static class PowerLawFunction extends LMAFunction {
 	@Override
-	public double getY(double x, double[] a) {
+	public double getY(final double x, final double[] a) {
 	    return a[0] * Math.pow(x, -a[1]);
 	}
 
 	@Override
-	public double getPartialDerivate(double x, double[] a, int parameterIndex) {
+	public double getPartialDerivate(final double x, final double[] a, final int parameterIndex) {
 	    switch (parameterIndex) {
 	    case 0:
 		return Math.pow(x, -a[1]);
@@ -73,7 +72,7 @@ public class PowerLawFit_LMA extends PowerLawFit {
 	    errorCode = ERROR_NONE;
 	    a = lma.parameters[0];
 	    r = lma.parameters[1];
-	} catch (Exception e) {
+	} catch (final Exception e) {
 	    errorCode = ERROR_CONVERGE;
 	    a = Double.NaN;
 	    r = Double.NaN;

@@ -1,18 +1,18 @@
 /**
  * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
- * 
+ *
  * Copyright (c) 2014, Michael Entrup b. Epping <michael.entrup@wwu.de>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -27,12 +27,11 @@
 package elemental_map;
 
 /**
- * This is an implementation of {@link PowerLawFit} that uses the
- * <strong>Maximum Likelihood Estimation (MLE)</strong>. The MLE is an iterative
- * method to do a parameter fit.
- * 
+ * This is an implementation of {@link PowerLawFit} that uses the <strong>Maximum Likelihood Estimation (MLE)</strong>.
+ * The MLE is an iterative method to do a parameter fit.
+ *
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
- * 
+ *
  */
 public class PowerLawFit_MLE extends PowerLawFit {
 
@@ -42,40 +41,37 @@ public class PowerLawFit_MLE extends PowerLawFit {
     /**
      * A constructor that uses a default value for epsilon.<br />
      * The constructor of {@link PowerLawFit} is called.
-     * 
+     *
      * @param xValues
      * @param yValues
      */
-    public PowerLawFit_MLE(float[] xValues, float[] yValues) {
+    public PowerLawFit_MLE(final double[] xValues, final double[] yValues) {
 	super(xValues, yValues, DEFAULT_EPSILON);
 	r = DEFAULT_R;
     }
 
     /**
-     * A constructor that uses the same parameters as the constructor of
-     * {@link PowerLawFit}.
-     * 
+     * A constructor that uses the same parameters as the constructor of {@link PowerLawFit}.
+     *
      * @param xValues
      * @param yValues
      * @param epsilon
      */
-    public PowerLawFit_MLE(float[] xValues, float[] yValues, float epsilon) {
+    public PowerLawFit_MLE(final double[] xValues, final double[] yValues, final double epsilon) {
 	super(xValues, yValues, epsilon);
 	r = DEFAULT_R;
     }
 
     /**
-     * The constructor of {@link PowerLawFit} is called. Additionally you can
-     * define a starting value for the iterative calculation of
-     * <strong>r</strong>.
-     * 
+     * The constructor of {@link PowerLawFit} is called. Additionally you can define a starting value for the iterative
+     * calculation of <strong>r</strong>.
+     *
      * @param xValues
      * @param yValues
      * @param epsilon
      * @param rStart
      */
-    public PowerLawFit_MLE(float[] xValues, float[] yValues, float epsilon,
-	    float rStart) {
+    public PowerLawFit_MLE(final double[] xValues, final double[] yValues, final double epsilon, final double rStart) {
 	super(xValues, yValues, epsilon);
 	r = rStart;
     }
@@ -141,32 +137,31 @@ public class PowerLawFit_MLE extends PowerLawFit {
 
     /**
      * The denominator of the equation to calculate <strong>r</strong>.
-     * 
+     *
      * @param rn
      *            The value of <strong>r</strong> at the current iteration.
      * @return The result of the equation at the denominator.
      */
-    private double denominator(double rn) {
-	double s0 = sumExp(rn, 0);
-	double s2 = sumExp(rn, 2);
+    private double denominator(final double rn) {
+	final double s0 = sumExp(rn, 0);
+	final double s2 = sumExp(rn, 2);
 	return Math.pow((sumExp(rn, 1) / s0), 2) - s2 / s0;
     }
 
     /**
      * The numerator of the equation to calculate <strong>r</strong>.
-     * 
+     *
      * @param rn
      *            The value of <strong>r</strong> at the current iteration.
      * @return The result of the equation at the numerator.
      */
-    private double numerator(double rn) {
+    private double numerator(final double rn) {
 	return sumExp(rn, 1) / sumExp(rn, 0) - weight();
     }
 
     /**
-     * Sums the counts of all pre-edge images at the currently processed pixel
-     * position.
-     * 
+     * Sums the counts of all pre-edge images at the currently processed pixel position.
+     *
      * @return Sum of the counts.
      */
     private double sumCounts() {
@@ -179,25 +174,24 @@ public class PowerLawFit_MLE extends PowerLawFit {
 
     /**
      * Calculates the sum of E<sub>i</sub><sup>exponent</sup>.
-     * 
+     *
      * @param rn
      *            The value of <strong>r</strong> at the current iteration.
      * @param exponent
      *            Can be 0, 1, or 2.
      * @return The sum of power functions.
      */
-    private double sumExp(double rn, int exponent) {
+    private double sumExp(final double rn, final int exponent) {
 	double value = 0;
 	for (int i = 0; i < xValues.length; i++) {
-	    value += (Math.pow(Math.log(xValues[i]), exponent))
-		    * Math.exp(-1 * rn * Math.log(xValues[i]));
+	    value += (Math.pow(Math.log(xValues[i]), exponent)) * Math.exp(-1 * rn * Math.log(xValues[i]));
 	}
 	return value;
     }
 
     /**
      * The MLE uses a weight that is calculated at this method.
-     * 
+     *
      * @return A weighted mean energy loss.
      */
     private double weight() {

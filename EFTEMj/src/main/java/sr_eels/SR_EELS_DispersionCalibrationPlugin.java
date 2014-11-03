@@ -1,18 +1,18 @@
 /**
  * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
- * 
+ *
  * Copyright (c) 2014, Michael Entrup b. Epping <michael.entrup@wwu.de>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -49,9 +49,9 @@ import tools.EFTEMjLogTool;
  * This class is used to set the energy dispersion of SR-EELS images or stacks. There is a second class (
  * {@link SR_EELS_DispersionConfigurationPlugin}) that is used to setup predefined values. The offset (origin) can be
  * set by different methods.
- * 
+ *
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
- * 
+ *
  */
 public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter {
 
@@ -65,13 +65,13 @@ public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter
 	/**
 	 * The {@link String} that will be returned when using the method <code>toString()</code>.
 	 */
-	private String string;
+	private final String string;
 
 	/**
 	 * @param string
 	 *            The {@link String} that will be returned when using the method <code>toString()</code>.
 	 */
-	private BINNING(String string) {
+	private BINNING(final String string) {
 	    this.string = string;
 	}
 
@@ -80,6 +80,7 @@ public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter
 	 * 
 	 * @see java.lang.Enum#toString()
 	 */
+	@Override
 	public String toString() {
 	    return string;
 	}
@@ -88,7 +89,7 @@ public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter
 	 * @return A {@link String} array that can be used to create a choice at a {@link GenericDialog}.
 	 */
 	public static String[] toStringArray() {
-	    String[] array = new String[values().length];
+	    final String[] array = new String[values().length];
 	    for (int i = 0; i < array.length; i++) {
 		array[i] = values()[i].toString();
 	    }
@@ -172,36 +173,34 @@ public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter
      * @see ij.plugin.filter.PlugInFilter#setup(java.lang.String, ij.ImagePlus)
      */
     @Override
-    public int setup(String arg, ImagePlus imp) {
+    public int setup(final String arg, final ImagePlus imp) {
 	if (arg == "final") {
 	    // Update the ImagePlus to make the new calibration visible. RepaintWindow is necessary to update the
 	    // information displayed above the image (dimension, type, size).
 	    input.updateAndRepaintWindow();
 	    return DONE;
-	} else {
-	    return init();
 	}
+	return init();
     }
 
     /**
      * Read values from IJ_Prefs.txt by using the class {@link Prefs}.
-     * 
+     *
      * @return FLAGS if the initialisation was successful.
      */
     private int init() {
-	String empty = "empty";
-	String values = Prefs.get(PREFIX + KEYS.specMagValues, empty);
+	final String empty = "empty";
+	final String values = Prefs.get(PREFIX + KEYS.specMagValues, empty);
 	if (values == empty) {
 	    IJ.showMessage("No Spec. Mag values found", "The IJ_Prefs.txt contains no Spec. Mag values." + "\n"
 		    + "You can ente some values by using the dispersion configuration.");
 	    return DONE;
-	} else {
-	    // The Keys to access the dispersion are stored as a string like "125;163;200;250;315".
-	    String[] keys = values.split(";");
-	    specMagValues = new String[keys.length];
-	    for (int i = 0; i < keys.length; i++) {
-		specMagValues[i] = keys[i];
-	    }
+	}
+	// The Keys to access the dispersion are stored as a string like "125;163;200;250;315".
+	final String[] keys = values.split(";");
+	specMagValues = new String[keys.length];
+	for (int i = 0; i < keys.length; i++) {
+	    specMagValues[i] = keys[i];
 	}
 	// Load the values that were saved at the last usage of this plugin.
 	specMagIndex = (int) Prefs.get(PREFIX + KEYS.specMagIndex, 0);
@@ -219,8 +218,8 @@ public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter
      * @see ij.plugin.filter.PlugInFilter#run(ij.process.ImageProcessor)
      */
     @Override
-    public void run(ImageProcessor ip) {
-	double dispersion = Prefs.get(PREFIX + specMagValues[specMagIndex], 1);
+    public void run(final ImageProcessor ip) {
+	final double dispersion = Prefs.get(PREFIX + specMagValues[specMagIndex], 1);
 	int offsetValue = 0;
 	int binning;
 	if (BINNING.toStringArray()[binningIndex].equals(BINNING.BINNING_OTHER.toString())) {
@@ -267,7 +266,7 @@ public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter
 	default:
 	    break;
 	}
-	Calibration cal = new Calibration(input);
+	final Calibration cal = new Calibration(input);
 	if (orientation == 0) {
 	    cal.pixelWidth = dispersion * binning;
 	    // If you use setXUnit() it's the same like using setUnit().
@@ -290,13 +289,13 @@ public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter
      * ij.plugin.filter.PlugInFilterRunner)
      */
     @Override
-    public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
+    public int showDialog(final ImagePlus imp, final String command, final PlugInFilterRunner pfr) {
 	input = imp;
 	logTool = new EFTEMjLogTool(command);
-	GenericDialog gd = new GenericDialog(command, IJ.getInstance());
-	String[] items = { "x-axis", "y-axis" };
+	final GenericDialog gd = new GenericDialog(command, IJ.getInstance());
+	final String[] items = { "x-axis", "y-axis" };
 	// Try to make a good default selection for the orientation.
-	String selectedItem = ((input.getWidth() >= input.getHeight()) ? items[0] : items[1]);
+	final String selectedItem = ((input.getWidth() >= input.getHeight()) ? items[0] : items[1]);
 	gd.addChoice("Energy_axis:", items, selectedItem);
 	gd.addChoice("Spec_Mag:", specMagValues, specMagValues[specMagIndex]);
 	gd.addChoice("Binning:", BINNING.toStringArray(), BINNING.toStringArray()[binningIndex]);
@@ -330,7 +329,7 @@ public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter
 		    return DONE | NO_CHANGES;
 		}
 		// A point is a rectangle with width = height = 0.
-		point = (Rectangle) input.getRoi().getBounds();
+		point = input.getRoi().getBounds();
 	    }
 	    return FLAGS;
 	}
@@ -341,13 +340,13 @@ public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter
     /**
      * A dialog that requests the user to set a point selection. This point is used to calibrate the origin of the
      * energy axis.
-     * 
+     *
      * @return <code>true</code> if Ok has been pressed.
      */
     private boolean showPointSelectionDialog() {
-	String oldTool = IJ.getToolName();
+	final String oldTool = IJ.getToolName();
 	IJ.setTool(Toolbar.POINT);
-	ExtendedWaitForUserDialog dialog = new ExtendedWaitForUserDialog("Offset calibration",
+	final ExtendedWaitForUserDialog dialog = new ExtendedWaitForUserDialog("Offset calibration",
 		"Select the feature with an energy loss of " + offsetLoss + "eV." + "\n"
 			+ "Press Ok to use the selected point for the offset calibration.", null);
 	dialog.show();
@@ -361,7 +360,7 @@ public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter
      * Cancel the plugin and show a status message.
      */
     private void cancel() {
-	String message = "Dispersion calibration has been canceled.";
+	final String message = "Dispersion calibration has been canceled.";
 	logTool.println(message);
 	IJ.showStatus(message);
     }
@@ -372,7 +371,7 @@ public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter
      * @see ij.plugin.filter.ExtendedPlugInFilter#setNPasses(int)
      */
     @Override
-    public void setNPasses(int nPasses) {
+    public void setNPasses(final int nPasses) {
 	// This method is not used.
     }
 
@@ -385,16 +384,16 @@ public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter
      * @param args
      *            unused
      */
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
 	// start ImageJ
 	new ImageJ();
 
 	// open the sample
-	ImagePlus image = IJ.openImage("http://imagej.net/images/clown.jpg");
+	final ImagePlus image = IJ.openImage("http://imagej.net/images/clown.jpg");
 	image.show();
 
 	// run the plugin
-	Class<?> clazz = SR_EELS_DispersionCalibrationPlugin.class;
+	final Class<?> clazz = SR_EELS_DispersionCalibrationPlugin.class;
 	IJ.runPlugIn(clazz.getName(), "");
     }
 }

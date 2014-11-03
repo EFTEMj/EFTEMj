@@ -1,18 +1,18 @@
 /**
  * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
- * 
+ *
  * Copyright (c) 2014, Michael Entrup b. Epping <michael.entrup@wwu.de>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -26,8 +26,6 @@
  */
 package sr_eels;
 
-import java.io.IOException;
-
 import gui.GenericDialogPlus;
 import ij.IJ;
 import ij.ImageJ;
@@ -36,6 +34,8 @@ import ij.gui.GenericDialog;
 import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
 import ij.process.ImageProcessor;
+
+import java.io.IOException;
 
 /**
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
@@ -58,8 +58,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     private String path = "No file selected.";
     private int subdivision;
     private int oversampling;
-    private ImagePlus imp;
-    private int binning = 4;
+    private ImagePlus inputImage;
+    private final int binning = 4;
 
     /*
      * (non-Javadoc)
@@ -67,7 +67,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      * @see ij.plugin.filter.PlugInFilter#setup(java.lang.String, ij.ImagePlus)
      */
     @Override
-    public int setup(String arg, ImagePlus imp) {
+    public int setup(final String arg, final ImagePlus imp) {
 	if (arg == "final") {
 	    // TODO Implement final processing
 	    return NO_CHANGES | DONE;
@@ -81,14 +81,15 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      * @see ij.plugin.filter.PlugInFilter#run(ij.process.ImageProcessor)
      */
     @Override
-    public void run(ImageProcessor ip) {
+    public void run(final ImageProcessor ip) {
 	try {
-	    SR_EELS_CorrectionFunction func = new SR_EELS_CorrectionFunction(path);
-	    SR_EELS_Correction correction = new SR_EELS_Correction(imp, binning, func, subdivision, oversampling);
+	    final SR_EELS_CorrectionFunction func = new SR_EELS_CorrectionFunction(path);
+	    final SR_EELS_Correction correction = new SR_EELS_Correction(inputImage, binning, func, subdivision,
+		    oversampling);
 	    correction.startCalculation();
 	    correction.showResult();
 
-	} catch (IOException e) {
+	} catch (final IOException e) {
 	    IJ.showMessage(e.getMessage());
 	    return;
 	}
@@ -101,25 +102,25 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      * ij.plugin.filter.PlugInFilterRunner)
      */
     @Override
-    public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
+    public int showDialog(final ImagePlus imp, final String command, final PlugInFilterRunner pfr) {
 	while (!path.contains(".txt")) {
 	    if (showParameterDialog(command) == CANCEL) {
 		canceled();
 		return NO_CHANGES | DONE;
 	    }
 	}
-	this.imp = imp;
+	inputImage = imp;
 	return FLAGS;
     }
 
     /**
      * Creates and shows the {@link GenericDialog} that is used to set the parameters for elemental mapping.
-     * 
+     *
      * @param title
      * @return The constant <code>OK</code> or <code>CANCEL</code>.
      */
-    private int showParameterDialog(String title) {
-	GenericDialogPlus gd = new GenericDialogPlus(title + " - set parameters", IJ.getInstance());
+    private int showParameterDialog(final String title) {
+	final GenericDialogPlus gd = new GenericDialogPlus(title + " - set parameters", IJ.getInstance());
 	gd.addFileField("Parameters_file (*.txt)", path);
 	gd.addNumericField("Pixel_subdivision", 10, 0);
 	gd.addNumericField("Oversampling", 3, 0);
@@ -147,20 +148,20 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      * @see ij.plugin.filter.ExtendedPlugInFilter#setNPasses(int)
      */
     @Override
-    public void setNPasses(int nPasses) {
+    public void setNPasses(final int nPasses) {
 	// This method is not used.
     }
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
 	// start ImageJ
 	new ImageJ();
 
 	// open the sample stack
-	ImagePlus image = IJ.openImage("http://EFTEMj.entrup.com.de/SR_EELS.tif");
+	final ImagePlus image = IJ.openImage("http://EFTEMj.entrup.com.de/SR_EELS.tif");
 	image.show();
 
 	// run the plugin
-	Class<?> clazz = SR_EELS_CorrectionPlugin.class;
+	final Class<?> clazz = SR_EELS_CorrectionPlugin.class;
 	IJ.runPlugIn(clazz.getName(), "");
     }
 

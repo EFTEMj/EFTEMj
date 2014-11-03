@@ -89,7 +89,7 @@ public class ExtendedWaitForUserDialog extends WaitForUserDialog implements Cont
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see ij.gui.WaitForUserDialog#escPressed()
      */
     @Override
@@ -99,7 +99,7 @@ public class ExtendedWaitForUserDialog extends WaitForUserDialog implements Cont
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.awt.event.ContainerListener#componentAdded(java.awt.event.ContainerEvent)
      */
     @Override
@@ -127,7 +127,7 @@ public class ExtendedWaitForUserDialog extends WaitForUserDialog implements Cont
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.awt.event.ContainerListener#componentRemoved(java.awt.event.ContainerEvent)
      */
     @Override
@@ -155,7 +155,7 @@ public class ExtendedWaitForUserDialog extends WaitForUserDialog implements Cont
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see ij.gui.WaitForUserDialog#keyPressed(java.awt.event.KeyEvent)
      */
     @Override

@@ -1,18 +1,18 @@
 /**
  * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
- * 
+ *
  * Copyright (c) 2014, Michael Entrup b. Epping <michael.entrup@wwu.de>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -34,19 +34,17 @@ public class PowerLawFit_WLSE extends PowerLawFit {
 
     private final static double DEFAULT_R = 4.0;
 
-    private double[] xValues;
-    private double[] yValues;
     private double rn;
     private double an;
 
-    public PowerLawFit_WLSE(float[] xValues, float[] yValues, float epsilon) {
-	super(xValues, yValues, epsilon);
+    public PowerLawFit_WLSE(final double[] preEdgeEnergyLosses, final double[] counts, final double epsilon) {
+	super(preEdgeEnergyLosses, counts, epsilon);
 	r = DEFAULT_R;
-	this.xValues = new double[xValues.length];
-	this.yValues = new double[yValues.length];
-	for (int i = 0; i < xValues.length; i++) {
-	    this.xValues[i] = Math.log(xValues[i]);
-	    this.yValues[i] = Math.log(yValues[i]);
+	this.xValues = new double[preEdgeEnergyLosses.length];
+	this.yValues = new double[counts.length];
+	for (int i = 0; i < preEdgeEnergyLosses.length; i++) {
+	    this.xValues[i] = Math.log(preEdgeEnergyLosses[i]);
+	    this.yValues[i] = Math.log(counts[i]);
 	}
     }
 
@@ -125,7 +123,7 @@ public class PowerLawFit_WLSE extends PowerLawFit {
 	done = true;
     }
 
-    private double sum(int w, int x, int y) {
+    private double sum(final int w, final int x, final int y) {
 	double value = 0;
 	for (int i = 0; i < xValues.length; i++) {
 	    value += Math.pow(w(xValues[i]), w) * Math.pow(xValues[i], x) * Math.pow(yValues[i], y);
@@ -133,8 +131,8 @@ public class PowerLawFit_WLSE extends PowerLawFit {
 	return value;
     }
 
-    private double w(double x) {
-	double y = an - rn * x;
+    private double w(final double x) {
+	final double y = an - rn * x;
 	return y;
     }
 

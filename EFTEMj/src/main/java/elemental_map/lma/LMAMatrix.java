@@ -7,7 +7,7 @@ package elemental_map.lma;
 public interface LMAMatrix {
     @SuppressWarnings("serial")
     public static class InvertException extends RuntimeException {
-	public InvertException(String message) {
+	public InvertException(final String message) {
 	    super(message);
 	}
     }
@@ -30,7 +30,7 @@ public interface LMAMatrix {
     /**
      * Multiplies this matrix with an array (result = this * vector). The lengths of the arrays must be equal to the
      * number of rows in the matrix.
-     * 
+     *
      * @param vector
      *            The array to be multiplied with the matrix.
      * @param result

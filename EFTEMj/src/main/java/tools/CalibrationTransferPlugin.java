@@ -59,7 +59,7 @@ public class CalibrationTransferPlugin implements ExtendedPlugInFilter {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see ij.plugin.filter.PlugInFilter#setup(java.lang.String, ij.ImagePlus)
      */
     @Override
@@ -74,7 +74,7 @@ public class CalibrationTransferPlugin implements ExtendedPlugInFilter {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see ij.plugin.filter.PlugInFilter#run(ij.process.ImageProcessor)
      */
     @Override
@@ -85,7 +85,7 @@ public class CalibrationTransferPlugin implements ExtendedPlugInFilter {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see ij.plugin.filter.ExtendedPlugInFilter#showDialog(ij.ImagePlus, java.lang.String,
      * ij.plugin.filter.PlugInFilterRunner)
      */
@@ -128,7 +128,7 @@ public class CalibrationTransferPlugin implements ExtendedPlugInFilter {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see ij.plugin.filter.ExtendedPlugInFilter#setNPasses(int)
      */
     @Override
