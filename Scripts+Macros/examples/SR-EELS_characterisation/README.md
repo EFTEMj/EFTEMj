@@ -1,7 +1,7 @@
 # example images for SR-EELS_characterisation.ijm
 
 To test [SR-EELS_characterisation.ijm][SR-EELS_chara] you can download the example images as a ZIP-file:
-[SR-EELS_characterisation_SM315_QSinK7=0%.zip (size: 99.7 MB)][SR-EELS_chara_example].
+[SR-EELS_characterisation_SM315_QSinK7=0.zip (size: 99.7 MB)][SR-EELS_chara_example].
 
 ## How to record images for the SR-EELS characterisation?
 
@@ -20,7 +20,7 @@ This steps are valid for a Zeiss Libra 200FE with in-column Omega-Filter.
 **Figure 1:** This montage shows the position of the filter entrance aperture. For each position a SR-EELS image has been recorded (see figure 2).
 
 ![SR-EELS_cal.png](SR-EELS_cal.png)
-**Figure 2:** This is the montage of the SR-EELS images used for the characterisation. You can download these file: [SR-EELS_characterisation_SM315_QSinK7=0%.zip][SR-EELS_chara_example].
+**Figure 2:** This is the montage of the SR-EELS images used for the characterisation. You can download these file: [SR-EELS_characterisation_SM315_QSinK7=0.zip][SR-EELS_chara_example].
 
 [SR-EELS_chara]: https://github.com/EFTEMj/EFTEMj/blob/master/Scripts%2BMacros/SR-EELS_characterisation.ijm
-[SR-EELS_chara_example]: http://www.entrup.com.de/EFTEMj/SR-EELS_characterisation_SM315_QSinK7=0%.zip
+[SR-EELS_chara_example]: http://eftemj.entrup.com.de/SR-EELS_characterisation_SM315_QSinK7=0.zip
