@@ -41,4 +41,20 @@ public class EFTEMj {
      */
     public static final String PREFS_PREFIX = "EFTEMj.";
 
+    /**
+     * The path inside the JAR file where the macro files are located.
+     */
+    public static final String PATH_MACROS = "/macros/";
+
+    /**
+     * @param classToParse
+     *            can be any {@link Object}.
+     * @return the name of the passed {@link Object} without the package prefix.
+     */
+    public static String getNameWithoutPackage(final Object classToParse) {
+	final String className = classToParse.getClass().getName()
+		.substring(classToParse.getClass().getName().indexOf(".") + 1);
+	return className;
+    }
+
 }

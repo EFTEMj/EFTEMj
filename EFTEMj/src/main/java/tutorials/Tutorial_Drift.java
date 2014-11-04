@@ -1,11 +1,10 @@
 package tutorials;
 
+import eftemj.EFTEMj;
 import ij.IJ;
+import ij.ImageJ;
 import ij.plugin.PlugIn;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import tools.JARTool;
 
 /**
  * This Plugin is a tutorial on how to use the drift correction.<br />
@@ -16,47 +15,20 @@ import java.io.InputStreamReader;
  */
 public class Tutorial_Drift implements PlugIn {
 
-    private final String path_macros = "/macros/";
-    private final String ijm_create = "create_Drift-Stack.ijm";
+    private final String filename_ijm_create = "create_Drift-Stack.ijm";
 
     @Override
     public void run(final String arg) {
-	IJ.runMacro(getText(path_macros + ijm_create));
+	IJ.runMacro(new JARTool().getText(EFTEMj.PATH_MACROS + filename_ijm_create));
 	// TODO Create the tutorial.
     }
 
-    /**
-     * Loads a text file from within a JAR file using getResourceAsStream().<br />
-     * Taken from <url>http://imagej.nih.gov/ij/plugins/download/JAR_Resources_Demo.java</url>.
-     *
-     * @param path
-     *            Path to the text file.
-     * @return Content of the text file.
-     */
-    private String getText(final String path) {
-	String text = "";
-	try {
-	    // get the text resource as a stream
-	    final InputStream is = getClass().getResourceAsStream(path);
-	    if (is == null) {
-		IJ.showMessage("Load macro from JAR", "File not found in JAR at " + path);
-		return "";
-	    }
-	    final InputStreamReader isr = new InputStreamReader(is);
-	    final StringBuffer sb = new StringBuffer();
-	    final char[] b = new char[8192];
-	    int n;
-	    // read a block and append any characters
-	    while ((n = isr.read(b)) > 0)
-		sb.append(b, 0, n);
-	    // display the text in a TextWindow
-	    text = sb.toString();
-	} catch (final IOException e) {
-	    String msg = e.getMessage();
-	    if (msg == null || msg.equals(""))
-		msg = "" + e;
-	    IJ.showMessage("Load macro from JAR", msg);
-	}
-	return text;
+    public static void main(final String[] args) {
+	// start ImageJ
+	new ImageJ();
+
+	// run the plugin
+	final Class<?> clazz = Tutorial_Drift.class;
+	IJ.runPlugIn(clazz.getName(), "");
     }
 }

@@ -14,14 +14,8 @@ import java.io.InputStreamReader;
  */
 public class JARTool {
 
-    private final String path;
-
-    /**
-     * @param path
-     *            to a text file inside the JAR file.
-     */
-    public JARTool(final String path) {
-	this.path = path;
+    public JARTool() {
+	super();
     }
 
     /**
@@ -30,7 +24,7 @@ public class JARTool {
      *
      * @return Content of the text file.
      */
-    public String getText() {
+    public String getText(final String path) {
 	String text = "";
 	try {
 	    // get the text resource as a stream

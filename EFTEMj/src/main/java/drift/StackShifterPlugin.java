@@ -26,6 +26,7 @@
  */
 package drift;
 
+import eftemj.EFTEMj;
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
@@ -90,7 +91,7 @@ public class StackShifterPlugin implements ExtendedPlugInFilter {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see ij.plugin.filter.PlugInFilter#setup(java.lang.String, ij.ImagePlus)
      */
     @Override
@@ -100,7 +101,7 @@ public class StackShifterPlugin implements ExtendedPlugInFilter {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see ij.plugin.filter.PlugInFilter#run(ij.process.ImageProcessor)
      */
     @Override
@@ -117,7 +118,7 @@ public class StackShifterPlugin implements ExtendedPlugInFilter {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see ij.plugin.filter.ExtendedPlugInFilter#showDialog(ij.ImagePlus, java.lang.String,
      * ij.plugin.filter.PlugInFilterRunner)
      */
@@ -125,7 +126,12 @@ public class StackShifterPlugin implements ExtendedPlugInFilter {
     public int showDialog(final ImagePlus imp, final String command, final PlugInFilterRunner pfr) {
 	initialImp = imp;
 	calibration = imp.getCalibration();
-	if (showParameterDialog(command) == CANCEL) {
+	/*
+	 * command is an empty String if the plugin is called from within the main method of this class (testing). In
+	 * this case we add the name of this class as title.
+	 */
+	final String title = (command != "" ? command : "Test " + EFTEMj.getNameWithoutPackage(this));
+	if (showParameterDialog(title) == CANCEL) {
 	    canceled();
 	    return NO_CHANGES | DONE;
 	}
@@ -137,7 +143,7 @@ public class StackShifterPlugin implements ExtendedPlugInFilter {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see ij.plugin.filter.ExtendedPlugInFilter#setNPasses(int)
      */
     @Override

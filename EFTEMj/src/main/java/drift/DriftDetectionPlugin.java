@@ -26,6 +26,7 @@
  */
 package drift;
 
+import eftemj.EFTEMj;
 import gui.ExtendedWaitForUserDialog;
 import ij.IJ;
 import ij.ImageJ;
@@ -211,12 +212,18 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	    stack = imp;
 	}
 	calibration = imp.getCalibration();
+	/*
+	 * command is an empty String if the plugin is called from within the main method of this class (testing). In
+	 * this case we add the name of this class as title.
+	 */
+	final String title = (command != "" ? command : "Test "
+		+ EFTEMj.getNameWithoutPackage(this));
 	if (imp.getRoi() == null) {
 	    /*
 	     * Show the ROI dialog again until the user cancels it or places a ROI.
 	     */
 	    do {
-		referenceIndex = showRoiDialog(command);
+		referenceIndex = showRoiDialog(title);
 	    } while (referenceIndex != CANCEL & imp.getRoi() == null);
 	}
 	if (referenceIndex == CANCEL) {
@@ -224,7 +231,7 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 	    return NO_CHANGES | DONE;
 	}
 	roi = (Rectangle) imp.getRoi().getBounds().clone();
-	if (showParameterDialog(command) == CANCEL) {
+	if (showParameterDialog(title) == CANCEL) {
 	    canceled();
 	    return NO_CHANGES | DONE;
 	}

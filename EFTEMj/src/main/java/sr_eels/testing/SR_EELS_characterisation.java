@@ -1,5 +1,6 @@
 package sr_eels.testing;
 
+import eftemj.EFTEMj;
 import ij.IJ;
 import ij.ImageJ;
 import ij.plugin.PlugIn;
@@ -7,16 +8,11 @@ import tools.JARTool;
 
 public class SR_EELS_characterisation implements PlugIn {
 
-    private final String path_macros = "/macros/";
-    private final String ijm_characterisation = "SR-EELS_characterisation.ijm";
-
-    public SR_EELS_characterisation() {
-	// TODO Auto-generated constructor stub
-    }
+    private final String filename_ijm_characterisation = "SR-EELS_characterisation.ijm";
 
     @Override
     public void run(final String arg) {
-	IJ.runMacro(new JARTool(path_macros + ijm_characterisation).getText());
+	IJ.runMacro(new JARTool().getText(EFTEMj.PATH_MACROS + filename_ijm_characterisation));
 	// TODO Create the tutorial.
     }
 
