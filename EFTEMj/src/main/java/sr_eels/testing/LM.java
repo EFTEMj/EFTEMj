@@ -1,4 +1,4 @@
-// levenberg-marquardt in java 
+// levenberg-marquardt in java
 //
 // To use this, implement the functions in the LMfunc interface.
 //
@@ -6,7 +6,7 @@
 // which is in the public domain.  Reference:
 //    http://math.nist.gov/javanumerics/jama/
 // (JAMA has a matrix object class.  An earlier library JNL, which is no longer
-// available, represented matrices as low-level arrays.  Several years 
+// available, represented matrices as low-level arrays.  Several years
 // ago the performance of JNL matrix code was better than that of JAMA,
 // though improvements in java compilers may have fixed this by now.)
 //
@@ -20,27 +20,27 @@
 // (and put it on the web).
 //
 // ----------------------------------------------------------------
-// 
+//
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Library General Public
 // License as published by the Free Software Foundation; either
 // version 2 of the License, or (at your option) any later version.
-// 
+//
 // This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Library General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU Library General Public
 // License along with this library; if not, write to the
 // Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 // Boston, MA  02111-1307, USA.
 //
-// initial author contact info:  
+// initial author contact info:
 // jplewis  www.idiom.com/~zilla  zilla # computer.org,   #=at
 //
 // Improvements by:
-// dscherba  www.ncsa.uiuc.edu/~dscherba  
+// dscherba  www.ncsa.uiuc.edu/~dscherba
 // Jonathan Jackson   j.jackson # ucl.ac.uk
 // Michael Entrup	entrup@arcor.de
 
@@ -65,8 +65,9 @@ public final class LM {
      * calculate the current sum-squared-error (Chi-squared is the distribution of squared Gaussian errors, thus the
      * name)
      */
-    static double chiSquared(double[][] x, double[] a, double[] y, double[] s, LM_Function f) {
-	int npts = y.length;
+    static double chiSquared(final double[][] x, final double[] a, final double[] y, final double[] s,
+	    final LM_Function f) {
+	final int npts = y.length;
 	double sum = 0.;
 
 	for (int i = 0; i < npts; i++) {
@@ -81,13 +82,13 @@ public final class LM {
     /**
      * Minimize E = sum {(y[k] - f(x[k],a)) / s[k]}^2 The individual errors are optionally scaled by s[k]. Note that
      * LMfunc implements the value and gradient of f(x,a), NOT the value and gradient of E with respect to a!
-     * 
+     *
      * @param x
      *            array of domain points, each may be multidimensional
-     * @param y
-     *            corresponding array of values
      * @param a
      *            the parameters/state of the model
+     * @param y
+     *            corresponding array of values
      * @param vary
      *            false to indicate the corresponding a[k] is to be held fixed
      * @param s2
@@ -105,11 +106,12 @@ public final class LM {
      * @return the new lambda for future iterations. Can use this and maxiter to interleave the LM descent with some
      *         other task, setting maxiter to something small.
      */
-    public static double solve(double[][] x, double[] a, double[] y, double[] s, boolean[] vary, LM_Function f,
-	    double lambda, double termepsilon, int maxiter, int verbose) throws Exception {
-	int npts = y.length;
-	int nparm = a.length;
-	assert s.length == npts;
+    public static double solve(final double[][] x, final double[] a, final double[] y, final double[] s2,
+	    final boolean[] vary, final LM_Function f, final double lambda, final double termepsilon,
+	    final int maxiter, final int verbose) throws Exception {
+	final int npts = y.length;
+	final int nparm = a.length;
+	assert s2.length == npts;
 	assert x.length == npts;
 	if (verbose > 0) {
 	    System.out.print("solve x[" + x.length + "][" + x[0].length + "]");
@@ -117,22 +119,24 @@ public final class LM {
 	    System.out.println(" y[" + y.length + "]");
 	}
 
-	double e0 = chiSquared(x, a, y, s, f);
+	double e0 = chiSquared(x, a, y, s2, f);
 	// double lambda = 0.001;
 	boolean done = false;
 
 	// g = gradient, H = hessian, d = step to minimum
 	// H d = -g, solve for d
-	double[][] H = new double[nparm][nparm];
-	double[] g = new double[nparm];
+	final double[][] H = new double[nparm][nparm];
+	final double[] g = new double[nparm];
 	// double[] d = new double[nparm];
 
-	double[] oos2 = new double[s.length];
+	final double[] oos2 = new double[s2.length];
 	for (int i = 0; i < npts; i++)
-	    oos2[i] = 1. / (s[i] * s[i]);
+	    oos2[i] = 1. / (s2[i] * s2[i]);
 
 	int iter = 0;
 	int term = 0; // termination count test
+
+	double lambdaChanged = lambda;
 
 	do {
 	    ++iter;
@@ -143,7 +147,7 @@ public final class LM {
 		    for (int i = 0; i < npts; i++) {
 			if (i == 0)
 			    H[r][c] = 0.;
-			double[] xi = x[i];
+			final double[] xi = x[i];
 			H[r][c] += (oos2[i] * f.grad(xi, a, r) * f.grad(xi, a, c));
 		    } // npts
 		} // c
@@ -158,17 +162,17 @@ public final class LM {
 		for (int i = 0; i < npts; i++) {
 		    if (i == 0)
 			g[r] = 0.;
-		    double[] xi = x[i];
+		    final double[] xi = x[i];
 		    g[r] += (oos2[i] * (y[i] - f.val(xi, a)) * f.grad(xi, a, r));
 		}
 	    } // npts
 
 	    // solve H d = -g, evaluate error at new location
 	    // double[] d = DoubleMatrix.solve(H, g);
-	    double[] d = (new Matrix(H)).lu().solve(new Matrix(g, nparm)).getRowPackedCopy();
+	    final double[] d = (new Matrix(H)).lu().solve(new Matrix(g, nparm)).getRowPackedCopy();
 	    // double[] na = DoubleVector.add(a, d);
-	    double[] na = (new Matrix(a, nparm)).plus(new Matrix(d, nparm)).getRowPackedCopy();
-	    double e1 = chiSquared(x, na, y, s, f);
+	    final double[] na = (new Matrix(a, nparm)).plus(new Matrix(d, nparm)).getRowPackedCopy();
+	    final double e1 = chiSquared(x, na, y, s2, f);
 
 	    if (verbose > 0) {
 		System.out.println("\n\niteration " + iter + " lambda = " + lambda);
@@ -209,11 +213,10 @@ public final class LM {
 
 	    // in the C++ version, found that changing this to e1 >= e0
 	    // was not a good idea. See comment there.
-	    //
 	    if (e1 > e0 || Double.isNaN(e1)) { // new location worse than before
-		lambda *= 10.;
+		lambdaChanged *= 10.;
 	    } else { // new location better, accept new parameters
-		lambda *= 0.1;
+		lambdaChanged *= 0.1;
 		e0 = e1;
 		// simply assigning a = na will not get results copied back to caller
 		for (int i = 0; i < nparm; i++) {
@@ -224,14 +227,14 @@ public final class LM {
 
 	} while (!done);
 
-	return lambda;
+	return lambdaChanged;
     } // solve
 
     // ----------------------------------------------------------------
 
     /**
      * This methods were part of LMfunc.java. I moved them to a new interface, as they are only needed for testing.
-     * 
+     *
      * @author Michael Entrup b. Epping <entrup@arcor.de>
      *
      */
@@ -258,19 +261,22 @@ public final class LM {
 	static final int AMP = 1;
 	static final int FREQ = 2;
 
+	@Override
 	public double[] initial() {
-	    double[] a = new double[3];
+	    final double[] a = new double[3];
 	    a[PHASE] = 0.;
 	    a[AMP] = 1.;
 	    a[FREQ] = 1.;
 	    return a;
 	} // initial
 
-	public double val(double[] x, double[] a) {
+	@Override
+	public double val(final double[] x, final double[] a) {
 	    return a[AMP] * Math.sin(a[FREQ] * x[0] + a[PHASE]);
 	} // val
 
-	public double grad(double[] x, double[] a, int a_k) {
+	@Override
+	public double grad(final double[] x, final double[] a, final int a_k) {
 	    if (a_k == AMP)
 		return Math.sin(a[FREQ] * x[0] + a[PHASE]);
 
@@ -286,23 +292,24 @@ public final class LM {
 	    }
 	} // grad
 
+	@Override
 	public Object[] testdata() {
-	    double[] a = new double[3];
+	    final double[] a = new double[3];
 	    a[PHASE] = 0.111;
 	    a[AMP] = 1.222;
 	    a[FREQ] = 1.333;
 
-	    int npts = 10;
-	    double[][] x = new double[npts][1];
-	    double[] y = new double[npts];
-	    double[] s = new double[npts];
+	    final int npts = 10;
+	    final double[][] x = new double[npts][1];
+	    final double[] y = new double[npts];
+	    final double[] s = new double[npts];
 	    for (int i = 0; i < npts; i++) {
 		x[i][0] = (double) i / npts;
 		y[i] = val(x[i], a);
 		s[i] = 1.;
 	    }
 
-	    Object[] o = new Object[4];
+	    final Object[] o = new Object[4];
 	    o[0] = x;
 	    o[1] = a;
 	    o[2] = y;
@@ -320,25 +327,29 @@ public final class LM {
      */
     static class LMPolyTest implements LM_TestFunction {
 
+	@Override
 	public double[] initial() {
-	    double[] a = { 1., 0.01, 0.0001, 0.01, 0.0001, 1e-6, 0.0001, 1e-6, 1e-8 };
+	    final double[] a = { 1., 0.01, 0.0001, 0.01, 0.0001, 1e-6, 0.0001, 1e-6, 1e-8 };
 	    return a;
 	} // initial
 
-	public double val(double[] x, double[] a) {
+	@Override
+	public double val(final double[] x, final double[] a) {
 	    return Polynomial_2D.val(x, a, 2, 2);
 	} // val
 
-	public double grad(double[] x, double[] a, int a_k) {
+	@Override
+	public double grad(final double[] x, final double[] a, final int a_k) {
 	    return Polynomial_2D.grad(x, a, 2, 2, a_k);
 	} // grad
 
+	@Override
 	public Object[] testdata() {
 	    return testdata(1);
 	} // test
 
-	public Object[] testdata(int n) {
-	    double[] x_vals = { 287.859, 351.834, 415.842, 479.841, 543.846, 607.831, 671.85, 735.848, 799.859,
+	public Object[] testdata(final int n) {
+	    final double[] x_vals = { 287.859, 351.834, 415.842, 479.841, 543.846, 607.831, 671.85, 735.848, 799.859,
 		    863.868, 927.84, 991.848, 1055.85, 1119.85, 1183.86, 1247.87, 1311.84, 1375.85, 1439.89, 1503.86,
 		    1567.86, 1631.85, 1695.87, 1759.85, 1823.85, 1887.86, 1951.87, 2015.93, 2079.84, 2143.86, 2207.87,
 		    2271.86, 2335.87, 2399.85, 2463.89, 2527.86, 2591.86, 2655.84, 2719.89, 2783.85, 2847.89, 2911.85,
@@ -365,7 +376,7 @@ public final class LM {
 		    2719.86, 2783.86, 2847.86, 2911.9, 2975.88, 3039.86, 3103.84, 3167.87, 3231.87, 3295.87, 3359.86,
 		    3423.89, 3487.88, 3551.91, 3615.86, 3679.86, 3743.94, 3807.9 };
 
-	    double[] y_vals = { 2045.48, 2046.57, 2047.31, 2048.06, 2048.77, 2049.78, 2050.74, 2051.48, 2052.14,
+	    final double[] y_vals = { 2045.48, 2046.57, 2047.31, 2048.06, 2048.77, 2049.78, 2050.74, 2051.48, 2052.14,
 		    2052.99, 2053.82, 2054.6, 2054.96, 2055.93, 2056.13, 2057.08, 2057.92, 2058.39, 2059.1, 2059.68,
 		    2060.07, 2060.7, 2061.34, 2061.82, 2062.68, 2063.49, 2063.98, 2064.47, 2065.15, 2065.7, 2066.11,
 		    2067.22, 2067.71, 2068.45, 2069.49, 2070.27, 2071.07, 2071.67, 2072.34, 2073.1, 2073.95, 2074.51,
@@ -392,31 +403,31 @@ public final class LM {
 		    2869.53, 2869.03, 2869.18, 2869.09, 2869.21, 2869.17, 2869.37, 2869.51, 2869.81, 2869.91, 2870.49,
 		    2870.58, 2871.05, 2871.94, 2872.23, 2873.12, 2873.33, 2873.92 };
 
-	    double[] z_vals = { 630, 630, 628, 628, 626, 624, 622, 624, 622, 622, 620, 618, 618, 616, 614, 614, 616,
-		    610, 612, 608, 608, 608, 606, 604, 606, 604, 604, 602, 602, 602, 602, 600, 600, 594, 596, 594, 594,
-		    594, 594, 592, 590, 592, 592, 590, 588, 590, 588, 586, 584, 584, 586, 584, 582, 584, 578, 582, 580,
-		    580, 580, 576, 576, 576, 574, 574, 572, 570, 570, 568, 568, 564, 566, 562, 564, 562, 560, 558, 560,
-		    558, 556, 556, 554, 556, 552, 552, 550, 550, 550, 546, 548, 546, 544, 546, 542, 544, 542, 540, 540,
-		    540, 538, 536, 538, 536, 536, 534, 534, 532, 532, 532, 530, 528, 528, 526, 614, 616, 614, 612, 612,
-		    608, 610, 608, 606, 604, 602, 604, 602, 600, 600, 598, 598, 598, 594, 594, 594, 592, 588, 590, 588,
-		    588, 588, 588, 584, 584, 586, 584, 582, 580, 580, 580, 578, 576, 576, 576, 576, 576, 574, 576, 574,
-		    572, 572, 572, 572, 570, 568, 568, 566, 566, 568, 564, 580, 580, 576, 576, 576, 574, 574, 570, 572,
-		    570, 570, 568, 568, 566, 566, 564, 562, 564, 564, 560, 560, 558, 560, 556, 556, 554, 554, 552, 552,
-		    550, 550, 550, 548, 550, 546, 546, 546, 548, 546, 542, 544, 544, 542, 542, 540, 538, 538, 538, 536,
-		    536, 536, 536, 536, 534, 532, 532, 620, 618, 616, 616, 614, 616, 612, 612, 610, 608, 608, 608, 604,
-		    608, 606, 604, 600, 602, 600, 596, 594, 594, 596, 594, 594, 594, 592, 592, 590, 588, 588, 586, 588,
-		    586, 584, 584, 584, 582, 582, 582, 580, 582, 578, 578, 578, 576, 576, 574, 576, 574, 574, 572, 572,
-		    572, 574, 572 };
+	    final double[] z_vals = { 630, 630, 628, 628, 626, 624, 622, 624, 622, 622, 620, 618, 618, 616, 614, 614,
+		    616, 610, 612, 608, 608, 608, 606, 604, 606, 604, 604, 602, 602, 602, 602, 600, 600, 594, 596, 594,
+		    594, 594, 594, 592, 590, 592, 592, 590, 588, 590, 588, 586, 584, 584, 586, 584, 582, 584, 578, 582,
+		    580, 580, 580, 576, 576, 576, 574, 574, 572, 570, 570, 568, 568, 564, 566, 562, 564, 562, 560, 558,
+		    560, 558, 556, 556, 554, 556, 552, 552, 550, 550, 550, 546, 548, 546, 544, 546, 542, 544, 542, 540,
+		    540, 540, 538, 536, 538, 536, 536, 534, 534, 532, 532, 532, 530, 528, 528, 526, 614, 616, 614, 612,
+		    612, 608, 610, 608, 606, 604, 602, 604, 602, 600, 600, 598, 598, 598, 594, 594, 594, 592, 588, 590,
+		    588, 588, 588, 588, 584, 584, 586, 584, 582, 580, 580, 580, 578, 576, 576, 576, 576, 576, 574, 576,
+		    574, 572, 572, 572, 572, 570, 568, 568, 566, 566, 568, 564, 580, 580, 576, 576, 576, 574, 574, 570,
+		    572, 570, 570, 568, 568, 566, 566, 564, 562, 564, 564, 560, 560, 558, 560, 556, 556, 554, 554, 552,
+		    552, 550, 550, 550, 548, 550, 546, 546, 546, 548, 546, 542, 544, 544, 542, 542, 540, 538, 538, 538,
+		    536, 536, 536, 536, 536, 534, 532, 532, 620, 618, 616, 616, 614, 616, 612, 612, 610, 608, 608, 608,
+		    604, 608, 606, 604, 600, 602, 600, 596, 594, 594, 596, 594, 594, 594, 592, 592, 590, 588, 588, 586,
+		    588, 586, 584, 584, 584, 582, 582, 582, 580, 582, 578, 578, 578, 576, 576, 574, 576, 574, 574, 572,
+		    572, 572, 574, 572 };
 
 	    assert x_vals.length == y_vals.length;
 	    assert x_vals.length == z_vals.length;
-	    int npts = (int) Math.floor(x_vals.length / n);
-	    double[][] x = new double[npts][2];
-	    double[] y = new double[npts];
-	    double[] s = new double[npts];
+	    final int npts = (int) Math.floor(x_vals.length / n);
+	    final double[][] x = new double[npts][2];
+	    final double[] y = new double[npts];
+	    final double[] s = new double[npts];
 	    // results from Gnuplot
-	    double[] a = { 551.113, 0.0834116, -2.01285e-005, -0.0236638, 2.68602e-006, -5.03575e-010, 6.71201e-007,
-		    7.10721e-010, -1.43449e-013 };
+	    final double[] a = { 551.113, 0.0834116, -2.01285e-005, -0.0236638, 2.68602e-006, -5.03575e-010,
+		    6.71201e-007, 7.10721e-010, -1.43449e-013 };
 
 	    for (int i = 0; i < npts; i += n) {
 		x[i][0] = x_vals[i];
@@ -425,7 +436,7 @@ public final class LM {
 		s[i] = 1.;
 	    }
 
-	    Object[] o = new Object[4];
+	    final Object[] o = new Object[4];
 	    o[0] = x;
 	    o[1] = a;
 	    o[2] = y;
@@ -443,16 +454,17 @@ public final class LM {
      */
     static class LMQuadTest implements LM_TestFunction {
 
-	public double val(double[] x, double[] a) {
+	@Override
+	public double val(final double[] x, final double[] a) {
 	    assert a.length == 3;
 	    assert x.length == 2;
 
-	    double ox = a[0];
-	    double oy = a[1];
-	    double s = a[2];
+	    final double ox = a[0];
+	    final double oy = a[1];
+	    final double s = a[2];
 
-	    double sdx = s * (x[0] - ox);
-	    double sdy = s * (x[1] - oy);
+	    final double sdx = s * (x[0] - ox);
+	    final double sdy = s * (x[1] - oy);
 
 	    return sdx * sdx + sdy * sdy;
 	} // val
@@ -461,20 +473,21 @@ public final class LM {
 	 * z = (p-o)'S'S(p-o) dz/dp = 2S'S(p-o)
 	 *
 	 * z = (s*(px-ox))^2 + (s*(py-oy))^2 dz/dox = -2(s*(px-ox))*s dz/ds = 2*s*[(px-ox)^2 + (py-oy)^2]
-	 * 
+	 *
 	 * z = (s*dx)^2 + (s*dy)^2 dz/ds = 2(s*dx)*dx + 2(s*dy)*dy
 	 */
-	public double grad(double[] x, double[] a, int a_k) {
+	@Override
+	public double grad(final double[] x, final double[] a, final int a_k) {
 	    assert a.length == 3;
 	    assert x.length == 2;
 	    assert a_k < 3 : "a_k=" + a_k;
 
-	    double ox = a[0];
-	    double oy = a[1];
-	    double s = a[2];
+	    final double ox = a[0];
+	    final double oy = a[1];
+	    final double s = a[2];
 
-	    double dx = (x[0] - ox);
-	    double dy = (x[1] - oy);
+	    final double dx = (x[0] - ox);
+	    final double dy = (x[1] - oy);
 
 	    if (a_k == 0)
 		return -2. * s * s * dx;
@@ -486,21 +499,23 @@ public final class LM {
 		return 2. * s * (dx * dx + dy * dy);
 	} // grad
 
+	@Override
 	public double[] initial() {
-	    double[] a = new double[3];
+	    final double[] a = new double[3];
 	    a[0] = 0.05;
 	    a[1] = 0.1;
 	    a[2] = 1.0;
 	    return a;
 	} // initial
 
+	@Override
 	public Object[] testdata() {
-	    Object[] o = new Object[4];
-	    int npts = 25;
-	    double[][] x = new double[npts][2];
-	    double[] y = new double[npts];
-	    double[] s = new double[npts];
-	    double[] a = new double[3];
+	    final Object[] o = new Object[4];
+	    final int npts = 25;
+	    final double[][] x = new double[npts][2];
+	    final double[] y = new double[npts];
+	    final double[] s = new double[npts];
+	    final double[] a = new double[3];
 
 	    a[0] = 0.;
 	    a[1] = 0.;
@@ -545,17 +560,18 @@ public final class LM {
     static class LMGaussTest implements LM_TestFunction {
 	static double SPREAD = 0.001; // noise variance
 
-	public double val(double[] x, double[] a) {
+	@Override
+	public double val(final double[] x, final double[] a) {
 	    assert x.length == 1;
 	    assert (a.length % 3) == 0;
 
-	    int K = a.length / 3;
+	    final int K = a.length / 3;
 	    int i = 0;
 
 	    double y = 0.;
 	    for (int j = 0; j < K; j++) {
-		double arg = (x[0] - a[i + 1]) / a[i + 2];
-		double ex = Math.exp(-arg * arg);
+		final double arg = (x[0] - a[i + 1]) / a[i + 2];
+		final double ex = Math.exp(-arg * arg);
 		y += (a[i] * ex);
 		i += 3;
 	    }
@@ -582,15 +598,16 @@ public final class LM {
 	 *       = fac arg / G_k
 	 * d/dx[1/x] = d/dx[x^-1] = -x[x^-2]
 	 */
-	public double grad(double[] x, double[] a, int a_k) {
+	@Override
+	public double grad(final double[] x, final double[] a, final int a_k) {
 	    assert x.length == 1;
 
 	    // i - index one of the K Gaussians
-	    int i = 3 * (a_k / 3);
+	    final int i = 3 * (a_k / 3);
 
-	    double arg = (x[0] - a[i + 1]) / a[i + 2];
-	    double ex = Math.exp(-arg * arg);
-	    double fac = a[i] * ex * 2. * arg;
+	    final double arg = (x[0] - a[i + 1]) / a[i + 2];
+	    final double ex = Math.exp(-arg * arg);
+	    final double fac = a[i] * ex * 2. * arg;
 
 	    if (a_k == i)
 		return ex;
@@ -610,8 +627,9 @@ public final class LM {
 
 	} // grad
 
+	@Override
 	public double[] initial() {
-	    double[] a = new double[6];
+	    final double[] a = new double[6];
 	    a[0] = 4.5;
 	    a[1] = 2.2;
 	    a[2] = 2.8;
@@ -622,13 +640,14 @@ public final class LM {
 	    return a;
 	} // initial
 
+	@Override
 	public Object[] testdata() {
-	    Object[] o = new Object[4];
-	    int npts = 100;
-	    double[][] x = new double[npts][1];
-	    double[] y = new double[npts];
-	    double[] s = new double[npts];
-	    double[] a = new double[6];
+	    final Object[] o = new Object[4];
+	    final int npts = 100;
+	    final double[][] x = new double[npts][1];
+	    final double[] y = new double[npts];
+	    final double[] s = new double[npts];
+	    final double[] a = new double[6];
 
 	    a[0] = 5.0; // values returned by initial
 	    a[1] = 2.0; // should be fairly close to these
@@ -657,27 +676,27 @@ public final class LM {
     // ----------------------------------------------------------------
 
     // test program
-    public static void main(String[] cmdline) {
+    public static void main(final String[] cmdline) {
 
 	// LMfunc f = new LMQuadTest(); // works
 	// LMfunc f = new LMSineTest(); // works
 	// LMfunc f = new LMGaussTest(); // works
-	LM_TestFunction f = new LMPolyTest(); // works
+	final LM_TestFunction f = new LMPolyTest(); // works
 
-	double[] aguess = f.initial();
-	Object[] test = f.testdata();
-	double[][] x = (double[][]) test[0];
-	double[] areal = (double[]) test[1];
-	double[] y = (double[]) test[2];
-	double[] s = (double[]) test[3];
-	boolean[] vary = new boolean[aguess.length];
+	final double[] aguess = f.initial();
+	final Object[] test = f.testdata();
+	final double[][] x = (double[][]) test[0];
+	final double[] areal = (double[]) test[1];
+	final double[] y = (double[]) test[2];
+	final double[] s = (double[]) test[3];
+	final boolean[] vary = new boolean[aguess.length];
 	for (int i = 0; i < aguess.length; i++)
 	    vary[i] = true;
 	assert aguess.length == areal.length;
 
 	try {
 	    solve(x, aguess, y, s, vary, f, 0.001, 1e-5, 1000, 2);
-	} catch (Exception ex) {
+	} catch (final Exception ex) {
 	    System.err.println("Exception caught: " + ex.getMessage());
 	    System.exit(1);
 	}

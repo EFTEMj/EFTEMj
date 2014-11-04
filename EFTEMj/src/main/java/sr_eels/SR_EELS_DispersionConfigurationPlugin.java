@@ -55,7 +55,7 @@ public class SR_EELS_DispersionConfigurationPlugin implements PlugIn {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see ij.plugin.PlugIn#run(java.lang.String)
      */
     @Override

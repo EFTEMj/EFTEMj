@@ -8,47 +8,47 @@ import java.io.InputStreamReader;
 
 /**
  * This class is used to load data that is stored at the JAR file of this plugin package.
- * 
+ *
  * @author Michael Entrup b. Epping <entrup@arcor.de>
  *
  */
 public class JARTool {
 
-    private String path;
+    private final String path;
 
     /**
      * @param path
      *            to a text file inside the JAR file.
      */
-    public JARTool(String path) {
+    public JARTool(final String path) {
 	this.path = path;
     }
 
     /**
      * Loads a text file from within a JAR file using getResourceAsStream().<br />
      * Taken from <url>http://imagej.nih.gov/ij/plugins/download/JAR_Resources_Demo.java</url>.
-     * 
+     *
      * @return Content of the text file.
      */
     public String getText() {
 	String text = "";
 	try {
 	    // get the text resource as a stream
-	    InputStream is = getClass().getResourceAsStream(path);
+	    final InputStream is = getClass().getResourceAsStream(path);
 	    if (is == null) {
 		IJ.showMessage("Load macro from JAR", "File not found in JAR at " + path);
 		return "";
 	    }
-	    InputStreamReader isr = new InputStreamReader(is);
-	    StringBuffer sb = new StringBuffer();
-	    char[] b = new char[8192];
+	    final InputStreamReader isr = new InputStreamReader(is);
+	    final StringBuffer sb = new StringBuffer();
+	    final char[] b = new char[8192];
 	    int n;
 	    // read a block and append any characters
 	    while ((n = isr.read(b)) > 0)
 		sb.append(b, 0, n);
 	    // display the text in a TextWindow
 	    text = sb.toString();
-	} catch (IOException e) {
+	} catch (final IOException e) {
 	    String msg = e.getMessage();
 	    if (msg == null || msg.equals(""))
 		msg = "" + e;

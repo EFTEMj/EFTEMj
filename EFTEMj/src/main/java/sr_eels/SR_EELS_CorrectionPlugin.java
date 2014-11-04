@@ -58,8 +58,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     private String path = "No file selected.";
     private int subdivision;
     private int oversampling;
-    private ImagePlus imp;
-    private int binning = 4;
+    private ImagePlus inputImage;
+    private final int binning = 4;
 
     /*
      * (non-Javadoc)
@@ -109,7 +109,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 		return NO_CHANGES | DONE;
 	    }
 	}
-	this.imp = imp;
+	inputImage = imp;
 	return FLAGS;
     }
 

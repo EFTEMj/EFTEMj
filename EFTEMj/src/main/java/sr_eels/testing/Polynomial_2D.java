@@ -5,19 +5,19 @@ import java.util.Arrays;
 /**
  * This class represents a polynomial in 2D: z(x,y). It implements all necessary methods to be used in a
  * Levenberg-Marquardt algorithm.
- * 
+ *
  * @author Michael Entrup b. Epping <entrup@arcor.de>
  *
  */
 public class Polynomial_2D implements LM_Function {
 
-    private int m;
-    private int n;
+    private final int m;
+    private final int n;
     private double[] params;
 
     /**
      * This is a static version of the value calculation.
-     * 
+     *
      * @param x
      *            is the coordinate (x,y).
      * @param params
@@ -30,7 +30,7 @@ public class Polynomial_2D implements LM_Function {
      *            is the maximal order of y.
      * @return the value z(x,y).
      */
-    public static double val(double[] x, double[] params, int m, int n) {
+    public static double val(final double[] x, final double[] params, final int m, final int n) {
 	assert x.length == 2;
 	assert params.length == (m + 1) * (n + 1);
 	double value = 0.;
@@ -44,7 +44,7 @@ public class Polynomial_2D implements LM_Function {
 
     /**
      * This is a static version of the gradient calculation.
-     * 
+     *
      * @param x
      *            is the coordinate (x,y).
      * @param params
@@ -59,7 +59,7 @@ public class Polynomial_2D implements LM_Function {
      *            is the index of the parameter.
      * @return the element of the gradient vector with the given index.
      */
-    public static double grad(double[] x, double[] params, int m, int n, int param) {
+    public static double grad(final double[] x, final double[] params, final int m, final int n, final int param) {
 	assert x.length == 2;
 	assert params.length == (m + 1) * (n + 1);
 	assert param < params.length;
@@ -75,13 +75,13 @@ public class Polynomial_2D implements LM_Function {
     /**
      * This constructor creates a new 2D polynomial with given orders and all parameters = 1.<br />
      * Use the second constructor to define all parameters yourself.
-     * 
+     *
      * @param m
      *            is the maximal order of x.
      * @param n
      *            is the maximal order of y.
      */
-    public Polynomial_2D(int m, int n) {
+    public Polynomial_2D(final int m, final int n) {
 	this.m = m;
 	this.n = n;
 	this.params = new double[(m + 1) * (n + 1)];
@@ -95,12 +95,12 @@ public class Polynomial_2D implements LM_Function {
      * @param n
      *            is the maximal order of y.
      * @param params
-     * 
+     *
      *            is an array that contains all the necessary parameters. The order f the parameters is:<br />
      *            a<SUB>00</SUB> , a<SUB>01</SUB> , ... , a<SUB>0n</SUB> , a<SUB>10</SUB> , ... , a<SUB>m0</SUB> , ... ,
      *            a<SUB>mn</SUB>
      */
-    public Polynomial_2D(int m, int n, double[] params) {
+    public Polynomial_2D(final int m, final int n, final double[] params) {
 	assert params.length == (m + 1) * (n + 1);
 	this.m = m;
 	this.n = n;
@@ -112,7 +112,7 @@ public class Polynomial_2D implements LM_Function {
      *            is the coordinate (x,y).
      * @return the value z(x,y).
      */
-    public double val(double[] x) {
+    public double val(final double[] x) {
 	assert x.length == 2;
 	double value = 0.;
 	for (int i = 0; i <= m; i++) {
@@ -128,8 +128,8 @@ public class Polynomial_2D implements LM_Function {
      *            is a list of coordinates ( x<SUB>i</SUB> ,y<SUB>i</SUB> ).
      * @return a list of the values z<SUB>i</SUB> ( x<SUB>i</SUB> ,y<SUB>i</SUB> ).
      */
-    public double[] val(double[][] x) {
-	double[] values = new double[x.length];
+    public double[] val(final double[][] x) {
+	final double[] values = new double[x.length];
 	for (int i = 0; i < x.length; i++) {
 	    values[i] = val(x[i]);
 	}
@@ -143,7 +143,7 @@ public class Polynomial_2D implements LM_Function {
      *            is the index of the parameter.
      * @return the element of the gradient vector with the given index.
      */
-    public double grad(double[] x, int param) {
+    public double grad(final double[] x, final int param) {
 	assert x.length == 2;
 	assert param < (m + 1) * (n + 1);
 	for (int i = 0; i <= m; i++) {
@@ -160,28 +160,28 @@ public class Polynomial_2D implements LM_Function {
      *            is the coordinate (x,y).
      * @return the gradient vector as an array.
      */
-    public double[] grad(double[] x) {
+    public double[] grad(final double[] x) {
 	assert x.length == 2;
-	double[] grads = new double[params.length];
+	final double[] grads = new double[params.length];
 	for (int i = 0; i < grads.length; i++) {
 	    grads[i] = grad(x, i);
 	}
 	return grads;
     }
 
-    private void updateParams(double[] params) {
-	assert this.params.length == params.length;
-	this.params = Arrays.copyOf(params, params.length);
+    private void updateParams(final double[] paramsNew) {
+	assert params.length == paramsNew.length;
+	params = Arrays.copyOf(paramsNew, paramsNew.length);
     }
 
     @Override
-    public double val(double[] x, double[] params) {
-	updateParams(params);
+    public double val(final double[] x, final double[] paramsIn) {
+	updateParams(paramsIn);
 	return val(x);
     }
 
     @Override
-    public double grad(double[] x, double[] a, int ak) {
+    public double grad(final double[] x, final double[] a, final int ak) {
 	updateParams(params);
 	return grad(x, ak);
     }

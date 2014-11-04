@@ -1,18 +1,18 @@
 /**
  * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
- * 
+ *
  * Copyright (c) 2014, Michael Entrup b. Epping <entrup@arcor.de>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -34,7 +34,7 @@ package sr_eels;
 public class SR_EELS_Exception extends Exception {
 
     /**
-     * 
+     *
      */
     public SR_EELS_Exception() {
 	// TODO Auto-generated constructor stub
@@ -43,7 +43,7 @@ public class SR_EELS_Exception extends Exception {
     /**
      * @param message
      */
-    public SR_EELS_Exception(String message) {
+    public SR_EELS_Exception(final String message) {
 	super(message);
 	// TODO Auto-generated constructor stub
     }
@@ -51,7 +51,7 @@ public class SR_EELS_Exception extends Exception {
     /**
      * @param cause
      */
-    public SR_EELS_Exception(Throwable cause) {
+    public SR_EELS_Exception(final Throwable cause) {
 	super(cause);
 	// TODO Auto-generated constructor stub
     }
@@ -60,7 +60,7 @@ public class SR_EELS_Exception extends Exception {
      * @param message
      * @param cause
      */
-    public SR_EELS_Exception(String message, Throwable cause) {
+    public SR_EELS_Exception(final String message, final Throwable cause) {
 	super(message, cause);
 	// TODO Auto-generated constructor stub
     }
