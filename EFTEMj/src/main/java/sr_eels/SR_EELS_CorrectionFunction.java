@@ -55,27 +55,41 @@ public class SR_EELS_CorrectionFunction {
 	readParameters(path);
     }
 
-    public double[] transform(final double x1, final double x2) {
-	final double y1 = calc_y1(x1, x2);
-	final double y2 = calc_y2(x1, x2);
-	final double[] point = { y1, y2 };
+    public double[] transform(double x1, double x2) {
+	double y1 = calc_y1(x1, x2);
+	double y2 = calc_y2(x1, x2);
+	double[] point = { y1, y2 };
 	return point;
     }
 
-    private double calc_y1(final double x1, final double x2) {
-	final double yn = calc_yn(x2);
+    /**
+     * @param x1
+     * @param x2
+     * @return
+     */
+    private double calc_y1(double x1, double x2) {
+	double yn = calc_yn(x2);
 	return arcsinh(a[1][0] + 2 * a[2][0] * x1 + yn * (a[1][1] + a[1][2] * yn + 2 * x1 * (a[2][1] + a[2][2] * yn)))
 		/ (2 * (a[2][0] + yn * (a[2][1] + a[2][2] * yn))) - arcsinh(a[1][0] + yn * (a[1][1] + a[1][2] * yn))
 		/ (2 * (a[2][0] + yn * (a[2][1] + a[2][2] * yn)));
     }
 
-    private double calc_y2(final double x1, final double x2) {
-	final double yn = calc_yn(x2);
+    /**
+     * @param x1
+     * @param x2
+     * @return
+     */
+    private double calc_y2(double x1, double x2) {
+	double yn = calc_yn(x2);
 	return a[0][0] + a[1][0] * x1 + a[2][0] * x1 * x1 + yn
 		* (a[0][1] + a[0][2] * yn + x1 * (a[1][1] + a[2][1] * x1 + a[1][2] * yn + a[2][2] * x1 * yn));
     }
 
-    private double calc_yn(final double x2) {
+    /**
+     * @param x2
+     * @return
+     */
+    private double calc_yn(double x2) {
 	// TODO optimise this method by using the full 3d polynomial.
 	return (x2 * x2 * x2 * b[0][2] / 3 + x2 * x2 * b[0][1] / 2 + x2 * b[0][0]) - offset;
     }
@@ -104,8 +118,8 @@ public class SR_EELS_CorrectionFunction {
 	while ((line = data.readLine()) != null) {
 	    line = line.replace(" ", "");
 	    splitItems = line.split("=");
-	    final int i = Integer.parseInt(splitItems[0].substring(1, 2));
-	    final int j = Integer.parseInt(splitItems[0].substring(2, 3));
+	    int i = Integer.parseInt(splitItems[0].substring(1, 2));
+	    int j = Integer.parseInt(splitItems[0].substring(2, 3));
 	    if (splitItems[0].startsWith("a")) {
 		a[i][j] = Double.parseDouble(splitItems[1]);
 	    }
