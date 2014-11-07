@@ -1,8 +1,8 @@
 /*
  * file:	SR-EELS_characterisation.ijm
- * author:	Michael Entrup (entrup@arcor.de)
- * version:	20140812
- * date:	12.08.2014
+ * author:	Michael Entrup b. Epping (michael.entrup@wwu.de)
+ * version:	20141107
+ * date:	07.11.2014
  * info:	This macro is used to characterise the  aberrations of an Zeiss in-column energy filter when using SR-EELS. A series of calibration datasets is necessary  to run the characterisation. Place all datasets (images) at a folder that contains no other images.
  * You can find an example SR-EELS series at https://github.com/EFTEMj/EFTEMj/tree/master/Scripts+Macros/examples/SR-EELS_characterisation. There you will find a instruction on how to record such a series, too.
  */
@@ -62,8 +62,12 @@ sigma_weighting = 3;	// 1 = 68.27%, 2 = 95.45%, 3 = 99.73%
  */
 var doRotate; var input_dir; var result_dirs; var skip_threshold; var datapoints; var list; var width; var height;	// global variables for use in 'load_images()'
 var array_pos_all; var array_width_all; var array_pos_all_calc; var array_width_all_calc;	// global variables for use in 'save_pos_and_width()'
+var array_x1; var array_x2; var array_y;	// global arrays to store all values needed for fitting a 2D polynominal
 var threshold;	// global variables for use in 'analyse_dataset()'
 
+array_x1 = newArray();
+array_x2 = newArray();
+array_y = newArray();
 load_images();
 
 /*
@@ -85,6 +89,7 @@ for(m=0; m < thresholds.length; m++) {
 	if (skip_threshold[m] == false) {
 		threshold = thresholds[m];
 		analyse_dataset();	// this is the main function of this macro
+		prepareFileForPolynominalFit();	// create the file that contains the values for fitting a 2D polynominal
 		run("Collect Garbage");	// The macro needs a large amount of memory. After each analysis most of the used memory can be freed.
 	}
 }
@@ -96,6 +101,10 @@ if (isOpen("Results")) {
 	run("Close");
 }
 showMessage("<html><p>The evaluation finished.</p><p>Elapsed time: " + (getTime() - start) / 1000 + "s</p>");
+/*
+ * End of macro:
+ * The following code contains function definitions only.
+ */
 
 /*
  * function: analyse_dataset
@@ -275,6 +284,12 @@ function analyse_dataset() {
 			saveAs("Results", result_dirs[m] + "values_" + img_name + ".txt");
 			run("Close");
 		}
+		/*
+		 * Put all determined values into a single array. These values are necessary to plot a 2D polynominal.
+		 */
+		 array_x1 = Array.concat(array_x1, array_pos_y);
+		 array_x2 = Array.concat(array_x2, array_pos_x);
+		 array_y = Array.concat(array_y, array_width);
 	}
 }
 
@@ -483,5 +498,14 @@ function addPointsToOverlay(xPos, yPos, overlayColorIndex) {
 	for (i=0; i<xPos.length; i++) {
 		makePoint(xPos[i], yPos[i]);
 		run("Add Selection...");
+	}
+}
+
+function prepareFileForPolynominalFit() {
+	Array.show("Polynominal2D", array_x1, array_x2, array_y);
+	if (isOpen("Polynominal2D")) {
+		selectWindow("Polynominal2D");
+		saveAs("Results", result_dirs[m] + "Polynominal2D.txt");
+		run("Close");
 	}
 }
