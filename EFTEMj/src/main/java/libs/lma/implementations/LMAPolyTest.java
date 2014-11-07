@@ -1,13 +1,19 @@
 package libs.lma.implementations;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Vector;
+
+import javax.swing.JFileChooser;
+
 import libs.lma.LMA;
 import libs.lma.LMAMultiDimFunction;
 
-
 public class LMAPolyTest {
-
-    public LMAPolyTest() {
-    }
 
     static class LMPolyTest extends LMAMultiDimFunction {
 
@@ -36,7 +42,7 @@ public class LMAPolyTest {
 	    final double[][] vals = new double[2][y_vals.length];
 	    for (int i = 0; i < y_vals.length; i++) {
 		vals[0][i] = y_vals[i];
-		//vals[1][i] = 1 / y_vals[i];
+		// vals[1][i] = 1 / y_vals[i];
 		vals[1][i] = 1;
 	    }
 	    return vals;
@@ -129,6 +135,58 @@ public class LMAPolyTest {
 	for (int i = 0; i < a_fit.length; i++) {
 	    System.out
 		    .println(a_fit[i] + "\t\t" + a_gnuplot[i] + "\t\t" + Math.abs(a_gnuplot[i] - a_fit[i]) / a_fit[i]);
+	}
+
+	final PolyDataImport importer = new LMAPolyTest.PolyDataImport();
+	final double[][] x_vals = importer.x_vals;
+	final double[] y_vals = importer.y_vals;
+	final double[] weights = new double[y_vals.length];
+	Arrays.fill(weights, 1.);
+	final LMA lma2 = new LMA(func, a_fit, y_vals, x_vals, weights, new JAMAMatrix(a_fit.length, a_fit.length));
+	lma2.fit();
+	for (int i = 0; i < a_fit.length; i++) {
+	    System.out
+		    .println(a_fit[i]);
+	}
+    }
+
+    private static class PolyDataImport {
+
+	protected double[][] x_vals;
+	protected double[] y_vals;
+
+	public PolyDataImport() {
+	    final JFileChooser fChooser = new JFileChooser();
+	    fChooser.showOpenDialog(null);
+	    final File file = fChooser.getSelectedFile();
+	    final Vector<Double[]> values = new Vector<Double[]>();
+	    try {
+		final BufferedReader reader = new BufferedReader(new FileReader(file));
+		boolean containsData = true;
+		do {
+		    final String line = reader.readLine();
+		    if (line == null) {
+			containsData = false;
+		    } else {
+			final String[] splitLine = line.split("\\s");
+			final Double[] point = { Double.valueOf(splitLine[0]), Double.valueOf(splitLine[1]),
+				Double.valueOf(splitLine[2]) };
+			values.add(point);
+		    }
+		} while (containsData);
+		reader.close();
+	    } catch (final FileNotFoundException exc) {
+		exc.printStackTrace();
+	    } catch (final IOException exc) {
+		exc.printStackTrace();
+	    }
+	    x_vals = new double[values.size()][2];
+	    y_vals = new double[values.size()];
+	    for (int i = 0; i < values.size(); i++) {
+		x_vals[i][0] = values.get(i)[0];
+		x_vals[i][1] = values.get(i)[1];
+		y_vals[i] = values.get(i)[2];
+	    }
 	}
     }
 }
