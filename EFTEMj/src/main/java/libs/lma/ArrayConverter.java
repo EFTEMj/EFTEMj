@@ -1,4 +1,4 @@
-package elemental_map.lma;
+package libs.lma;
 
 public class ArrayConverter {
     public static class SeparatedData {

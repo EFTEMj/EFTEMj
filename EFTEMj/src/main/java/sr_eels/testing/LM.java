@@ -46,6 +46,7 @@
 
 package sr_eels.testing;
 
+import libs.lma.Polynomial_2D;
 // see comment above
 import Jama.Matrix;
 

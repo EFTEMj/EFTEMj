@@ -1,8 +1,9 @@
-package sr_eels.testing;
+package libs.lma.implementations;
 
-import elemental_map.lma.JAMAMatrix;
-import elemental_map.lma.LMA;
-import elemental_map.lma.LMAMultiDimFunction;
+import libs.lma.LMA;
+import libs.lma.LMAMultiDimFunction;
+import libs.lma.Polynomial_2D;
+
 
 public class LMAPolyTest {
 
@@ -36,7 +37,8 @@ public class LMAPolyTest {
 	    final double[][] vals = new double[2][y_vals.length];
 	    for (int i = 0; i < y_vals.length; i++) {
 		vals[0][i] = y_vals[i];
-		vals[1][i] = 1 / y_vals[i];
+		//vals[1][i] = 1 / y_vals[i];
+		vals[1][i] = 1;
 	    }
 	    return vals;
 	}

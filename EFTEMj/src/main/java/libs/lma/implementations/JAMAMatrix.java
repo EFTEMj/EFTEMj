@@ -1,10 +1,12 @@
-package elemental_map.lma;
+package libs.lma.implementations;
 
 import Jama.Matrix;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.NumberFormat;
+
+import libs.lma.LMAMatrix;
 
 public class JAMAMatrix extends Matrix implements LMAMatrix {
     private static final long serialVersionUID = -8925816623803983503L;

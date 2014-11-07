@@ -1,8 +1,9 @@
-package elemental_map.lma;
-
-import elemental_map.lma.ArrayConverter.SeparatedData;
+package libs.lma;
 
 import java.util.Arrays;
+
+import libs.lma.ArrayConverter.SeparatedData;
+import libs.lma.implementations.JAMAMatrix;
 
 /**
  * A class which implements the <i>Levenberg-Marquardt Algorithm</i> (LMA) fit for non-linear, multidimensional

@@ -1,6 +1,8 @@
-package sr_eels.testing;
+package libs.lma;
 
 import java.util.Arrays;
+
+import sr_eels.testing.LM_Function;
 
 /**
  * This class represents a polynomial in 2D: z(x,y). It implements all necessary methods to be used in a

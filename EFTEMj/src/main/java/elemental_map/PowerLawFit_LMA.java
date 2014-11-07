@@ -26,8 +26,8 @@
  */
 package elemental_map;
 
-import elemental_map.lma.LMA;
-import elemental_map.lma.LMAFunction;
+import libs.lma.LMA;
+import libs.lma.LMAFunction;
 
 /**
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>

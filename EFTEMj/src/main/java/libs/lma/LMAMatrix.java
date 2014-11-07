@@ -1,4 +1,4 @@
-package elemental_map.lma;
+package libs.lma;
 
 /**
  * The matrix to be used in LMA. Implement this to make LMA operational if you don't or can't use jama or flanagan math
