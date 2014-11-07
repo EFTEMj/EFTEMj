@@ -1,8 +1,8 @@
-package libs.lma;
+package libs.lma.implementations;
 
 import java.util.Arrays;
 
-import sr_eels.testing.LM_Function;
+import libs.lma.LMAMultiDimFunction;
 
 /**
  * This class represents a polynomial in 2D: z(x,y). It implements all necessary methods to be used in a
@@ -11,27 +11,12 @@ import sr_eels.testing.LM_Function;
  * @author Michael Entrup b. Epping <entrup@arcor.de>
  *
  */
-public class Polynomial_2D implements LM_Function {
+public class Polynomial_2D extends LMAMultiDimFunction {
 
     private final int m;
     private final int n;
     private double[] params;
 
-    /**
-     * This is a static version of the value calculation.
-     *
-     * @param x
-     *            is the coordinate (x,y).
-     * @param params
-     *            is an array that contains all the necessary parameters. The order f the parameters is:<br />
-     *            a<SUB>00</SUB> , a<SUB>01</SUB> , ... , a<SUB>0n</SUB> , a<SUB>10</SUB> , ... , a<SUB>m0</SUB> , ... ,
-     *            a<SUB>mn</SUB>
-     * @param m
-     *            is the maximal order of x.
-     * @param n
-     *            is the maximal order of y.
-     * @return the value z(x,y).
-     */
     public static double val(final double[] x, final double[] params, final int m, final int n) {
 	assert x.length == 2;
 	assert params.length == (m + 1) * (n + 1);
@@ -141,16 +126,16 @@ public class Polynomial_2D implements LM_Function {
     /**
      * @param x
      *            is the coordinate (x,y).
-     * @param param
+     * @param paramIndex
      *            is the index of the parameter.
      * @return the element of the gradient vector with the given index.
      */
-    public double grad(final double[] x, final int param) {
+    public double grad(final double[] x, final int paramIndex) {
 	assert x.length == 2;
-	assert param < (m + 1) * (n + 1);
+	assert paramIndex < (m + 1) * (n + 1);
 	for (int i = 0; i <= m; i++) {
 	    for (int j = 0; j <= n; j++) {
-		if (param == (n + 1) * i + j)
+		if (paramIndex == (n + 1) * i + j)
 		    return Math.pow(x[0], i) * Math.pow(x[1], j);
 	    }
 	}
@@ -177,14 +162,14 @@ public class Polynomial_2D implements LM_Function {
     }
 
     @Override
-    public double val(final double[] x, final double[] paramsIn) {
-	updateParams(paramsIn);
+    public double getY(final double[] x, final double[] a) {
+	updateParams(a);
 	return val(x);
     }
 
     @Override
-    public double grad(final double[] x, final double[] a, final int ak) {
-	updateParams(params);
-	return grad(x, ak);
+    public double getPartialDerivate(final double[] x, final double[] a, final int parameterIndex) {
+	updateParams(a);
+	return grad(x, parameterIndex);
     }
 }

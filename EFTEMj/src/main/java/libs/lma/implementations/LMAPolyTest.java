@@ -2,7 +2,6 @@ package libs.lma.implementations;
 
 import libs.lma.LMA;
 import libs.lma.LMAMultiDimFunction;
-import libs.lma.Polynomial_2D;
 
 
 public class LMAPolyTest {
