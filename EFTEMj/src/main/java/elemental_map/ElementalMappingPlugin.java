@@ -46,6 +46,7 @@ import java.util.LinkedHashMap;
 import javax.swing.JLabel;
 
 import tools.EnergyLossExtractor;
+import tools.ExposureExtractor;
 import tools.ExtendedImagesToStack;
 import tools.IonisationEdges;
 
@@ -78,9 +79,13 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
      */
     private ImagePlus impStack;
     /**
-     * An array that represents the energy loss of the stack images.
+     * An array that represents the energy losses of the stack images.
      */
     private float[] energyLossArray;
+    /**
+     * An array that represents the exposure times of the stack images.
+     */
+    private float[] exposureArray;
     /**
      * The energy loss that divides the images into pre-edge and post-edge.
      */
@@ -125,8 +130,13 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
 	case MLE:
 	case LSE:
 	case WLSE:
-	    final ElementalMapping mapping = new ElementalMapping(energyLossArray, impStack, edgeEnergyLoss, epsilon,
-		    method);
+	    ElementalMapping mapping;
+	    if (checkForVaryingExposure() == false) {
+		mapping = new ElementalMapping(energyLossArray, impStack, edgeEnergyLoss, epsilon, method);
+	    } else {
+		mapping = new ElementalMapping(energyLossArray, exposureArray, impStack, edgeEnergyLoss, epsilon,
+			method);
+	    }
 	    mapping.startCalculation();
 	    // TODO Move all show-methods to the final processing
 	    mapping.showRMap(calibration);
@@ -322,7 +332,33 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
     private void initELossArry() {
 	energyLossArray = new float[impStack.getStackSize()];
 	for (int i = 0; i < energyLossArray.length; i++) {
-	    energyLossArray[i] = EnergyLossExtractor.eLossFromTitle(impStack, i);
+	    energyLossArray[i] = new EnergyLossExtractor().extractFloatFromTitle(impStack, i);
+	}
+    }
+
+    private boolean checkForVaryingExposure() {
+	if (exposureArray == null) {
+	    initExposureArray();
+	}
+	if (Arrays.binarySearch(exposureArray, 0) >= 0) {
+	    return false;
+	}
+	/*
+	 * We check if all exposure times are the same by creating a new array (same length as exposureArray) that
+	 * contains only the first value in exposureArray.
+	 */
+	final float[] tempArray = new float[exposureArray.length];
+	Arrays.fill(tempArray, exposureArray[0]);
+	if (Arrays.equals(exposureArray, tempArray)) {
+	    return false;
+	}
+	return true;
+    }
+
+    private void initExposureArray() {
+	exposureArray = new float[impStack.getStackSize()];
+	for (int i = 0; i < exposureArray.length; i++) {
+	    exposureArray[i] = new ExposureExtractor().extractFloatFromTitle(impStack, i);
 	}
     }
 
@@ -348,7 +384,7 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
 	new ImageJ();
 
 	// open the sample stack
-	final ImagePlus image = IJ.openImage("http://EFTEMj.entrup.com.de/EFTEM-Stack_Fe_50counts.tif");
+	final ImagePlus image = IJ.openImage("C:\\Users\\m_eppi02\\Downloads\\EFTEM-Stack_Fe_50counts.tif");
 	image.show();
 
 	// run the plugin

@@ -31,6 +31,7 @@ import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.GenericDialog;
 import ij.measure.Calibration;
+import ij.plugin.Duplicator;
 import ij.process.Blitter;
 import ij.process.ByteProcessor;
 import ij.process.FloatProcessor;
@@ -75,7 +76,7 @@ public class ElementalMapping {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Enum#toString()
 	 */
 	@Override
@@ -227,6 +228,42 @@ public class ElementalMapping {
 	    Arrays.fill(pixels, Float.NaN);
 	}
 	progressSteps = stack.getHeight();
+    }
+
+    public ElementalMapping(final float[] energyLossArray, final float[] exposureArray, final ImagePlus stack,
+	    final float edgeEnergyLoss, final float epsilon, final AVAILABLE_METHODS method) {
+	this.method = method;
+	this.epsilon = epsilon;
+	this.impStack = processExposureArray(stack, exposureArray);
+	splitEnergyLosses(energyLossArray, edgeEnergyLoss);
+	rMap = new FloatProcessor(stack.getWidth(), stack.getHeight());
+	aMap = new FloatProcessor(stack.getWidth(), stack.getHeight());
+	errorMap = new ByteProcessor(stack.getWidth(), stack.getHeight());
+	elementalMaps = new FloatProcessor[postEdgeIndices.length];
+	for (int i = 0; i < elementalMaps.length; i++) {
+	    elementalMaps[i] = new FloatProcessor(stack.getWidth(), stack.getHeight());
+	    final float[] pixels = (float[]) elementalMaps[i].getPixels();
+	    Arrays.fill(pixels, Float.NaN);
+	}
+	progressSteps = stack.getHeight();
+    }
+
+    private ImagePlus processExposureArray(final ImagePlus stack, final float[] exposureArray) {
+	final float[] exposureArrayNorm = new float[exposureArray.length];
+	final float[] exposureArraySorted = Arrays.copyOf(exposureArray, exposureArray.length);
+	Arrays.sort(exposureArraySorted);
+	final float max = exposureArraySorted[exposureArraySorted.length - 1];
+	for (int i = 0; i < exposureArray.length; i++) {
+	    exposureArrayNorm[i] = exposureArray[i] / max;
+	}
+	final ImagePlus imp = new Duplicator().run(stack, 1, stack.getStackSize());
+	for (int i = 0; i < exposureArray.length; i++) {
+	    final float[] pixels = (float[]) imp.getStack().getPixels(i + 1);
+	    for (int j = 0; j < pixels.length; j++) {
+		pixels[j] /= exposureArrayNorm[i];
+	    }
+	}
+	return imp;
     }
 
     /**

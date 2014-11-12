@@ -26,16 +26,13 @@
  */
 package tools;
 
-/**
- * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
- *
- */
-public class EnergyLossExtractor extends Extractor {
+public class ExposureExtractor extends Extractor {
 
-    public EnergyLossExtractor() {
+    public ExposureExtractor() {
 	pattern = new String[2];
-	pattern[0] = "^(.*\\D)*\\[(\\d{1,4}[\\.]?[,]?\\d*)eV\\].*$";
-	pattern[1] = "^(.*\\D)*(\\d{1,4}[\\.]?[,]?\\d*)eV.*$";
+	pattern[0] = "^(.*\\D)*\\[(\\d*[\\.]?[,]?\\d*)s\\].*$";
+	pattern[1] = "^(.*\\D)(\\d*[\\.]?[,]?\\d*)s.*$";
 	replace = "$2";
     }
+
 }
