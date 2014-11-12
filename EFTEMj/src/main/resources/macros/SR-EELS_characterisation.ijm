@@ -3,7 +3,7 @@
  * author:	Michael Entrup b. Epping (michael.entrup@wwu.de)
  * version:	20141107
  * date:	07.11.2014
- * info:	This macro is used to characterise the  aberrations of an Zeiss in-column energy filter when using SR-EELS. A series of calibration datasets is necessary  to run the characterisation. Place all datasets (images) at a folder that contains no other images.
+ * info:	This macro is used to characterise the  aberrations of an Zeiss in-column energy filter when using SR-EELS. A series of calibration data sets is necessary  to run the characterisation. Place all data sets (images) at a folder that contains no other images.
  * You can find an example SR-EELS series at https://github.com/EFTEMj/EFTEMj/tree/master/Scripts+Macros/examples/SR-EELS_characterisation. There you will find a instruction on how to record such a series, too.
  */
 
@@ -12,7 +12,7 @@
  * Only this values should be changed by the user.
  */
  /*
-  *  step_size determines the number of energy channels that will result in one data point of the resulting dataset.
+  *  step_size determines the number of energy channels that will result in one data point of the resulting data set.
   */
 var step_size = -1;	// choose '-1' for automatic mode 'abs(height / 64)'
 /*
@@ -29,14 +29,14 @@ var filter_radius = -1;	// choose '-1' for automatic mode 'round(sqrt(step_size)
  *
  * ToDo: implement a function to calibrate the energy scale. Then it is possible to select an energy loss instead of a relative value.
  */
-var energy_pos = 0.5;	// choose a value between 0 and 1; 0.5 is the centre of the SR-EELS dataset
+var energy_pos = 0.5;	// choose a value between 0 and 1; 0.5 is the centre of the SR-EELS data set
 /*
  * Select some methods used for threshold. The following options are available:
  * Default, Huang, Intermodes, IsoData, Li, MaxEntropy, Mean, MinError, Minimum, Moments, Otsu, Percentile, RenyiEntropy, Shanbhag, Triangle and Yen
  *
  * With 'Li' the borders match best.
  * Other methods perform better at low counts, but they underestimate the width of the spectrum at higher counts.
- * If you want to test other threshold methods, just add them to the array 'thresholds'. A seperate folder with results is created for each method.
+ * If you want to test other threshold methods, just add them to the array 'thresholds'. A separate folder with results is created for each method.
  *
  * Li
  * Implements Li's Minimum Cross Entropy thresholding method based on the iterative version (2nd reference below) of the algorithm.
@@ -49,11 +49,11 @@ var energy_pos = 0.5;	// choose a value between 0 and 1; 0.5 is the centre of th
  * [2]:	http://sourceforge.net/projects/fourier-ipal
  */
 // var thresholds = newArray("Default", "Huang", "Intermodes", "IsoData", "Li", "MaxEntropy", "Mean", "MinError", "Minimum", "Moments", "Otsu", "Percentile", "RenyiEntropy", "Shanbhag", "Triangle and Yen");	// this are all available methods
-// var thresholds = newArray("IsoData", "Huang", "RenyiEntropy", "Minimum", "Otsu", "Li", "Default");	// these 7 methods performed best with my test datasets
+// var thresholds = newArray("IsoData", "Huang", "RenyiEntropy", "Minimum", "Otsu", "Li", "Default");	// these 7 methods performed best with my test data sets
 var thresholds = newArray("Li");
  /*
-  * This is the multiplicator of the standard deviation sigma:
-  * This is only a minimal value. The macro will automaticaly increas it if r² of the gaussian fit decreases.
+  * This is the multiplier of the standard deviation sigma:
+  * This is only a minimal value. The macro will automatically increases it if r² of the gaussian fit decreases.
   */
 sigma_weighting = 3;	// 1 = 68.27%, 2 = 95.45%, 3 = 99.73%
 
@@ -62,7 +62,7 @@ sigma_weighting = 3;	// 1 = 68.27%, 2 = 95.45%, 3 = 99.73%
  */
 var doRotate; var input_dir; var result_dirs; var skip_threshold; var datapoints; var list; var width; var height;	// global variables for use in 'load_images()'
 var array_pos_all; var array_width_all; var array_pos_all_calc; var array_width_all_calc;	// global variables for use in 'save_pos_and_width()'
-var array_x1; var array_x2; var array_y;	// global arrays to store all values needed for fitting a 2D polynominal
+var array_x1; var array_x2; var array_y;	// global arrays to store all values needed for fitting a 2D polynomial
 var threshold;	// global variables for use in 'analyse_dataset()'
 
 array_x1 = newArray();
@@ -89,7 +89,7 @@ for(m=0; m < thresholds.length; m++) {
 	if (skip_threshold[m] == false) {
 		threshold = thresholds[m];
 		analyse_dataset();	// this is the main function of this macro
-		prepareFileForPolynominalFit();	// create the file that contains the values for fitting a 2D polynominal
+		prepareFileForPolynomialFit();	// create the file that contains the values for fitting a 2D polynomial
 		run("Collect Garbage");	// The macro needs a large amount of memory. After each analysis most of the used memory can be freed.
 	}
 }
@@ -129,7 +129,7 @@ function analyse_dataset() {
 		id = getImageID();	// id will be used to close the image
 		img_name = File.nameWithoutExtension;
 		/*
-		 * since 20140620: The default configuration is energy loss on the x-axis, but the fastes processing (of this macro) is achieved when the lateral axis is on the x-axis. That is why we rotate if doRotate == false. If the input images contain the lateral axis on the x-axis, we save an image that shows the energy loss on the x-axis (see else branch).
+		 * since 20140620: The default configuration is energy loss on the x-axis, but the fastest processing (of this macro) is achieved when the lateral axis is on the x-axis. That is why we rotate if doRotate == false. If the input images contain the lateral axis on the x-axis, we save an image that shows the energy loss on the x-axis (see else branch).
 		 */
 		if (!doRotate) {
 			run("Rotate 90 Degrees Right");
@@ -163,7 +163,7 @@ function analyse_dataset() {
 			makeRectangle(x_offset, y_pos + border_left, roi_width, step_size);
 			/*
 			 * A gaussian fit is used to limit the region used for thresholding:
-			 * The profile is no gaussian distribution, but the gaussian fit estimates centre and width well. For more presice results thresholding is needed.
+			 * The profile is no gaussian distribution, but the gaussian fit estimates centre and width well. For more precise results thresholding is needed.
 			 */
 			profile = getProfile();
 			/*
@@ -242,8 +242,8 @@ function analyse_dataset() {
 		close();	// ...close the image
 		/*
 		 * Plot and save the results:
-		 * The created diagrams are to estimate the quality of the used datasets.
-		 * For final fitting, Gnuplot (http://gnuplot.info/) should be used, which creates for superior results.
+		 * The created diagrams are to estimate the quality of the used data sets.
+		 * For final fitting, gnuplot (http://gnuplot.info/) should be used, which creates for superior results.
 		 */
 		/*
 		 * Spectrum width:
@@ -276,7 +276,7 @@ function analyse_dataset() {
 		/*
 		 * Create a table containing the results:
 		 * The table can be saved as a text file with  tab-separated values.
-		 * Gnuplot can access this files without any changes to the file.
+		 * gnuplot can access this files without any changes to the file.
 		 */
 		Array.show("Values", array_index, array_pos_y, array_pos_x, array_left, array_right, array_width, array_width_calc);
 		if (isOpen("Values")) {
@@ -285,7 +285,7 @@ function analyse_dataset() {
 			run("Close");
 		}
 		/*
-		 * Put all determined values into a single array. These values are necessary to plot a 2D polynominal.
+		 * Put all determined values into a single array. These values are necessary to plot a 2D polynomial.
 		 */
 		 array_x1 = Array.concat(array_x1, array_pos_y);
 		 array_x2 = Array.concat(array_x2, array_pos_x);
@@ -501,11 +501,11 @@ function addPointsToOverlay(xPos, yPos, overlayColorIndex) {
 	}
 }
 
-function prepareFileForPolynominalFit() {
-	Array.show("Polynominal2D", array_x1, array_x2, array_y);
-	if (isOpen("Polynominal2D")) {
-		selectWindow("Polynominal2D");
-		saveAs("Results", result_dirs[m] + "Polynominal2D.txt");
+function prepareFileForPolynomialFit() {
+	Array.show("Polynomial2D", array_x1, array_x2, array_y);
+	if (isOpen("Polynomial2D")) {
+		selectWindow("Polynomial2D");
+		saveAs("Results", result_dirs[m] + "Polynomial2D.txt");
 		run("Close");
 	}
 }
