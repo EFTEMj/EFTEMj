@@ -73,6 +73,12 @@ var thresholds = newArray("Li");
   * 	3 = 99.73%
   */
 sigma_weighting = 3;
+/*
+ * Set options for plotting:
+ */
+var plot_width = 1200;
+var plot_height = 900;
+run("Profile Plot Options...", "width=" + plot_width + " height=" + plot_height + " minimum=0 maximum=0 interpolate draw");
 
 /*
  * Global variables
@@ -326,25 +332,34 @@ function analyse_dataset() {
 			}
 			y_pos += step_size;
 		}
-		/*
-		 * The following code will create a jpg-version of the input image that shows the detected borders and the detected centre of the spectrum.
-		 * The image will be converted to logarithmic scale to enhance the visibility at regions with low signals.
-		 */
-		selectImage(id);
-		run("Select None");
-		run("Log");
-		run("Enhance Contrast", "saturated=0.35");
-		addPointsToOverlay(array_left, array_pos_y, 0);
-		addPointsToOverlay(array_pos_x, array_pos_y, 1);
-		addPointsToOverlay(array_right, array_pos_y, 2);
-		run("Flatten");
-		run("Flip Horizontally");
-		run("Rotate 90 Degrees Left");
-		saveAs("Jpeg", result_dirs[m] + img_name + ".jpg");
-		/*
-		 * Close the image that contains the overlay,...
-		 */
-		close();
+		if (show_detailed_results >= 1) {
+			/*
+			 * The following code will create a jpg-version of the input image that shows the detected borders and the detected centre of the spectrum.
+			 * The image will be converted to logarithmic scale to enhance the visibility at regions with low signals.
+			 */
+			selectImage(id);
+			run("Select None");
+			run("Log");
+			run("Enhance Contrast", "saturated=0.35");
+			addPointsToOverlay(array_left, array_pos_y, 0);
+			addPointsToOverlay(array_pos_x, array_pos_y, 1);
+			addPointsToOverlay(array_right, array_pos_y, 2);
+			/*
+			 * 'Flatten' creates a new image.
+			 */
+			run("Flatten");
+			/*
+			 * 'Flip' and 'Rotate' are used to get the default configuration:
+			 * energy loss on the x-axis.
+			 */
+			run("Flip Horizontally");
+			run("Rotate 90 Degrees Left");
+			saveAs("Jpeg", result_dirs[m] + img_name + ".jpg");
+			/*
+			 * Close the image that contains the overlay,...
+			 */
+			close();
+		}
 		/*
 		 * ..select and...
 		 */
@@ -358,34 +373,36 @@ function analyse_dataset() {
 		 * The created diagrams are to estimate the quality of the used data sets.
 		 * For final fitting, gnuplot (http://gnuplot.info/) should be used, which creates for superior results.
 		 */
-		/*
-		 * Spectrum width:
-		 */
-		Fit.doFit("3rd Degree Polynomial", array_pos_y, array_width);
-		Fit.plot;
-		saveAs("PNG", result_dirs[m] + "width_" + img_name + ".png");
-		close();
-		/*
-		 * Position of spectrum centre:
-		 */
-		Fit.doFit("3rd Degree Polynomial", array_pos_y, array_pos_x);
-		Fit.plot;
-		saveAs("PNG", result_dirs[m] + "center_" + img_name + ".png");
-		close();
-		/*
-		 * Position of left border:
-		 */
-		Fit.doFit("3rd Degree Polynomial", array_pos_y, array_left);
-		Fit.plot;
-		saveAs("PNG", result_dirs[m] + "bottom_" + img_name + ".png");
-		close();
-		/*
-		 * Position of right border:
-		 */
-		Fit.doFit("3rd Degree Polynomial", array_pos_y, array_right);
-		Fit.plot;
-		saveAs("PNG", result_dirs[m] + "top_" + img_name + ".png");
-		close();
+		if (show_detailed_results >= 1) {
+			/*
+			 * Spectrum width:
+			 */
+			Fit.doFit("3rd Degree Polynomial", array_pos_y, array_width);
+			Fit.plot;
+			saveAs("PNG", result_dirs[m] + "width_" + img_name + ".png");
+			close();
+			/*
+			 * Position of spectrum centre:
+			 */
+			Fit.doFit("3rd Degree Polynomial", array_pos_y, array_pos_x);
+			Fit.plot;
+			saveAs("PNG", result_dirs[m] + "center_" + img_name + ".png");
+			close();
+			/*
+			 * Position of left border:
+			 */
+			Fit.doFit("3rd Degree Polynomial", array_pos_y, array_left);
+			Fit.plot;
+			saveAs("PNG", result_dirs[m] + "bottom_" + img_name + ".png");
+			close();
+			/*
+			 * Position of right border:
+			 */
+			Fit.doFit("3rd Degree Polynomial", array_pos_y, array_right);
+			Fit.plot;
+			saveAs("PNG", result_dirs[m] + "top_" + img_name + ".png");
+			close();
+		}
 		/*
 		 * Create a table containing the results:
 		 * The table can be saved as a text file with  tab-separated values.
@@ -487,6 +504,15 @@ function setup_macro() {
 	border_right = Dialog.getNumber();
 	filter_radius = Dialog.getNumber();
 	show_detailed_results = Dialog.getRadioButton();
+	if (show_detailed_results == show_detailed_results_array[2]) {
+		show_detailed_results = 2;
+	} else {
+		if (show_detailed_results == show_detailed_results_array[1]) {
+			show_detailed_results = 1;
+		} else {
+			show_detailed_results = 0;
+		}
+	}
 	energy_pos = Dialog.getNumber();
 	datapoints = ceil((height - border_left - border_right) / step_size);
 	/*
@@ -571,14 +597,16 @@ function save_pos_and_width(index, pos, width, left, right) {
 	array_pos_all_calc[index] = left + (right - left) / 2;
 	array_width_all_calc[index] = right - left;
 	if (index == list.length - 1) {
-		Fit.doFit("3rd Degree Polynomial", array_pos_all, array_width_all);
-		Fit.plot;
-		saveAs("PNG", result_dirs[m] + "width_vs_pos.png");
-		close();
-		Fit.doFit("3rd Degree Polynomial", array_pos_all_calc, array_width_all_calc);
-		Fit.plot;
-		saveAs("PNG", result_dirs[m] + "width_vs_pos_calc.png");
-		close();
+		if (show_detailed_results >= 1){
+			Fit.doFit("3rd Degree Polynomial", array_pos_all, array_width_all);
+			Fit.plot;
+			saveAs("PNG", result_dirs[m] + "width_vs_pos.png");
+			close();
+			Fit.doFit("3rd Degree Polynomial", array_pos_all_calc, array_width_all_calc);
+			Fit.plot;
+			saveAs("PNG", result_dirs[m] + "width_vs_pos_calc.png");
+			close();
+		}
 		Array.show("Values", array_pos_all, array_width_all, array_pos_all_calc, array_width_all_calc);
 		if (isOpen("Values")) {
 			selectWindow("Values");
@@ -634,17 +662,17 @@ function addPointsToOverlay(xPos, yPos, overlayColorIndex) {
 	color = newArray("Green", "Red", "Blue");
 	markerSize = "Tiny";
 	if (maxOf(getHeight, getWidth) > 4000) {
-		markerSize = "Large";
+		markerSize = "[Extra Large]";
 	} else {
 		if (maxOf(getHeight, getWidth) > 2000) {
-			markerSize = "Mediam";
+			markerSize = "Large";
 		} else {
 			if (maxOf(getHeight, getWidth) > 1000) {
 				markerSize = "Small";
 			}
 			}
 		}
-	run("Point Tool...", "selection=" + color[overlayColorIndex] + " cross=White marker=" + markerSize + " mark=0");
+	run("Point Tool...", "type=Hybrid color=" + color[overlayColorIndex] + " size=" + markerSize);
 	for (i=0; i<xPos.length; i++) {
 		makePoint(xPos[i], yPos[i]);
 		run("Add Selection...");
