@@ -42,7 +42,6 @@ import java.awt.Choice;
 import java.awt.Rectangle;
 import java.awt.TextField;
 
-import sr_eels.SR_EELS.KEYS;
 import tools.EFTEMjLogTool;
 
 /**
@@ -53,7 +52,7 @@ import tools.EFTEMjLogTool;
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
  *
  */
-public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter {
+public class SR_EELS_DispersionCalibrationPlugin extends SR_EELS implements ExtendedPlugInFilter {
 
     /**
      * Items of a {@link Choice} element.<br />
@@ -77,7 +76,7 @@ public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.lang.Enum#toString()
 	 */
 	@Override
@@ -117,7 +116,7 @@ public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter
      * Items of a {@link Choice} element.<br />
      * This items are hard coded.
      */
-    private final String[] offsetMethods = { "absolute value", "peak selection", "center loss", "lowest loss",
+    private final String[] offsetMethods = { "absolute offset", "peak selection", "center loss", "lowest loss",
 	    "highest loss" };
     /**
      * The image that was selected when starting the plugin.
@@ -169,7 +168,7 @@ public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see ij.plugin.filter.PlugInFilter#setup(java.lang.String, ij.ImagePlus)
      */
     @Override
@@ -214,7 +213,7 @@ public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see ij.plugin.filter.PlugInFilter#run(ij.process.ImageProcessor)
      */
     @Override
@@ -284,7 +283,7 @@ public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see ij.plugin.filter.ExtendedPlugInFilter#showDialog(ij.ImagePlus, java.lang.String,
      * ij.plugin.filter.PlugInFilterRunner)
      */
@@ -367,7 +366,7 @@ public class SR_EELS_DispersionCalibrationPlugin implements ExtendedPlugInFilter
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see ij.plugin.filter.ExtendedPlugInFilter#setNPasses(int)
      */
     @Override

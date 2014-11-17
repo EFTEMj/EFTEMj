@@ -47,7 +47,7 @@ public class SR_EELS_DispersionConfigurationPlugin extends SR_EELS implements Pl
     /**
      * A prefix used to create key for accessing IJ_Prefs.txt by the class {@link Prefs}.
      */
-    protected static final String PREFIX = PREFS_PREFIX + KEYS.dispersion;
+    protected static final String PREFIX = PREFS_PREFIX + KEYS.dispersion + ".";
     /**
      * This {@link Hashtable} is used to manage the SpecMag-dispersion pairs.
      */
@@ -67,12 +67,12 @@ public class SR_EELS_DispersionConfigurationPlugin extends SR_EELS implements Pl
 	/*
 	 * The Keys to access the dispersion are stored as a string like "125;163;200;250;315".
 	 */
-	String specMags = Prefs.get(PREFIX + "." + KEYS.specMagValues, empty);
+	String specMags = Prefs.get(PREFIX + KEYS.specMagValues, empty);
 	String[] keys;
 	if (!specMags.equals(empty)) {
 	    keys = specMags.split(";");
 	    for (final String key : keys) {
-		final String value = Prefs.get(PREFIX + "." + key, empty);
+		final String value = Prefs.get(PREFIX + key, empty);
 		if (!value.equals(empty)) {
 		    dispersionStorage.put(new Double(key), new Double(value));
 		}
@@ -105,9 +105,9 @@ public class SR_EELS_DispersionConfigurationPlugin extends SR_EELS implements Pl
 		}
 		specMags += key;
 		final double val = dispersionStorage.get(key);
-		Prefs.set(PREFIX + "." + Double.toString(key), val);
+		Prefs.set(PREFIX + Double.toString(key), val);
 	    }
-	    Prefs.set(PREFIX + "." + KEYS.specMagValues, specMags);
+	    Prefs.set(PREFIX + KEYS.specMagValues, specMags);
 	    Prefs.savePreferences();
 	}
     }
