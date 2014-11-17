@@ -43,7 +43,7 @@ public class SR_EELS {
      * <code>PREFIX + KEYS.dispersion + "." + number</code>
      */
     public static enum KEYS {
-	specMagValues, specMagIndex, binningIndex, binningUser, offsetIndex, offsetLoss, offsetAbsolute
+	specMagValues, specMagIndex, dispersion, binningIndex, binningUser, offsetIndex, offsetLoss, offsetAbsolute
     }
 
     /**

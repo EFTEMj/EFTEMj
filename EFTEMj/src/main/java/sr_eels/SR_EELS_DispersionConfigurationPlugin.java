@@ -32,69 +32,84 @@ import ij.Prefs;
 import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
 
-import java.util.Arrays;
-import java.util.Vector;
-
-import sr_eels.SR_EELS.KEYS;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.List;
 
 /**
  * This plugin will setup the energy dispersion values used by {@link SR_EELS_DispersionCalibrationPlugin}.
  *
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
  */
-public class SR_EELS_DispersionConfigurationPlugin implements PlugIn {
+public class SR_EELS_DispersionConfigurationPlugin extends SR_EELS implements PlugIn {
 
     /**
      * A prefix used to create key for accessing IJ_Prefs.txt by the class {@link Prefs}.
      */
-    protected static final String PREFIX = SR_EELS.PREFS_PREFIX + "dispersion.";
+    protected static final String PREFIX = PREFS_PREFIX + KEYS.dispersion;
     /**
-     * This {@link Vector} is used to manage the keys.
+     * This {@link Hashtable} is used to manage the SpecMag-dispersion pairs.
      */
-    private Vector<String> keyStorage;
+    private Hashtable<Double, Double> dispersionStorage;
+    private boolean somethingChanged = false;
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see ij.plugin.PlugIn#run(java.lang.String)
      */
     @Override
     public void run(final String arg) {
-	keyStorage = new Vector<String>();
+	boolean showAgain;
+	dispersionStorage = new Hashtable<Double, Double>();
 	final String empty = "";
-	String values = Prefs.get(PREFIX + KEYS.specMagValues, empty);
-	if (values.equals(empty)) {
-	    /*
-	     * Show the dialog again until the user selects cancel.
-	     */
-	    boolean tryAgain = true;
-	    while (tryAgain == true)
-		tryAgain = showAddNewDialog();
-	    values = "";
-	    for (final String key : keyStorage) {
-		values += ";" + key;
-	    }
-	    values = values.substring(1);
-	    Prefs.set(PREFIX + KEYS.specMagValues, values);
-	    Prefs.savePreferences();
-	    return;
-	}
-	String[] keys;
-	double[] dispersionValues;
 	/*
-	 * Show the dialog again if the user has decided to add a new value. The arrays and the Vector has to be
-	 * initialised again to show the newly added value at the edit dialog.
+	 * The Keys to access the dispersion are stored as a string like "125;163;200;250;315".
 	 */
-	do {
-	    values = Prefs.get(PREFIX + KEYS.specMagValues, empty);
-	    // The Keys to access the dispersion are stored as a string like "125;163;200;250;315".
-	    keys = values.split(";");
-	    dispersionValues = new double[keys.length];
-	    for (int i = 0; i < keys.length; i++) {
-		keyStorage.add(keys[i]);
-		dispersionValues[i] = Prefs.get(PREFIX + keys[i], 0);
+	String specMags = Prefs.get(PREFIX + "." + KEYS.specMagValues, empty);
+	String[] keys;
+	if (!specMags.equals(empty)) {
+	    keys = specMags.split(";");
+	    for (final String key : keys) {
+		final String value = Prefs.get(PREFIX + "." + key, empty);
+		if (!value.equals(empty)) {
+		    dispersionStorage.put(new Double(key), new Double(value));
+		}
 	    }
-	} while (showEditDialog(keys, dispersionValues) == true);
+	} else {
+	    /*
+	     * Show the dialog again, until the user presses cancel.
+	     */
+	    showAgain = true;
+	    while (showAgain == true) {
+		showAgain = showAddNewDialog();
+	    }
+	}
+	/*
+	 * If the user adds new values, the dialog will be shown again, to check them.
+	 */
+	showAgain = true;
+	while (showAgain == true) {
+	    showAgain = showEditDialog();
+	}
+	/*
+	 * We have to write the dispersion to the preferences only if the user changed a value.
+	 */
+	if (somethingChanged == true) {
+	    specMags = "";
+	    for (final Enumeration<Double> e = dispersionStorage.keys(); e.hasMoreElements();) {
+		final double key = e.nextElement();
+		if (specMags.length() > 0) {
+		    specMags += ";";
+		}
+		specMags += key;
+		final double val = dispersionStorage.get(key);
+		Prefs.set(PREFIX + "." + Double.toString(key), val);
+	    }
+	    Prefs.set(PREFIX + "." + KEYS.specMagValues, specMags);
+	    Prefs.savePreferences();
+	}
     }
 
     /**
@@ -112,14 +127,14 @@ public class SR_EELS_DispersionConfigurationPlugin implements PlugIn {
 	gd.addHelp(help);
 	gd.showDialog();
 	if (gd.wasOKed() == true) {
-	    final int key = (int) gd.getNextNumber();
+	    final double key = gd.getNextNumber();
 	    if (key == 0)
 		return true;
 	    final double dispersion = gd.getNextNumber();
 	    if (dispersion == 0)
 		return true;
-	    Prefs.set(PREFIX + key, dispersion);
-	    keyStorage.add("" + key);
+	    dispersionStorage.put(key, dispersion);
+	    somethingChanged = true;
 	    return true;
 	}
 	return false;
@@ -128,75 +143,45 @@ public class SR_EELS_DispersionConfigurationPlugin implements PlugIn {
     /**
      * A dialog that is used to edit the energy dispersion values. It is possible to switch to the add dialog.
      *
-     * @param keys
-     *            Spec. Mag values read from IJ_Prefs.txt.
-     * @param dispersionValues
-     *            Energy dispersion values associated with the Spec. Mag values.
      * @return <code>true</code> if a new value has been added. <br />
      *         <code>false</code> otherwise.
      */
-    private boolean showEditDialog(final String[] keys, final double[] dispersionValues) {
+    private boolean showEditDialog() {
 	final GenericDialog gd = new GenericDialog("Edit dispersion values", IJ.getInstance());
-	gd.addMessage("Set the dispersion to 0" + "\n" + "to remove an entry.");
-	for (int i = 0; i < keys.length; i++) {
-	    gd.addNumericField("Spec. Mag: " + keys[i], dispersionValues[i], 6, 10, "eV/px");
+	gd.addMessage("Set the dispersion to 0 to remove an entry.");
+	final Enumeration<Double> e = dispersionStorage.keys();
+	final List<Double> list = Collections.list(e);
+	Collections.sort(list);
+	final Object[] keys = list.toArray();
+	for (final Object key : keys) {
+	    final double val = dispersionStorage.get(key);
+	    gd.addNumericField("Spec. Mag: " + key, val, 6, 10, "eV/px");
 	}
 	gd.addCheckbox("Add_new", false);
 	final String help = "<html><h3>Edit energy dispersion values</h3>" + "<p>description</p></html>";
 	gd.addHelp(help);
 	gd.showDialog();
 	if (gd.wasOKed() == true) {
-	    final double[] newDispersionValues = Arrays.copyOf(dispersionValues, dispersionValues.length);
-	    for (int i = 0; i < dispersionValues.length; i++) {
-		newDispersionValues[i] = gd.getNextNumber();
+	    for (final Object key : keys) {
+		final double val = gd.getNextNumber();
+		if (val == 0) {
+		    dispersionStorage.remove(key);
+		    somethingChanged = true;
+		} else {
+		    if (val != dispersionStorage.get(key)) {
+			dispersionStorage.put((Double) key, val);
+			somethingChanged = true;
+		    }
+		}
 	    }
 	    /*
 	     * If the user want to add new energy dispersion values editing is not performed.
 	     */
 	    if (gd.getNextBoolean() == true) {
-		boolean tryAgain = true;
-		while (tryAgain == true)
-		    tryAgain = showAddNewDialog();
-		String values = "";
-		for (final String key : keyStorage) {
-		    values += ";" + key;
-		}
-		values = values.substring(1);
-		Prefs.set(PREFIX + KEYS.specMagValues, values);
-		Prefs.savePreferences();
+		boolean showAgain = true;
+		while (showAgain == true)
+		    showAgain = showAddNewDialog();
 		return true;
-	    }
-	    boolean removedOne = false;
-	    /*
-	     * Check all values for changes and edit or remove them.
-	     */
-	    for (int i = 0; i < dispersionValues.length; i++) {
-		if (newDispersionValues[i] == 0) {
-		    /*
-		     * If 0 has been entered the value will be removed.
-		     */
-		    Prefs.set(PREFIX + keys[i], 0.0);
-		    keyStorage.remove(keys[i]);
-		    removedOne = true;
-		} else {
-		    if (newDispersionValues[i] != dispersionValues[i]) {
-			/*
-			 * If a value has changed it will be updated atIJ_Prefs.txt.
-			 */
-			Prefs.set(PREFIX + keys[i], newDispersionValues[i]);
-		    }
-		}
-	    }
-	    if (removedOne == true) {
-		String values = "";
-		for (final String key : keyStorage) {
-		    values += ";" + key;
-		}
-		if (values.equals("") == false) {
-		    values = values.substring(1);
-		}
-		Prefs.set(PREFIX + KEYS.specMagValues, values);
-		Prefs.savePreferences();
 	    }
 	}
 	return false;
