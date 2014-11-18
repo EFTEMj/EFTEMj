@@ -219,10 +219,6 @@ function analyse_dataset() {
 		 */
 		run("Properties...", "unit=[] pixel_width=1 pixel_height=1 origin=0,0");
 		/*
-		 * we need an empty results table
-		 */
-		run("Clear Results");
-		/*
 		 *  remove the outliers and smooth
 		 */
 		run("Remove Outliers...", "radius=" + filter_radius + " threshold=32 which=Bright");
@@ -279,7 +275,7 @@ function analyse_dataset() {
 			 * ..set background to NaN.
 			 */
 			run("NaN Background");
-			run("Measure");
+			List.setMeasurements;
 			/*
 			 * Line number at the result table:
 			 */
@@ -288,18 +284,18 @@ function analyse_dataset() {
 			/*
 			 * The mean width of all 'step_size' energy channels:
 			 */
-			spec_width = getResult("IntDen", result_pos) / getResult("Mean", result_pos) / step_size;
+			spec_width = List.getValue("IntDen") / List.getValue("Mean") / step_size;
 			array_width[result_pos] = spec_width;
 			/*
 			 * The centre of mass in x-direction:
 			 */
-			XM = getResult("XM", result_pos);
+			XM = List.getValue("XM");
 			array_pos_x[result_pos] = XM + x_offset;
 			/*
 			 * The centre of mass in y-direction:
 			 * We need to add 'y_pos', because the measurement is done on a cropped image with the height 'step_size'
 			 */
-			YM = getResult("YM", result_pos) + y_pos + border_left;
+			YM = List.getValue("YM") + y_pos + border_left;
 			array_pos_y[result_pos] = YM;
 			/*
 			 * Detect left and right border:
@@ -418,12 +414,12 @@ function analyse_dataset() {
 		 * The table can be saved as a text file with  tab-separated values.
 		 * gnuplot can access this files without any changes to the file.
 		 */
-		Array.show("Values", array_index, array_pos_y, array_pos_x, array_left, array_right, array_width, array_width_calc);
-		if (isOpen("Values")) {
-			selectWindow("Values");
-			saveAs("Results", result_dirs[m] + "values_" + img_name + ".txt");
-			run("Close");
+		f = File.open(result_dirs[m] + "values_" + img_name + ".txt");
+		print(f, "#index\tx1-position\tx2-position\tbottom_pos\ttop_position\twidth\twidth_calc");
+		for (p=0; p<array_index.length; p++) {
+			print(f, array_index[p] + "\t" + array_pos_y[p] + "\t" + array_pos_x[p] + "\t" + array_left[p] + "\t" + array_right[p] + "\t" + array_width[p] + "\t" + array_width_calc[p]);
 		}
+		File.close(f);
 		/*
 		 * Put all determined values into a single array. These values are necessary to plot a 2D polynomial.
 		 */
@@ -610,12 +606,12 @@ function save_pos_and_width(index, pos, width, left, right) {
 			saveAs("PNG", result_dirs[m] + "width_vs_pos_calc.png");
 			close();
 		}
-		Array.show("Values", array_pos_all, array_width_all, array_pos_all_calc, array_width_all_calc);
-		if (isOpen("Values")) {
-			selectWindow("Values");
-			saveAs("Results", result_dirs[m] + "width_vs_pos.txt");
-			run("Close");
+		f = File.open(result_dirs[m] + "width_vs_pos.txt");
+		print(f, "#x2-position\twidth\tx2-pos_calc\twidth_calc");
+		for (p=0; p<array_pos_all.length; p++) {
+			print(f, array_pos_all[p] + "\t" + array_width_all[p] + "\t" + array_pos_all_calc[p] + "\t" + array_width_all_calc[p]);
 		}
+		File.close(f);
 	}
 }
 
@@ -688,10 +684,10 @@ function addPointsToOverlay(xPos, yPos, overlayColorIndex) {
  * 				This function writes the data stored in 3 arrays to a file.
  */
 function prepareFileForPolynomial2DFit() {
-	Array.show("Polynomial2D", array_x1, array_x2, array_y);
-	if (isOpen("Polynomial2D")) {
-		selectWindow("Polynomial2D");
-		saveAs("Results", result_dirs[m] + "Polynomial2D.txt");
-		run("Close");
+	f = File.open(result_dirs[m] + "Polynomial2D.txt");
+	print(f, "#x1-position\tx2-position\ty-value");
+	for (p=0; p<array_x1.length; p++) {
+		print(f, array_x1[p] + "\t" + array_x2[p] + "\t" + array_y[p]);
 	}
+	File.close(f);
 }
