@@ -1,12 +1,12 @@
 /*
  * file:	SR-EELS_characterisation.ijm
  * author:	Michael Entrup b. Epping (michael.entrup@wwu.de)
- * version:	20141117
- * date:	17.11.2014
- * info:	This macro is used to characterise the distortions of an Zeiss in-column energy filter when using SR-EELS. 
- * 			A series of calibration data sets is necessary to run the characterisation. 
+ * version:	20141118
+ * date:	18.11.2014
+ * info:	This macro is used to characterise the distortions of an Zeiss in-column energy filter when using SR-EELS.
+ * 			A series of calibration data sets is necessary to run the characterisation.
  * 			Place all data sets (images) at a folder that contains no other images.
- * 			You can find an example SR-EELS series at: 
+ * 			You can find an example SR-EELS series at:
  * 				https://github.com/EFTEMj/EFTEMj/tree/master/Scripts+Macros/examples/SR-EELS_characterisation
  * 			There you will find a instruction on how to record such a series, too.
  */
@@ -33,7 +33,7 @@ var border_right = -1;
  */
 var filter_radius = -1;
 /*
- * The macro will create a diagram that plots the spectrum width against the spectrum position. 
+ * The macro will create a diagram that plots the spectrum width against the spectrum position.
  * This value determines the energy channel that is used to calculate the spectrum width.
  * Choose a value between 0 and 1; 0.5 is the centre of the SR-EELS data set
  *
@@ -57,12 +57,12 @@ var energy_pos = 0.5;
  *
  * [1]:	http://citeseer.ist.psu.edu/sezgin04survey.html
  * [2]:	http://sourceforge.net/projects/fourier-ipal
- * 
+ *
  * This are all available methods:
  * var thresholds = newArray("Default", "Huang", "Intermodes", "IsoData", "Li", "MaxEntropy", "Mean", "MinError", "Minimum", "Moments", "Otsu", "Percentile", "RenyiEntropy", "Shanbhag", "Triangle and Yen");
- * 
+ *
  * These 7 methods performed best with my test data sets:
- * var thresholds = newArray("IsoData", "Huang", "RenyiEntropy", "Minimum", "Otsu", "Li", "Default");	
+ * var thresholds = newArray("IsoData", "Huang", "RenyiEntropy", "Minimum", "Otsu", "Li", "Default");
  */
 var thresholds = newArray("Li");
  /*
@@ -79,6 +79,12 @@ sigma_weighting = 3;
 var plot_width = 1200;
 var plot_height = 900;
 run("Profile Plot Options...", "width=" + plot_width + " height=" + plot_height + " minimum=0 maximum=0 interpolate draw");
+/*
+ * This is some kind of debug level:
+ * A checkbox at the GUI allows to switch between the configured value and 0.
+ * 0	create text/data files only
+ */
+var detailed_results = 1;
 
 /*
  * Global variables
@@ -88,7 +94,6 @@ run("Profile Plot Options...", "width=" + plot_width + " height=" + plot_height 
  *  global variables for use in 'load_images()'
  */
 var doRotate; var input_dir; var result_dirs; var skip_threshold; var datapoints; var list; var width; var height;
-var show_detailed_results_array = newArray("no details", "save datails", "show & save details"); var show_detailed_results;
 /*
  * global variables for use in 'save_pos_and_width()'
  */
@@ -114,6 +119,7 @@ array_y = newArray();
  */
 setup_macro();
 
+
 /*
  *  Set-up:
  *  Start a timer and switch to Batch mode.
@@ -125,8 +131,10 @@ start = getTime();
  */
 run("Input/Output...", "jpeg=85 gif=-1 file=.txt use_file copy_row save_row");
 /*
+ * Close all open images to avoid problems.
  * Batch mode will speed up the macro.
  */
+close("*");
 setBatchMode(true);
 
 /*
@@ -158,6 +166,8 @@ if (isOpen("Results")) {
 	selectWindow("Results");
 	run("Close");
 }
+
+setBatchMode("exit and display");
 showMessage("<html><p>The evaluation finished.</p><p>Elapsed time: " + (getTime() - start) / 1000 + "s</p>");
 /*
  * End of macro:
@@ -250,14 +260,14 @@ function analyse_dataset() {
 			 */
 			sigma_weighed = sigma_weighting * gauss_sigma / pow(Fit.rSquared(), 2);
 			/*
-			 * All further measurements use the coordinates of the duplicated selection 
+			 * All further measurements use the coordinates of the duplicated selection
 			 * and this value is used to transform them to coordinates of the full image
 			 */
 			x_offset = maxOf(x_offset + round(gauss_centre - sigma_weighed), 0);
 			roi_width = round(2 * sigma_weighed);
 			makeRectangle(x_offset, y_pos + border_left, roi_width, step_size);
 			/*
-			 * Create a temporary image: 
+			 * Create a temporary image:
 			 * 		only the rectangle selection gets duplicated
 			 */
 			run("Duplicate...", "temp");
@@ -286,7 +296,7 @@ function analyse_dataset() {
 			XM = getResult("XM", result_pos);
 			array_pos_x[result_pos] = XM + x_offset;
 			/*
-			 * The centre of mass in y-direction: 
+			 * The centre of mass in y-direction:
 			 * We need to add 'y_pos', because the measurement is done on a cropped image with the height 'step_size'
 			 */
 			YM = getResult("YM", result_pos) + y_pos + border_left;
@@ -332,7 +342,7 @@ function analyse_dataset() {
 			}
 			y_pos += step_size;
 		}
-		if (show_detailed_results >= 1) {
+		if (detailed_results >= 1) {
 			/*
 			 * The following code will create a jpg-version of the input image that shows the detected borders and the detected centre of the spectrum.
 			 * The image will be converted to logarithmic scale to enhance the visibility at regions with low signals.
@@ -373,7 +383,7 @@ function analyse_dataset() {
 		 * The created diagrams are to estimate the quality of the used data sets.
 		 * For final fitting, gnuplot (http://gnuplot.info/) should be used, which creates for superior results.
 		 */
-		if (show_detailed_results >= 1) {
+		if (detailed_results >= 1) {
 			/*
 			 * Spectrum width:
 			 */
@@ -450,10 +460,10 @@ function setup_macro() {
 	 */
 	draw_axes_as_overlay();
 	/*
-	 * This name is a bit stange.
+	 * This name is a bit strange.
 	 * We will rotate the image  if doRotate == false.
 	 * This is because the energy axis on the x-axis is best for further processing and theoretical description,
-	 * but this macro runs fastes with the lateral axis on the x-axis.
+	 * but this macro runs fastest with the lateral axis on the x-axis.
 	 */
 	doRotate = getBoolean("The macro requires the following configuration:\nx: energy axis\ny: lateral axis\n\nRotate the images?");
 	run("Remove Overlay");
@@ -496,27 +506,20 @@ function setup_macro() {
 	Dialog.addNumber("Left border:", border_left, 0, 4, "px");
 	Dialog.addNumber("Right border:", border_right, 0, 4, "px");
 	Dialog.addNumber("Filter radius:", filter_radius, 0, 4, "px");
-	Dialog.addRadioButtonGroup("Show details:", show_detailed_results_array, 3, 1, show_detailed_results_array[0]);
+	Dialog.addCheckbox("No detailed results", false);
 	Dialog.addSlider("Energy Position:", 0, 1, 0.5);
 	Dialog.show();
 	step_size = Dialog.getNumber();
 	border_left = Dialog.getNumber();
 	border_right = Dialog.getNumber();
 	filter_radius = Dialog.getNumber();
-	show_detailed_results = Dialog.getRadioButton();
-	if (show_detailed_results == show_detailed_results_array[2]) {
-		show_detailed_results = 2;
-	} else {
-		if (show_detailed_results == show_detailed_results_array[1]) {
-			show_detailed_results = 1;
-		} else {
-			show_detailed_results = 0;
-		}
+	if (Dialog.getCheckbox() == true) {
+		detailed_results = 0;
 	}
 	energy_pos = Dialog.getNumber();
 	datapoints = ceil((height - border_left - border_right) / step_size);
 	/*
-	 * For each set of parameters it is checked if there are already some result. 
+	 * For each set of parameters it is checked if there are already some result.
 	 * The user is asked, if he wants to overwrite these previous results.
 	 */
 	result_dirs = newArray(thresholds.length);
@@ -544,7 +547,7 @@ function setup_macro() {
  * function: filter_images
  * description: Keep tif and dm3 files only. Ignore subdirectories.
  * since 20140620:	A dialog is presented to select the files for the characterization.
- * 					By default all files are selected and you have to deselect all files that are not necassary.
+ * 					By default all files are selected and you have to deselect all files that are not necessary.
  */
 function filter_images(array_str) {
 	temp = -1;
@@ -582,7 +585,7 @@ function filter_images(array_str) {
 
 /*
  * function: save_pos_and_width
- * description: This function is used to collect values from all datasets. 
+ * description: This function is used to collect values from all datasets.
  * 				Finally a fit will be performed and the result may be saved as PNG-file.
  */
 function save_pos_and_width(index, pos, width, left, right) {
@@ -597,7 +600,7 @@ function save_pos_and_width(index, pos, width, left, right) {
 	array_pos_all_calc[index] = left + (right - left) / 2;
 	array_width_all_calc[index] = right - left;
 	if (index == list.length - 1) {
-		if (show_detailed_results >= 1){
+		if (detailed_results >= 1){
 			Fit.doFit("3rd Degree Polynomial", array_pos_all, array_width_all);
 			Fit.plot;
 			saveAs("PNG", result_dirs[m] + "width_vs_pos.png");
@@ -681,7 +684,7 @@ function addPointsToOverlay(xPos, yPos, overlayColorIndex) {
 
 /*
  * function: prepareFileForPolynomial2DFit:
- * description: We need to combine the results of all analyzed images to fit the 2D polynomial.
+ * description: We need to combine the results of all analysed images to fit the 2D polynomial.
  * 				This function writes the data stored in 3 arrays to a file.
  */
 function prepareFileForPolynomial2DFit() {
