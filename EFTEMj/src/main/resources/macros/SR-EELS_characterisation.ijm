@@ -153,10 +153,6 @@ for(m=0; m < thresholds.length; m++) {
 		 * create the file that contains the values for fitting a 2D polynomial
 		 */
 		prepareFileForPolynomial2DFit();
-		/*
-		 * The macro needs a large amount of memory. After each analysis most of the used memory can be freed.
-		 */
-		run("Collect Garbage");
 	}
 }
 /*
