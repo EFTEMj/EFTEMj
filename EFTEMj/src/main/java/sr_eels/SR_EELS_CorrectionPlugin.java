@@ -35,7 +35,10 @@ import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
 import ij.process.ImageProcessor;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.Vector;
 
 /**
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
@@ -103,14 +106,60 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      */
     @Override
     public int showDialog(final ImagePlus imp, final String command, final PlugInFilterRunner pfr) {
-	while (!path.contains(".txt")) {
+	final String searchPath = IJ.getDirectory("image");
+	final LinkedList<String> found = new LinkedList<String>();
+	findDatasets(searchPath, found);
+	if (found.size() > 1) {
+	    /*
+	     * A dialog is presented to select one of the found files.
+	     */
+	    String[] files = new String[found.size()];
+	    files = found.toArray(files);
+	    final GenericDialog gd = new GenericDialog(command + " - Select data set", IJ.getInstance());
+	    gd.addRadioButtonGroup("Data set", files, found.size(), 1, found.get(0));
+	    gd.setResizable(false);
+	    gd.showDialog();
+	    if (gd.wasCanceled()) {
+		canceled();
+		return NO_CHANGES | DONE;
+	    }
+	    path = gd.getNextRadioButton();
+	} else {
+	    if (found.size() == 1) {
+		/*
+		 * If only one file has been found, this one automatically is passed to the parameters dialog.
+		 */
+		path = found.getFirst();
+	    }
+	}
+	do {
 	    if (showParameterDialog(command) == CANCEL) {
 		canceled();
 		return NO_CHANGES | DONE;
 	    }
-	}
+	} while (!path.contains(".txt"));
 	inputImage = imp;
 	return FLAGS;
+    }
+
+    /**
+     * Searches the given folder for a data set file. Recursion is used to search in subfolders.
+     *
+     * @param searchPath
+     *            the folder to search in.
+     * @param found
+     *            a {@link Vector} that stores all found file paths.
+     */
+    private void findDatasets(final String searchPath, final LinkedList<String> found) {
+	final String[] entries = new File(searchPath).list();
+	for (final String entrie : entries) {
+	    if (entrie.equals(SR_EELS.FILE_NAME_POLINOMIAL_2D)) {
+		found.add(searchPath + entrie);
+	    }
+	    if (new File(searchPath + entrie).isDirectory()) {
+		findDatasets(searchPath + entrie + File.separatorChar, found);
+	    }
+	}
     }
 
     /**
@@ -121,7 +170,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      */
     private int showParameterDialog(final String title) {
 	final GenericDialogPlus gd = new GenericDialogPlus(title + " - set parameters", IJ.getInstance());
-	gd.addFileField("Parameters_file (*.txt)", path);
+	gd.addFileField(SR_EELS.FILE_NAME_POLINOMIAL_2D, path);
 	gd.addNumericField("Pixel_subdivision", 10, 0);
 	gd.addNumericField("Oversampling", 3, 0);
 	gd.setResizable(false);
@@ -157,7 +206,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	new ImageJ();
 
 	// open the sample stack
-	final ImagePlus image = IJ.openImage("http://EFTEMj.entrup.com.de/SR_EELS.tif");
+	final ImagePlus image = IJ.openImage("C:\\Temp\\SR_EELS.tif");
 	image.show();
 
 	// run the plugin

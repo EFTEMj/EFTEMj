@@ -51,4 +51,9 @@ public class SR_EELS {
      */
     protected static final String PREFS_PREFIX = EFTEMj.PREFS_PREFIX + "SR-EELS.";
 
+    /**
+     * This is the name of the file that stores the data points used for describing the SR-EELS distortion.
+     */
+    protected static final String FILE_NAME_POLINOMIAL_2D = "Polynomial2D.txt";
+
 }

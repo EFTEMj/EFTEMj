@@ -145,8 +145,7 @@ public class LMAPolyTest {
 	final LMA lma2 = new LMA(func, a_fit, y_vals, x_vals, weights, new JAMAMatrix(a_fit.length, a_fit.length));
 	lma2.fit();
 	for (int i = 0; i < a_fit.length; i++) {
-	    System.out
-		    .println(a_fit[i]);
+	    System.out.println(a_fit[i]);
 	}
     }
 
@@ -168,6 +167,9 @@ public class LMAPolyTest {
 		    if (line == null) {
 			containsData = false;
 		    } else {
+			if (line.indexOf('#') != -1) {
+			    break;
+			}
 			final String[] splitLine = line.split("\\s");
 			final Double[] point = { Double.valueOf(splitLine[0]), Double.valueOf(splitLine[1]),
 				Double.valueOf(splitLine[2]) };
