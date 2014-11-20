@@ -78,7 +78,7 @@ public class SR_EELS_Correction {
      * Starts the calculation with parallel {@link Thread}s.
      */
     public void startCalculation() {
-	final boolean debug = false;
+	final boolean debug = true;
 	if (debug) {
 	    for (int x2 = 0; x2 < output.getHeight(); x2++) {
 		final SR_EELS_CorrectionTask task = new SR_EELS_CorrectionTask(x2);

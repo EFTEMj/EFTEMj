@@ -102,7 +102,7 @@ var array_pos_all; var array_width_all; var array_pos_all_calc; var array_width_
  * global arrays to store all values needed for fitting a 2D polynomial
  */
 var array_x1; var array_x2; var array_y;
-var array_top; var array_top_start; var array_centre; var array_centre_start; var array_bot; var array_bot_start; var array_pos;
+var array_borders_x1; var array_borders_x2; var array_borders_y; var array_borders_weight;
 
 /*
  * global variables for use in 'analyse_dataset()'
@@ -115,10 +115,10 @@ var threshold;
 array_x1 = newArray();
 array_x2 = newArray();
 array_y = newArray();
-array_top = newArray(); array_top_start = newArray();
-array_centre = newArray(); array_centre_start = newArray();
-array_bot = newArray(); array_bot_start = newArray();
-array_pos = newArray();
+array_borders_x1 = newArray();
+array_borders_x2 = newArray();
+array_borders_y = newArray();
+array_borders_weight = newArray();
 
 
 /*
@@ -388,8 +388,7 @@ function analyse_dataset() {
 			 * Spectrum width:
 			 */
 			Fit.doFit("3rd Degree Polynomial", array_pos_y, array_width);
-			Fit.plot;
-			
+			Fit.plot;			
 			saveAs("PNG", result_dirs[m] + "width_" + img_name + ".png");
 			close();
 			/*
@@ -399,7 +398,9 @@ function analyse_dataset() {
 			Fit.plot;
 			temp = newArray(array_pos_x.length);
 			Array.fill(temp, Fit.f(0));
-			array_centre_start = Array.concat(array_centre_start, temp);
+			array_borders_x2 = Array.concat(array_borders_x2, temp);
+			Array.fill(temp, 0.5);
+			array_borders_weight = Array.concat(array_borders_weight, temp);
 			saveAs("PNG", result_dirs[m] + "center_" + img_name + ".png");
 			close();
 			/*
@@ -409,7 +410,9 @@ function analyse_dataset() {
 			Fit.plot;
 			temp = newArray(array_left.length);
 			Array.fill(temp, Fit.f(0));
-			array_top_start = Array.concat(array_top_start, temp);
+			array_borders_x2 = Array.concat(array_borders_x2, temp);
+			Array.fill(temp, 1.0);
+			array_borders_weight = Array.concat(array_borders_weight, temp);
 			saveAs("PNG", result_dirs[m] + "bottom_" + img_name + ".png");
 			close();
 			/*
@@ -419,7 +422,9 @@ function analyse_dataset() {
 			Fit.plot;
 			temp = newArray(array_right.length);
 			Array.fill(temp, Fit.f(0));
-			array_bot_start = Array.concat(array_bot_start, temp);
+			array_borders_x2 = Array.concat(array_borders_x2, temp);
+			Array.fill(temp, 1.0);
+			array_borders_weight = Array.concat(array_borders_weight, temp);
 			saveAs("PNG", result_dirs[m] + "top_" + img_name + ".png");
 			close();
 		}
@@ -442,10 +447,15 @@ function analyse_dataset() {
 		/*
 		 * Put all determined values into a single array. These values are necessary to fit a single function series to all borders.
 		 */
-		array_top = Array.concat(array_top, array_left);
-		array_centre = Array.concat(array_centre, array_pos_x);
-		array_bot = Array.concat(array_bot, array_right);
-		array_pos = Array.concat(array_pos, array_pos_y);
+		array_borders_x1 = Array.concat(array_borders_x1, array_pos_x);
+		array_borders_x1 = Array.concat(array_borders_x1, array_left);
+		array_borders_x1 = Array.concat(array_borders_x1, array_right);
+		/*
+		 * We need y-values for each border. that is why we add them 3 times.
+		 */
+		array_borders_y = Array.concat(array_borders_y, array_pos_y);
+		array_borders_y = Array.concat(array_borders_y, array_pos_y);
+		array_borders_y = Array.concat(array_borders_y, array_pos_y);
 	}
 }
 
@@ -720,9 +730,9 @@ function prepareFileForPolynomial2DFit() {
  */
 function prepareFileForFitBorders() {
 	f = File.open(result_dirs[m] + "Borders.txt");
-	print(f, "#top\ttop_start\tcentre\tcentre_start\tbottom\tbottom_start\ty-value");
-	for (p=0; p<array_x1.length; p++) {
-		print(f, array_top[p] + "\t" + array_top_start[p] + "\t" + array_centre[p] + "\t" + array_centre_start[p] + "\t" + array_bot[p] + "\t" + array_bot_start[p] + "\t" + array_pos[p]);
+	print(f, "#x1-value\tx2-value\ty-value\tweight");
+	for (p=0; p<array_borders_y.length; p++) {
+		print(f, array_borders_x1[p] + "\t" + array_borders_x2[p] + "\t" + array_borders_y[p] + "\t" + array_borders_weight[p]);
 	}
 	File.close(f);
 }

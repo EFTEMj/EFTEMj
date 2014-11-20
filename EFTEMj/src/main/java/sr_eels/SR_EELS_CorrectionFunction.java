@@ -57,7 +57,7 @@ public class SR_EELS_CorrectionFunction {
      * @param path_poly2D
      */
     public SR_EELS_CorrectionFunction(final String path_borders, final String path_poly2D) {
-	// getParametersA(path_borders);
+	getParametersA(path_borders);
 	getParametersB(path_poly2D);
     }
 
@@ -93,10 +93,35 @@ public class SR_EELS_CorrectionFunction {
     /**
      * The parameters of two 3D polynomials are parsed from a file and stored at individual arrays.
      *
+     * @param path_borders
+     */
+    private void getParametersA(final String path_borders) {
+	final DataImporter importer = new DataImporter(path_borders, true);
+	final double[][] x_vals = importer.x_vals;
+	final double[] y_vals = importer.y_vals;
+	final double[] weights = importer.weights;
+	final int m = 2;
+	final int n = 2;
+	final Polynomial_2D func = new Polynomial_2D(m, n);
+	final double[] a_fit = new double[(m + 1) * (n + 1)];
+	Arrays.fill(a_fit, 1.);
+	final LMA lma = new LMA(func, a_fit, y_vals, x_vals, weights, new JAMAMatrix(a_fit.length, a_fit.length));
+	lma.fit();
+	a = convertParameterArray(a_fit, m, n);
+	for (int i = 0; i <= m; i++) {
+	    for (int j = 0; j <= n; j++) {
+		System.out.printf("a%d%d = %g\n", i, j, a[i][j]);
+	    }
+	}
+    }
+
+    /**
+     * The parameters of two 3D polynomials are parsed from a file and stored at individual arrays.
+     *
      * @param path_poly2D
      */
     private void getParametersB(final String path_poly2D) {
-	final DataImporter importer = new DataImporter(path_poly2D);
+	final DataImporter importer = new DataImporter(path_poly2D, false);
 	final double[][] x_vals = importer.x_vals;
 	final double[] y_vals = importer.y_vals;
 	final double[] weights = new double[y_vals.length];
@@ -165,6 +190,7 @@ public class SR_EELS_CorrectionFunction {
 
 	protected double[][] x_vals;
 	protected double[] y_vals;
+	protected double[] weights;
 
 	/**
 	 * Create a new data set by loading it from a file.
@@ -172,7 +198,7 @@ public class SR_EELS_CorrectionFunction {
 	 * @param dataFilePath
 	 *            is the path to the file that contains the data set.
 	 */
-	public DataImporter(final String dataFilePath) {
+	public DataImporter(final String dataFilePath, boolean readWeights) {
 	    final File file = new File(dataFilePath);
 	    final Vector<Double[]> values = new Vector<Double[]>();
 	    try {
@@ -188,10 +214,19 @@ public class SR_EELS_CorrectionFunction {
 			 */
 			if (line.indexOf('#') == -1) {
 			    final String[] splitLine = line.split("\\s+");
-			    if (splitLine.length >= 3) {
-				final Double[] point = { Double.valueOf(splitLine[0]), Double.valueOf(splitLine[1]),
-					Double.valueOf(splitLine[2]) };
-				values.add(point);
+			    if (readWeights == true) {
+				if (splitLine.length >= 4) {
+				    final Double[] point = { Double.valueOf(splitLine[0]),
+					    Double.valueOf(splitLine[1]), Double.valueOf(splitLine[2]),
+					    Double.valueOf(splitLine[3]) };
+				    values.add(point);
+				}
+			    } else {
+				if (splitLine.length >= 3) {
+				    final Double[] point = { Double.valueOf(splitLine[0]),
+					    Double.valueOf(splitLine[1]), Double.valueOf(splitLine[2]) };
+				    values.add(point);
+				}
 			    }
 			}
 		    }
@@ -204,10 +239,14 @@ public class SR_EELS_CorrectionFunction {
 	    }
 	    x_vals = new double[values.size()][2];
 	    y_vals = new double[values.size()];
+	    weights = new double[values.size()];
 	    for (int i = 0; i < values.size(); i++) {
 		x_vals[i][0] = values.get(i)[0];
 		x_vals[i][1] = values.get(i)[1];
 		y_vals[i] = values.get(i)[2];
+		if (readWeights == true) {
+		    weights[i] = values.get(i)[3];
+		}
 	    }
 	}
     }

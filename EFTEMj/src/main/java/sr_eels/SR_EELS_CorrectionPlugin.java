@@ -57,7 +57,9 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      * <code>DOES_32 | NO_CHANGES | FINAL_PROCESSING</code>
      */
     private final int FLAGS = DOES_32 | NO_CHANGES | FINAL_PROCESSING;
-    private String path = "No file selected.";
+    private final String NO_FILE_SELECTED = "No file selected.";
+    private String path_borders = NO_FILE_SELECTED;
+    private String path_poly = NO_FILE_SELECTED;
     private int subdivision;
     private int oversampling;
     private ImagePlus inputImage;
@@ -84,7 +86,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      */
     @Override
     public void run(final ImageProcessor ip) {
-	final SR_EELS_CorrectionFunction func = new SR_EELS_CorrectionFunction("", path);
+	final SR_EELS_CorrectionFunction func = new SR_EELS_CorrectionFunction(path_borders, path_poly);
 	final SR_EELS_Correction correction = new SR_EELS_Correction(inputImage, binning, func, subdivision,
 		oversampling);
 	correction.startCalculation();
@@ -100,37 +102,55 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     @Override
     public int showDialog(final ImagePlus imp, final String command, final PlugInFilterRunner pfr) {
 	final String searchPath = IJ.getDirectory("image");
-	final LinkedList<String> found = new LinkedList<String>();
-	findDatasets(searchPath, found);
-	if (found.size() > 1) {
+	final LinkedList<String> found_poly = new LinkedList<String>();
+	final LinkedList<String> found_borders = new LinkedList<String>();
+	findDatasets(searchPath, found_poly, SR_EELS.FILENAME_POLINOMIAL_2D);
+	findDatasets(searchPath, found_borders, SR_EELS.FILENAME_BORDERS);
+	if (found_poly.size() > 1 | found_borders.size() > 1) {
 	    /*
 	     * A dialog is presented to select one of the found files.
 	     */
-	    String[] files = new String[found.size()];
-	    files = found.toArray(files);
 	    final GenericDialog gd = new GenericDialog(command + " - Select data set", IJ.getInstance());
-	    gd.addRadioButtonGroup("Data set", files, found.size(), 1, found.get(0));
+	    if (found_poly.size() > 1) {
+		String[] files_poly = new String[found_poly.size()];
+		files_poly = found_poly.toArray(files_poly);
+		gd.addRadioButtonGroup(SR_EELS.FILENAME_POLINOMIAL_2D, files_poly, found_poly.size(), 1,
+			found_poly.get(0));
+	    }
+	    if (found_borders.size() > 1) {
+		String[] files_borders = new String[found_poly.size()];
+		files_borders = found_poly.toArray(files_borders);
+		gd.addRadioButtonGroup(SR_EELS.FILENAME_BORDERS, files_borders, found_borders.size(), 1,
+			found_borders.get(0));
+	    }
 	    gd.setResizable(false);
 	    gd.showDialog();
 	    if (gd.wasCanceled()) {
 		canceled();
 		return NO_CHANGES | DONE;
 	    }
-	    path = gd.getNextRadioButton();
-	} else {
-	    if (found.size() == 1) {
-		/*
-		 * If only one file has been found, this one automatically is passed to the parameters dialog.
-		 */
-		path = found.getFirst();
+	    if (found_poly.size() > 1) {
+		path_poly = gd.getNextRadioButton();
 	    }
+	    if (found_borders.size() > 1) {
+		path_borders = gd.getNextRadioButton();
+	    }
+	}
+	/*
+	 * If only one file has been found, this one automatically is passed to the parameters dialog.
+	 */
+	if (found_poly.size() == 1) {
+	    path_poly = found_poly.getFirst();
+	}
+	if (found_borders.size() == 1) {
+	    path_borders = found_borders.getFirst();
 	}
 	do {
 	    if (showParameterDialog(command) == CANCEL) {
 		canceled();
 		return NO_CHANGES | DONE;
 	    }
-	} while (!path.contains(".txt"));
+	} while (!path_poly.contains(".txt") | !path_borders.contains(".txt"));
 	inputImage = imp;
 	return FLAGS;
     }
@@ -142,15 +162,17 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      *            the folder to search in.
      * @param found
      *            a {@link Vector} that stores all found file paths.
+     * @param filename
+     *            is the full name of the file we search for.
      */
-    private void findDatasets(final String searchPath, final LinkedList<String> found) {
+    private void findDatasets(final String searchPath, final LinkedList<String> found, final String filename) {
 	final String[] entries = new File(searchPath).list();
 	for (final String entrie : entries) {
-	    if (entrie.equals(SR_EELS.FILE_NAME_POLINOMIAL_2D)) {
+	    if (entrie.equals(filename)) {
 		found.add(searchPath + entrie);
 	    }
 	    if (new File(searchPath + entrie).isDirectory()) {
-		findDatasets(searchPath + entrie + File.separatorChar, found);
+		findDatasets(searchPath + entrie + File.separatorChar, found, filename);
 	    }
 	}
     }
@@ -163,7 +185,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      */
     private int showParameterDialog(final String title) {
 	final GenericDialogPlus gd = new GenericDialogPlus(title + " - set parameters", IJ.getInstance());
-	gd.addFileField(SR_EELS.FILE_NAME_POLINOMIAL_2D, path);
+	gd.addFileField(SR_EELS.FILENAME_POLINOMIAL_2D, path_poly);
+	gd.addFileField(SR_EELS.FILENAME_BORDERS, path_borders);
 	gd.addNumericField("Pixel_subdivision", 10, 0);
 	gd.addNumericField("Oversampling", 3, 0);
 	gd.setResizable(false);
@@ -171,7 +194,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	if (gd.wasCanceled()) {
 	    return CANCEL;
 	}
-	path = gd.getNextString();
+	path_poly = gd.getNextString();
+	path_borders = gd.getNextString();
 	subdivision = (int) gd.getNextNumber();
 	oversampling = (int) gd.getNextNumber();
 	return OK;
