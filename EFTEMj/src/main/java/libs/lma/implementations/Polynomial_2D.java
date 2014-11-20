@@ -5,10 +5,10 @@ import java.util.Arrays;
 import libs.lma.LMAMultiDimFunction;
 
 /**
- * This class represents a polynomial in 2D: z(x,y). It implements all necessary methods to be used in a
+ * This class represents a polynomial in 2D: y(x1,x2). It implements all necessary methods to be used in a
  * Levenberg-Marquardt algorithm.
  *
- * @author Michael Entrup b. Epping <entrup@arcor.de>
+ * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
  *
  */
 public class Polynomial_2D extends LMAMultiDimFunction {
@@ -33,15 +33,14 @@ public class Polynomial_2D extends LMAMultiDimFunction {
      * This is a static version of the gradient calculation.
      *
      * @param x
-     *            is the coordinate (x,y).
+     *            is the coordinate (x1,x2).
      * @param params
      *            is an array that contains all the necessary parameters. The order f the parameters is:<br />
-     *            a<SUB>00</SUB> , a<SUB>01</SUB> , ... , a<SUB>0n</SUB> , a<SUB>10</SUB> , ... , a<SUB>m0</SUB> , ... ,
-     *            a<SUB>mn</SUB>
+     *            a_00 , a_01 , ... , a_0n , a_10 , ... , a_m0 , ... , a_mn
      * @param m
-     *            is the maximal order of x.
+     *            is the maximal order of x1.
      * @param n
-     *            is the maximal order of y.
+     *            is the maximal order of x2.
      * @param param
      *            is the index of the parameter.
      * @return the element of the gradient vector with the given index.
@@ -64,9 +63,9 @@ public class Polynomial_2D extends LMAMultiDimFunction {
      * Use the second constructor to define all parameters yourself.
      *
      * @param m
-     *            is the maximal order of x.
+     *            is the maximal order of x1.
      * @param n
-     *            is the maximal order of y.
+     *            is the maximal order of x2.
      */
     public Polynomial_2D(final int m, final int n) {
 	this.m = m;
@@ -78,14 +77,13 @@ public class Polynomial_2D extends LMAMultiDimFunction {
 
     /**
      * @param m
-     *            is the maximal order of x.
+     *            is the maximal order of x1.
      * @param n
-     *            is the maximal order of y.
+     *            is the maximal order of x2.
      * @param params
      *
      *            is an array that contains all the necessary parameters. The order f the parameters is:<br />
-     *            a<SUB>00</SUB> , a<SUB>01</SUB> , ... , a<SUB>0n</SUB> , a<SUB>10</SUB> , ... , a<SUB>m0</SUB> , ... ,
-     *            a<SUB>mn</SUB>
+     *            a_00 , a_01 , ... , a_0n , a_10 , ... , a_m0 , ... , a_mn
      */
     public Polynomial_2D(final int m, final int n, final double[] params) {
 	assert params.length == (m + 1) * (n + 1);
@@ -96,8 +94,8 @@ public class Polynomial_2D extends LMAMultiDimFunction {
 
     /**
      * @param x
-     *            is the coordinate (x,y).
-     * @return the value z(x,y).
+     *            is the coordinate (x1,x2).
+     * @return the value y(x1,x2).
      */
     public double val(final double[] x) {
 	assert x.length == 2;
@@ -112,8 +110,8 @@ public class Polynomial_2D extends LMAMultiDimFunction {
 
     /**
      * @param x
-     *            is a list of coordinates ( x<SUB>i</SUB> ,y<SUB>i</SUB> ).
-     * @return a list of the values z<SUB>i</SUB> ( x<SUB>i</SUB> ,y<SUB>i</SUB> ).
+     *            is a list of coordinates ( x1<SUB>i</SUB> ,x2<SUB>i</SUB> ).
+     * @return a list of the values y<SUB>i</SUB> ( x1<SUB>i</SUB> ,x2<SUB>i</SUB> ).
      */
     public double[] val(final double[][] x) {
 	final double[] values = new double[x.length];
@@ -125,7 +123,7 @@ public class Polynomial_2D extends LMAMultiDimFunction {
 
     /**
      * @param x
-     *            is the coordinate (x,y).
+     *            is the coordinate (x1,x2).
      * @param paramIndex
      *            is the index of the parameter.
      * @return the element of the gradient vector with the given index.
@@ -144,7 +142,7 @@ public class Polynomial_2D extends LMAMultiDimFunction {
 
     /**
      * @param x
-     *            is the coordinate (x,y).
+     *            is the coordinate (x1,x2).
      * @return the gradient vector as an array.
      */
     public double[] grad(final double[] x) {

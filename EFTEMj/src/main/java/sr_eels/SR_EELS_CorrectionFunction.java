@@ -28,9 +28,16 @@ package sr_eels;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Vector;
+
+import libs.lma.LMA;
+import libs.lma.implementations.JAMAMatrix;
+import libs.lma.implementations.Polynomial_2D;
+import sr_eels.testing.SR_EELS_characterisation;
 
 /**
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
@@ -46,13 +53,12 @@ public class SR_EELS_CorrectionFunction {
      * Creates an object that can calculate the coordinate transformation, that is necessary for correcting a SR-EELS
      * dataset.
      *
-     * @param path
-     *            The path to the parameter file that has been created by Gnuplot.
-     * @throws IOException
-     * @throws ArrayIndexOutOfBoundsException
+     * @param path_borders
+     * @param path_poly2D
      */
-    public SR_EELS_CorrectionFunction(final String path) throws IOException, ArrayIndexOutOfBoundsException {
-	readParameters(path);
+    public SR_EELS_CorrectionFunction(final String path_borders, final String path_poly2D) {
+	// getParametersA(path_borders);
+	getParametersB(path_poly2D);
     }
 
     public double[] transform(final double x1, final double x2) {
@@ -87,36 +93,44 @@ public class SR_EELS_CorrectionFunction {
     /**
      * The parameters of two 3D polynomials are parsed from a file and stored at individual arrays.
      *
-     * @param path
-     *            The path to the parameter file that has been created by Gnuplot.
-     * @throws IOException
-     * @throws ArrayIndexOutOfBoundsException
+     * @param path_poly2D
      */
-    private void readParameters(final String path) throws IOException, ArrayIndexOutOfBoundsException {
-	// We assume, that only polynomials up to an order of 10 are used.
-	a = new double[10][10];
-	b = new double[10][10];
-	final File file = new File(path);
-	final FileReader reader = new FileReader(file);
-	final BufferedReader data = new BufferedReader(reader);
-	String line;
-	String[] splitItems;
-	while ((line = data.readLine()) != null) {
-	    line = line.replace(" ", "");
-	    splitItems = line.split("=");
-	    final int i = Integer.parseInt(splitItems[0].substring(1, 2));
-	    final int j = Integer.parseInt(splitItems[0].substring(2, 3));
-	    if (splitItems[0].startsWith("a")) {
-		a[i][j] = Double.parseDouble(splitItems[1]);
-	    }
-	    if (splitItems[0].startsWith("b")) {
-		b[i][j] = Double.parseDouble(splitItems[1]);
+    private void getParametersB(final String path_poly2D) {
+	final DataImporter importer = new DataImporter(path_poly2D);
+	final double[][] x_vals = importer.x_vals;
+	final double[] y_vals = importer.y_vals;
+	final double[] weights = new double[y_vals.length];
+	final double[] y_vals_sorted = Arrays.copyOf(y_vals, y_vals.length);
+	Arrays.sort(y_vals_sorted);
+	final double max = y_vals_sorted[y_vals_sorted.length - 1];
+	for (int i = 0; i < weights.length; i++) {
+	    weights[i] = y_vals[i] / max;
+	}
+	final int m = 3;
+	final int n = 2;
+	final Polynomial_2D func = new Polynomial_2D(m, n);
+	final double[] b_fit = new double[(m + 1) * (n + 1)];
+	Arrays.fill(b_fit, 1.);
+	final LMA lma = new LMA(func, b_fit, y_vals, x_vals, weights, new JAMAMatrix(b_fit.length, b_fit.length));
+	lma.fit();
+	b = convertParameterArray(b_fit, m, n);
+	for (int i = 0; i <= m; i++) {
+	    for (int j = 0; j <= n; j++) {
+		System.out.printf("b%d%d = %g\n", i, j, b[i][j]);
 	    }
 	}
-	data.close();
-	a = trimArray(a);
-	b = trimArray(b);
+	// a = convertParameterArray(b_fit, m, n);
 	setOffset();
+    }
+
+    private double[][] convertParameterArray(final double[] a_fit, final int m, final int n) {
+	final double[][] b_converted = new double[m + 1][n + 1];
+	for (int i = 0; i <= m; i++) {
+	    for (int j = 0; j <= n; j++) {
+		b_converted[i][j] = a_fit[i * n + j];
+	    }
+	}
+	return b_converted;
     }
 
     private void setOffset() {
@@ -130,31 +144,71 @@ public class SR_EELS_CorrectionFunction {
     }
 
     /**
-     * We need this method to remove all unnecessary columns and rows from the parameter arrays.
+     * <p>
+     * This class is used to load a data file that contains a data set for the fit of a 2D polynomial. For each y-value
+     * there is are pairs of x-values that are stored at a 2D array.
+     * </p>
      *
-     * @param array
-     *            An MxN array that can contain empty columns and rows (empty means only zeros).
-     * @return An that contains no empty columns at the right and no empty row at the bottom.
+     * <p>
+     * The data file must contain one data point at each line. Each data point contains of x1, x2 and y separated by
+     * whitespace. Lines that contain a '#' are regarded as comments.
+     * </p>
+     *
+     * <p>
+     * The Plugin {@link SR_EELS_characterisation} creates files that can be processed by this class.
+     * </p>
+     *
+     * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
+     *
      */
-    private double[][] trimArray(final double[][] array) {
-	int i_max = array.length;
-	do {
-	    i_max--;
-	} while (Arrays.equals(array[i_max], new double[array[i_max].length]));
-	int j_max = 0;
-	for (int i = 0; i < i_max; i++) {
-	    int j = array[i].length;
-	    do {
-		j--;
-	    } while (array[i][j] == 0.);
-	    j_max = Math.max(j_max, j);
-	}
-	final double[][] trimmed = new double[i_max + 1][j_max + 1];
-	for (int m = 0; m <= i_max; m++) {
-	    for (int n = 0; n <= j_max; n++) {
-		trimmed[m][n] = array[m][n];
+    private static class DataImporter {
+
+	protected double[][] x_vals;
+	protected double[] y_vals;
+
+	/**
+	 * Create a new data set by loading it from a file.
+	 *
+	 * @param dataFilePath
+	 *            is the path to the file that contains the data set.
+	 */
+	public DataImporter(final String dataFilePath) {
+	    final File file = new File(dataFilePath);
+	    final Vector<Double[]> values = new Vector<Double[]>();
+	    try {
+		final BufferedReader reader = new BufferedReader(new FileReader(file));
+		boolean containsData = true;
+		do {
+		    final String line = reader.readLine();
+		    if (line == null) {
+			containsData = false;
+		    } else {
+			/*
+			 * Only read the line if if does not contain any comment.
+			 */
+			if (line.indexOf('#') == -1) {
+			    final String[] splitLine = line.split("\\s+");
+			    if (splitLine.length >= 3) {
+				final Double[] point = { Double.valueOf(splitLine[0]), Double.valueOf(splitLine[1]),
+					Double.valueOf(splitLine[2]) };
+				values.add(point);
+			    }
+			}
+		    }
+		} while (containsData);
+		reader.close();
+	    } catch (final FileNotFoundException exc) {
+		exc.printStackTrace();
+	    } catch (final IOException exc) {
+		exc.printStackTrace();
+	    }
+	    x_vals = new double[values.size()][2];
+	    y_vals = new double[values.size()];
+	    for (int i = 0; i < values.size(); i++) {
+		x_vals[i][0] = values.get(i)[0];
+		x_vals[i][1] = values.get(i)[1];
+		y_vals[i] = values.get(i)[2];
 	    }
 	}
-	return trimmed;
     }
 }

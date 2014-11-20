@@ -36,7 +36,6 @@ import ij.plugin.filter.PlugInFilterRunner;
 import ij.process.ImageProcessor;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Vector;
 
@@ -85,17 +84,11 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      */
     @Override
     public void run(final ImageProcessor ip) {
-	try {
-	    final SR_EELS_CorrectionFunction func = new SR_EELS_CorrectionFunction(path);
-	    final SR_EELS_Correction correction = new SR_EELS_Correction(inputImage, binning, func, subdivision,
-		    oversampling);
-	    correction.startCalculation();
-	    correction.showResult();
-
-	} catch (final IOException e) {
-	    IJ.showMessage(e.getMessage());
-	    return;
-	}
+	final SR_EELS_CorrectionFunction func = new SR_EELS_CorrectionFunction("", path);
+	final SR_EELS_Correction correction = new SR_EELS_Correction(inputImage, binning, func, subdivision,
+		oversampling);
+	correction.startCalculation();
+	correction.showResult();
     }
 
     /*

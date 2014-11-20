@@ -167,13 +167,15 @@ public class LMAPolyTest {
 		    if (line == null) {
 			containsData = false;
 		    } else {
-			if (line.indexOf('#') != -1) {
-			    break;
+			/*
+			 * Only read the line if if does not contain any comment.
+			 */
+			if (line.indexOf('#') == -1) {
+			    final String[] splitLine = line.split("\\s");
+			    final Double[] point = { Double.valueOf(splitLine[0]), Double.valueOf(splitLine[1]),
+				    Double.valueOf(splitLine[2]) };
+			    values.add(point);
 			}
-			final String[] splitLine = line.split("\\s");
-			final Double[] point = { Double.valueOf(splitLine[0]), Double.valueOf(splitLine[1]),
-				Double.valueOf(splitLine[2]) };
-			values.add(point);
 		    }
 		} while (containsData);
 		reader.close();
