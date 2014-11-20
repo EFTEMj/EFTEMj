@@ -102,6 +102,8 @@ var array_pos_all; var array_width_all; var array_pos_all_calc; var array_width_
  * global arrays to store all values needed for fitting a 2D polynomial
  */
 var array_x1; var array_x2; var array_y;
+var array_top; var array_top_start; var array_centre; var array_centre_start; var array_bot; var array_bot_start; var array_pos;
+
 /*
  * global variables for use in 'analyse_dataset()'
  */
@@ -113,6 +115,11 @@ var threshold;
 array_x1 = newArray();
 array_x2 = newArray();
 array_y = newArray();
+array_top = newArray(); array_top_start = newArray();
+array_centre = newArray(); array_centre_start = newArray();
+array_bot = newArray(); array_bot_start = newArray();
+array_pos = newArray();
+
 
 /*
  * This function shows some dialogs to setup the macro.
@@ -153,6 +160,7 @@ for(m=0; m < thresholds.length; m++) {
 		 * create the file that contains the values for fitting a 2D polynomial
 		 */
 		prepareFileForPolynomial2DFit();
+		prepareFileForFitBorders();
 	}
 }
 /*
@@ -381,6 +389,7 @@ function analyse_dataset() {
 			 */
 			Fit.doFit("3rd Degree Polynomial", array_pos_y, array_width);
 			Fit.plot;
+			
 			saveAs("PNG", result_dirs[m] + "width_" + img_name + ".png");
 			close();
 			/*
@@ -388,6 +397,9 @@ function analyse_dataset() {
 			 */
 			Fit.doFit("3rd Degree Polynomial", array_pos_y, array_pos_x);
 			Fit.plot;
+			temp = newArray(array_pos_x.length);
+			Array.fill(temp, Fit.f(0));
+			array_centre_start = Array.concat(array_centre_start, temp);
 			saveAs("PNG", result_dirs[m] + "center_" + img_name + ".png");
 			close();
 			/*
@@ -395,6 +407,9 @@ function analyse_dataset() {
 			 */
 			Fit.doFit("3rd Degree Polynomial", array_pos_y, array_left);
 			Fit.plot;
+			temp = newArray(array_left.length);
+			Array.fill(temp, Fit.f(0));
+			array_top_start = Array.concat(array_top_start, temp);
 			saveAs("PNG", result_dirs[m] + "bottom_" + img_name + ".png");
 			close();
 			/*
@@ -402,13 +417,15 @@ function analyse_dataset() {
 			 */
 			Fit.doFit("3rd Degree Polynomial", array_pos_y, array_right);
 			Fit.plot;
+			temp = newArray(array_right.length);
+			Array.fill(temp, Fit.f(0));
+			array_bot_start = Array.concat(array_bot_start, temp);
 			saveAs("PNG", result_dirs[m] + "top_" + img_name + ".png");
 			close();
 		}
 		/*
-		 * Create a table containing the results:
-		 * The table can be saved as a text file with  tab-separated values.
-		 * gnuplot can access this files without any changes to the file.
+		 * Write the results of a single image to a txt-file. 
+		 * This file can be processed by Gnuplot.
 		 */
 		f = File.open(result_dirs[m] + "values_" + img_name + ".txt");
 		print(f, "#index\tx1-position\tx2-position\tbottom_pos\ttop_position\twidth\twidth_calc");
@@ -417,11 +434,18 @@ function analyse_dataset() {
 		}
 		File.close(f);
 		/*
-		 * Put all determined values into a single array. These values are necessary to plot a 2D polynomial.
+		 * Put all determined values into a single array. These values are necessary to fit a 2D polynomial.
 		 */
-		 array_x1 = Array.concat(array_x1, array_pos_y);
-		 array_x2 = Array.concat(array_x2, array_pos_x);
-		 array_y = Array.concat(array_y, array_width);
+		array_x1 = Array.concat(array_x1, array_pos_y);
+		array_x2 = Array.concat(array_x2, array_pos_x);
+		array_y = Array.concat(array_y, array_width);
+		/*
+		 * Put all determined values into a single array. These values are necessary to fit a single function series to all borders.
+		 */
+		array_top = Array.concat(array_top, array_left);
+		array_centre = Array.concat(array_centre, array_pos_x);
+		array_bot = Array.concat(array_bot, array_right);
+		array_pos = Array.concat(array_pos, array_pos_y);
 	}
 }
 
@@ -579,6 +603,7 @@ function filter_images(array_str) {
  * function: save_pos_and_width
  * description: This function is used to collect values from all datasets.
  * 				Finally a fit will be performed and the result may be saved as PNG-file.
+ * 				The values are saved at the file width_vs_pos.txt.
  */
 function save_pos_and_width(index, pos, width, left, right) {
 	if (index == 0) {
@@ -649,7 +674,7 @@ function ceil(value) {
 }
 
 /*
- * function: addPointsToOverlay:
+ * function: addPointsToOverlay
  * description: This function is used to draw data points at the current image.
  * 				The datapoints are added to the overlay.
  */
@@ -675,8 +700,8 @@ function addPointsToOverlay(xPos, yPos, overlayColorIndex) {
 }
 
 /*
- * function: prepareFileForPolynomial2DFit:
- * description: We need to combine the results of all analysed images to fit the 2D polynomial.
+ * function: prepareFileForPolynomial2DFit
+ * description: We need to combine some results of all analysed images to fit the 2D polynomial.
  * 				This function writes the data stored in 3 arrays to a file.
  */
 function prepareFileForPolynomial2DFit() {
@@ -684,6 +709,20 @@ function prepareFileForPolynomial2DFit() {
 	print(f, "#x1-position\tx2-position\ty-value");
 	for (p=0; p<array_x1.length; p++) {
 		print(f, array_x1[p] + "\t" + array_x2[p] + "\t" + array_y[p]);
+	}
+	File.close(f);
+}
+
+/*
+ * function: prepareFileForFitBorders
+ * description: We need to combine the results of all analysed images to fit al borders with one function series.
+ * 				This function writes the data stored in 4 arrays to a file.
+ */
+function prepareFileForFitBorders() {
+	f = File.open(result_dirs[m] + "Borders.txt");
+	print(f, "#top\ttop_start\tcentre\tcentre_start\tbottom\tbottom_start\ty-value");
+	for (p=0; p<array_x1.length; p++) {
+		print(f, array_top[p] + "\t" + array_top_start[p] + "\t" + array_centre[p] + "\t" + array_centre_start[p] + "\t" + array_bot[p] + "\t" + array_bot_start[p] + "\t" + array_pos[p]);
 	}
 	File.close(f);
 }
