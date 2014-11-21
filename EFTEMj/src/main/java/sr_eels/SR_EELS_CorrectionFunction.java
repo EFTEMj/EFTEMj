@@ -131,11 +131,12 @@ public class SR_EELS_CorrectionFunction {
 	for (int i = 0; i < weights.length; i++) {
 	    weights[i] = y_vals[i] / max;
 	}
-	final int m = 3;
+	final int m = 2;
 	final int n = 2;
 	final Polynomial_2D func = new Polynomial_2D(m, n);
 	final double[] b_fit = new double[(m + 1) * (n + 1)];
 	Arrays.fill(b_fit, 1.);
+	Arrays.fill(weights, 1.);
 	final LMA lma = new LMA(func, b_fit, y_vals, x_vals, weights, new JAMAMatrix(b_fit.length, b_fit.length));
 	lma.fit();
 	b = convertParameterArray(b_fit, m, n);
@@ -144,7 +145,6 @@ public class SR_EELS_CorrectionFunction {
 		System.out.printf("b%d%d = %g\n", i, j, b[i][j]);
 	    }
 	}
-	// a = convertParameterArray(b_fit, m, n);
 	setOffset();
     }
 
@@ -152,7 +152,7 @@ public class SR_EELS_CorrectionFunction {
 	final double[][] b_converted = new double[m + 1][n + 1];
 	for (int i = 0; i <= m; i++) {
 	    for (int j = 0; j <= n; j++) {
-		b_converted[i][j] = a_fit[i * n + j];
+		b_converted[i][j] = a_fit[(n + 1) * i + j];
 	    }
 	}
 	return b_converted;
@@ -216,8 +216,8 @@ public class SR_EELS_CorrectionFunction {
 			    final String[] splitLine = line.split("\\s+");
 			    if (readWeights == true) {
 				if (splitLine.length >= 4) {
-				    final Double[] point = { Double.valueOf(splitLine[0]),
-					    Double.valueOf(splitLine[1]), Double.valueOf(splitLine[2]),
+				    final Double[] point = { Double.valueOf(splitLine[2]),
+					    Double.valueOf(splitLine[1]), Double.valueOf(splitLine[0]),
 					    Double.valueOf(splitLine[3]) };
 				    values.add(point);
 				}

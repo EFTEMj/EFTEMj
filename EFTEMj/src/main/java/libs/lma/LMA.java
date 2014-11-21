@@ -31,7 +31,7 @@ import libs.lma.implementations.JAMAMatrix;
  */
 public class LMA {
     /** Set true to print details while fitting. */
-    public boolean verbose = false;
+    public boolean verbose = true;
     /**
      * The model function to be fitted, y = y(x[], a[]), where <code>x[]</code> the array of x-values and <code>a</code>
      * is the array of fit parameters.
@@ -60,7 +60,7 @@ public class LMA {
     public LMAMatrix alpha;
     public double[] beta;
     public double[] da;
-    public double lambda = 0.001;
+    public double lambda = 1e-5;
     public double lambdaFactor = 10;
     public double incrementedChi2;
     public double[] incrementedParameters;
@@ -68,7 +68,7 @@ public class LMA {
     public double chi2;
 
     // default end conditions
-    public double minDeltaChi2 = 1e-30;
+    public double minDeltaChi2 = 1e-8;
     public int maxIterations = 100;
 
     /**

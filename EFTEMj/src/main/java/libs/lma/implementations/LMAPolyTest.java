@@ -19,27 +19,27 @@ public class LMAPolyTest {
 
 	public double[] initial() {
 	    // final double[] a = { 1., 0.01, 0.0001, 0.01, 0.0001, 1e-6, 0.0001, 1e-6, 1e-8 };
-	    final double[] a = { 1., 1., 1., 1., 1., 1., 1., 1., 1. };
+	    double[] a = { 1., 1., 1., 1., 1., 1., 1., 1., 1. };
 	    return a;
 	} // initial
 
 	public double[][] yValues() {
-	    final double[] y_vals = { 630, 630, 628, 628, 626, 624, 622, 624, 622, 622, 620, 618, 618, 616, 614, 614,
-		    616, 610, 612, 608, 608, 608, 606, 604, 606, 604, 604, 602, 602, 602, 602, 600, 600, 594, 596, 594,
-		    594, 594, 594, 592, 590, 592, 592, 590, 588, 590, 588, 586, 584, 584, 586, 584, 582, 584, 578, 582,
-		    580, 580, 580, 576, 576, 576, 574, 574, 572, 570, 570, 568, 568, 564, 566, 562, 564, 562, 560, 558,
-		    560, 558, 556, 556, 554, 556, 552, 552, 550, 550, 550, 546, 548, 546, 544, 546, 542, 544, 542, 540,
-		    540, 540, 538, 536, 538, 536, 536, 534, 534, 532, 532, 532, 530, 528, 528, 526, 614, 616, 614, 612,
-		    612, 608, 610, 608, 606, 604, 602, 604, 602, 600, 600, 598, 598, 598, 594, 594, 594, 592, 588, 590,
-		    588, 588, 588, 588, 584, 584, 586, 584, 582, 580, 580, 580, 578, 576, 576, 576, 576, 576, 574, 576,
-		    574, 572, 572, 572, 572, 570, 568, 568, 566, 566, 568, 564, 580, 580, 576, 576, 576, 574, 574, 570,
-		    572, 570, 570, 568, 568, 566, 566, 564, 562, 564, 564, 560, 560, 558, 560, 556, 556, 554, 554, 552,
-		    552, 550, 550, 550, 548, 550, 546, 546, 546, 548, 546, 542, 544, 544, 542, 542, 540, 538, 538, 538,
-		    536, 536, 536, 536, 536, 534, 532, 532, 620, 618, 616, 616, 614, 616, 612, 612, 610, 608, 608, 608,
-		    604, 608, 606, 604, 600, 602, 600, 596, 594, 594, 596, 594, 594, 594, 592, 592, 590, 588, 588, 586,
-		    588, 586, 584, 584, 584, 582, 582, 582, 580, 582, 578, 578, 578, 576, 576, 574, 576, 574, 574, 572,
-		    572, 572, 574, 572 };
-	    final double[][] vals = new double[2][y_vals.length];
+	    double[] y_vals = { 630, 630, 628, 628, 626, 624, 622, 624, 622, 622, 620, 618, 618, 616, 614, 614, 616,
+		    610, 612, 608, 608, 608, 606, 604, 606, 604, 604, 602, 602, 602, 602, 600, 600, 594, 596, 594, 594,
+		    594, 594, 592, 590, 592, 592, 590, 588, 590, 588, 586, 584, 584, 586, 584, 582, 584, 578, 582, 580,
+		    580, 580, 576, 576, 576, 574, 574, 572, 570, 570, 568, 568, 564, 566, 562, 564, 562, 560, 558, 560,
+		    558, 556, 556, 554, 556, 552, 552, 550, 550, 550, 546, 548, 546, 544, 546, 542, 544, 542, 540, 540,
+		    540, 538, 536, 538, 536, 536, 534, 534, 532, 532, 532, 530, 528, 528, 526, 614, 616, 614, 612, 612,
+		    608, 610, 608, 606, 604, 602, 604, 602, 600, 600, 598, 598, 598, 594, 594, 594, 592, 588, 590, 588,
+		    588, 588, 588, 584, 584, 586, 584, 582, 580, 580, 580, 578, 576, 576, 576, 576, 576, 574, 576, 574,
+		    572, 572, 572, 572, 570, 568, 568, 566, 566, 568, 564, 580, 580, 576, 576, 576, 574, 574, 570, 572,
+		    570, 570, 568, 568, 566, 566, 564, 562, 564, 564, 560, 560, 558, 560, 556, 556, 554, 554, 552, 552,
+		    550, 550, 550, 548, 550, 546, 546, 546, 548, 546, 542, 544, 544, 542, 542, 540, 538, 538, 538, 536,
+		    536, 536, 536, 536, 534, 532, 532, 620, 618, 616, 616, 614, 616, 612, 612, 610, 608, 608, 608, 604,
+		    608, 606, 604, 600, 602, 600, 596, 594, 594, 596, 594, 594, 594, 592, 592, 590, 588, 588, 586, 588,
+		    586, 584, 584, 584, 582, 582, 582, 580, 582, 578, 578, 578, 576, 576, 574, 576, 574, 574, 572, 572,
+		    572, 574, 572 };
+	    double[][] vals = new double[2][y_vals.length];
 	    for (int i = 0; i < y_vals.length; i++) {
 		vals[0][i] = y_vals[i];
 		// vals[1][i] = 1 / y_vals[i];
@@ -49,7 +49,7 @@ public class LMAPolyTest {
 	}
 
 	public double[][] xValues() {
-	    final double[] x1_vals = { 287.859, 351.834, 415.842, 479.841, 543.846, 607.831, 671.85, 735.848, 799.859,
+	    double[] x1_vals = { 287.859, 351.834, 415.842, 479.841, 543.846, 607.831, 671.85, 735.848, 799.859,
 		    863.868, 927.84, 991.848, 1055.85, 1119.85, 1183.86, 1247.87, 1311.84, 1375.85, 1439.89, 1503.86,
 		    1567.86, 1631.85, 1695.87, 1759.85, 1823.85, 1887.86, 1951.87, 2015.93, 2079.84, 2143.86, 2207.87,
 		    2271.86, 2335.87, 2399.85, 2463.89, 2527.86, 2591.86, 2655.84, 2719.89, 2783.85, 2847.89, 2911.85,
@@ -76,7 +76,7 @@ public class LMAPolyTest {
 		    2719.86, 2783.86, 2847.86, 2911.9, 2975.88, 3039.86, 3103.84, 3167.87, 3231.87, 3295.87, 3359.86,
 		    3423.89, 3487.88, 3551.91, 3615.86, 3679.86, 3743.94, 3807.9 };
 
-	    final double[] x2_vals = { 2045.48, 2046.57, 2047.31, 2048.06, 2048.77, 2049.78, 2050.74, 2051.48, 2052.14,
+	    double[] x2_vals = { 2045.48, 2046.57, 2047.31, 2048.06, 2048.77, 2049.78, 2050.74, 2051.48, 2052.14,
 		    2052.99, 2053.82, 2054.6, 2054.96, 2055.93, 2056.13, 2057.08, 2057.92, 2058.39, 2059.1, 2059.68,
 		    2060.07, 2060.7, 2061.34, 2061.82, 2062.68, 2063.49, 2063.98, 2064.47, 2065.15, 2065.7, 2066.11,
 		    2067.22, 2067.71, 2068.45, 2069.49, 2070.27, 2071.07, 2071.67, 2072.34, 2073.1, 2073.95, 2074.51,
@@ -104,7 +104,7 @@ public class LMAPolyTest {
 		    2870.58, 2871.05, 2871.94, 2872.23, 2873.12, 2873.33, 2873.92 };
 
 	    assert x1_vals.length == x2_vals.length;
-	    final double[][] x_vals = new double[x1_vals.length][2];
+	    double[][] x_vals = new double[x1_vals.length][2];
 	    for (int i = 0; i < x1_vals.length; i++) {
 		x_vals[i][0] = x1_vals[i];
 		x_vals[i][1] = x2_vals[i];
@@ -113,57 +113,63 @@ public class LMAPolyTest {
 	}
 
 	@Override
-	public double getY(final double[] x, final double[] a) {
+	public double getY(double[] x, double[] a) {
 	    return Polynomial_2D.val(x, a, 2, 2);
 	}
 
 	@Override
-	public double getPartialDerivate(final double[] x, final double[] a, final int parameterIndex) {
+	public double getPartialDerivate(double[] x, double[] a, int parameterIndex) {
 	    return Polynomial_2D.grad(x, a, 2, 2, parameterIndex);
 	}
     }
 
-    public static void main(final String[] cmdline) {
-	final LMPolyTest func = new LMPolyTest();
-	final double[] a_fit = func.initial();
-	final double[][] vals = func.yValues();
-	final LMA lma = new LMA(func, a_fit, vals[0], func.xValues(), vals[1], new JAMAMatrix(a_fit.length,
-		a_fit.length));
+    public static void main(String[] cmdline) {
+	LMPolyTest func = new LMPolyTest();
+	// double[] a_fit = func.initial();
+	double[][] vals = func.yValues();
+	double[] a_fit = { 552.452, 0.0816342, -1.00002, -0.025499, 5.1011e-006, -1.08015e-009, -2.87394, 1.09091e-010,
+		2.87394 };
+	LMA lma = new LMA(func, a_fit, vals[0], func.xValues(), vals[1], new JAMAMatrix(a_fit.length, a_fit.length));
 	lma.fit();
-	final double[] a_gnuplot = { 551.113, 0.0834116, -2.01285e-005, -0.0236638, 2.68602e-006, -5.03575e-010,
-		6.71201e-007, 7.10721e-010, -1.43449e-013 };
+	double[] a_gnuplot = { 552.452, 0.0816342, -1.00002, -0.025499, 5.1011e-006, -1.08015e-009, -2.87394,
+		1.09091e-010, 2.87394 };
+	System.out.println("");
 	for (int i = 0; i < a_fit.length; i++) {
 	    System.out
 		    .println(a_fit[i] + "\t\t" + a_gnuplot[i] + "\t\t" + Math.abs(a_gnuplot[i] - a_fit[i]) / a_fit[i]);
 	}
+	System.out.println("");
 
-	final PolyDataImport importer = new LMAPolyTest.PolyDataImport();
-	final double[][] x_vals = importer.x_vals;
-	final double[] y_vals = importer.y_vals;
-	final double[] weights = new double[y_vals.length];
-	Arrays.fill(weights, 1.);
-	final LMA lma2 = new LMA(func, a_fit, y_vals, x_vals, weights, new JAMAMatrix(a_fit.length, a_fit.length));
+	PolyDataImport importer = new LMAPolyTest.PolyDataImport();
+	LMPolyTest func2 = new LMPolyTest();
+	double[][] vals2 = importer.vals;
+	Arrays.fill(a_fit, 1.);
+	LMA lma2 = new LMA(func2, a_fit, vals2);
 	lma2.fit();
+	double[] a1_gnuplot = { 275.53, 0.0822029, -1.00004, -0.0252566, 1.04521e-005, -4.26757e-009, -2.34423,
+		1.99037e-010, 2.34423 };
+	System.out.println("");
 	for (int i = 0; i < a_fit.length; i++) {
-	    System.out.println(a_fit[i]);
+	    System.out.println(a_fit[i] + "\t\t" + a1_gnuplot[i] + "\t\t" + Math.abs(a1_gnuplot[i] - a_fit[i])
+		    / a_fit[i]);
 	}
+	System.out.println("");
     }
 
     private static class PolyDataImport {
 
-	protected double[][] x_vals;
-	protected double[] y_vals;
+	protected double[][] vals;
 
 	public PolyDataImport() {
-	    final JFileChooser fChooser = new JFileChooser();
+	    JFileChooser fChooser = new JFileChooser("C:\\Temp");
 	    fChooser.showOpenDialog(null);
-	    final File file = fChooser.getSelectedFile();
-	    final Vector<Double[]> values = new Vector<Double[]>();
+	    File file = fChooser.getSelectedFile();
+	    Vector<Double[]> values = new Vector<Double[]>();
 	    try {
-		final BufferedReader reader = new BufferedReader(new FileReader(file));
+		BufferedReader reader = new BufferedReader(new FileReader(file));
 		boolean containsData = true;
 		do {
-		    final String line = reader.readLine();
+		    String line = reader.readLine();
 		    if (line == null) {
 			containsData = false;
 		    } else {
@@ -171,25 +177,24 @@ public class LMAPolyTest {
 			 * Only read the line if if does not contain any comment.
 			 */
 			if (line.indexOf('#') == -1) {
-			    final String[] splitLine = line.split("\\s");
-			    final Double[] point = { Double.valueOf(splitLine[0]), Double.valueOf(splitLine[1]),
+			    String[] splitLine = line.split("\\s");
+			    Double[] point = { Double.valueOf(splitLine[0]), Double.valueOf(splitLine[1]),
 				    Double.valueOf(splitLine[2]) };
 			    values.add(point);
 			}
 		    }
 		} while (containsData);
 		reader.close();
-	    } catch (final FileNotFoundException exc) {
+	    } catch (FileNotFoundException exc) {
 		exc.printStackTrace();
-	    } catch (final IOException exc) {
+	    } catch (IOException exc) {
 		exc.printStackTrace();
 	    }
-	    x_vals = new double[values.size()][2];
-	    y_vals = new double[values.size()];
+	    vals = new double[values.size()][3];
 	    for (int i = 0; i < values.size(); i++) {
-		x_vals[i][0] = values.get(i)[0];
-		x_vals[i][1] = values.get(i)[1];
-		y_vals[i] = values.get(i)[2];
+		vals[i][1] = values.get(i)[0]; // x1
+		vals[i][2] = values.get(i)[1]; // x1
+		vals[i][0] = values.get(i)[2]; // y
 	    }
 	}
     }
