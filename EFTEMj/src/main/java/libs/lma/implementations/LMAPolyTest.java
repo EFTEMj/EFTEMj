@@ -125,20 +125,21 @@ public class LMAPolyTest {
 
     public static void main(String[] cmdline) {
 	LMPolyTest func = new LMPolyTest();
-	// double[] a_fit = func.initial();
-	double[][] vals = func.yValues();
-	double[] a_fit = { 552.452, 0.0816342, -1.00002, -0.025499, 5.1011e-006, -1.08015e-009, -2.87394, 1.09091e-010,
-		2.87394 };
-	LMA lma = new LMA(func, a_fit, vals[0], func.xValues(), vals[1], new JAMAMatrix(a_fit.length, a_fit.length));
-	lma.fit();
-	double[] a_gnuplot = { 552.452, 0.0816342, -1.00002, -0.025499, 5.1011e-006, -1.08015e-009, -2.87394,
-		1.09091e-010, 2.87394 };
-	System.out.println("");
-	for (int i = 0; i < a_fit.length; i++) {
-	    System.out
-		    .println(a_fit[i] + "\t\t" + a_gnuplot[i] + "\t\t" + Math.abs(a_gnuplot[i] - a_fit[i]) / a_fit[i]);
-	}
-	System.out.println("");
+	double[] a_fit = func.initial();
+	// double[][] vals = func.yValues();
+	// double[] a_fit = { 552.452, 0.0816342, -1.00002, -0.025499, 5.1011e-006, -1.08015e-009, -2.87394,
+	// 1.09091e-010,
+	// 2.87394 };
+	// LMA lma = new LMA(func, a_fit, vals[0], func.xValues(), null, new JAMAMatrix(a_fit.length, a_fit.length));
+	// lma.fit();
+	// double[] a_gnuplot = { 552.452, 0.0816342, -1.00002, -0.025499, 5.1011e-006, -1.08015e-009, -2.87394,
+	// 1.09091e-010, 2.87394 };
+	// System.out.println("");
+	// for (int i = 0; i < a_fit.length; i++) {
+	// System.out
+	// .println(a_fit[i] + "\t\t" + a_gnuplot[i] + "\t\t" + Math.abs(a_gnuplot[i] - a_fit[i]) / a_fit[i]);
+	// }
+	// System.out.println("");
 
 	PolyDataImport importer = new LMAPolyTest.PolyDataImport();
 	LMPolyTest func2 = new LMPolyTest();
@@ -146,8 +147,8 @@ public class LMAPolyTest {
 	Arrays.fill(a_fit, 1.);
 	LMA lma2 = new LMA(func2, a_fit, vals2);
 	lma2.fit();
-	double[] a1_gnuplot = { 275.53, 0.0822029, -1.00004, -0.0252566, 1.04521e-005, -4.26757e-009, -2.34423,
-		1.99037e-010, 2.34423 };
+	double[] a1_gnuplot = { 301.177, 0.00301992, -4.38781e-005, -0.0140776, 2.1228e-006, -4.28352e-009,
+		2.53962e-006, 2.19209e-010, -4.12894e-013 };
 	System.out.println("");
 	for (int i = 0; i < a_fit.length; i++) {
 	    System.out.println(a_fit[i] + "\t\t" + a1_gnuplot[i] + "\t\t" + Math.abs(a1_gnuplot[i] - a_fit[i])
@@ -192,8 +193,8 @@ public class LMAPolyTest {
 	    }
 	    vals = new double[values.size()][3];
 	    for (int i = 0; i < values.size(); i++) {
-		vals[i][1] = values.get(i)[0]; // x1
-		vals[i][2] = values.get(i)[1]; // x1
+		vals[i][1] = values.get(i)[0] - 1024; // x1
+		vals[i][2] = values.get(i)[1] - 1024; // x1
 		vals[i][0] = values.get(i)[2]; // y
 	    }
 	}

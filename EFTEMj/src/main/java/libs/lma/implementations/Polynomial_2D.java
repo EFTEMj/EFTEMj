@@ -170,4 +170,10 @@ public class Polynomial_2D extends LMAMultiDimFunction {
 	updateParams(a);
 	return grad(x, parameterIndex);
     }
+
+    public double[] getInitialParameters() {
+	final double[] paramsInit = new double[(m + 1) * (n + 1)];
+	Arrays.fill(paramsInit, 1.);
+	return paramsInit;
+    }
 }
