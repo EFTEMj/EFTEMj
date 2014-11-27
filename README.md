@@ -1,18 +1,18 @@
 # EFTEMj
 
-Processing of Energy Filtering TEM images with ImageJ
+Processing of Energy Filtering TEM images with ImageJ (Fiji)
 
 ## What is EFTEMj?
 
-EFTEMj is a plugin for [ImageJ][ij] that combines a drift correction and a flexible elemental mapping routine. It has been created in 2009 as a part of a diploma thesis. The current version is missing some elemental mapping features, but it is extended by tools for spacialy resolved electron energy loss spectroscopy (SR-EELS). SR-EELS is the main subject of my PhD thesis.
+EFTEMj is a plugin for [Fiji][fiji] that combines a drift correction and a flexible elemental mapping routine. It has been created in 2009 as a part of a diploma thesis. The current version is missing some elemental mapping features, but it is extended by tools for spacialy resolved electron energy loss spectroscopy (SR-EELS). SR-EELS is the main subject of my PhD thesis.
 
 ## LICENSING
 
 EFTEMj is distributed under a Simplified BSD License; for the full text of the license, see [LICENSE.txt](https://github.com/EFTEMj/EFTEMj/blob/master/LICENSE.txt).
 
-## Why do we use ImageJ?
+## Why do we use Fiji (ImageJ)?
 
-ImageJ is an open source image processing program and one can access the full source code. Further advantages of ImageJ are the support for a wide range of file formats, the easy to learn macro language and the possibility to write complex plugins with Java.
+[ImageJ][ij] is an open source image processing program and one can access the full source code. Further advantages of ImageJ are the support for a wide range of file formats, the easy to learn macro language and the possibility to write complex plugins with Java. [Fiji][fiji] is a package that contains ImageJ and lots of plugins. The main feature of Fiji is the [automatic update function][updater].
 
 ## Drift correction
 
@@ -20,7 +20,7 @@ Due to the specimen drift in a TEM it is necessary to apply a drift correction t
 
 ## Elemental mapping
 
-An introduction to elemental mapping with Energy Filtering Transmission Electron Microscopy (EFTEM) is given by [Ferdinand Hofer and Othmar Leitner][2]. EFTEMj uses the Maximum Likelihood Estimation (MLE) [Unser1987] to estimate the background signal. Additionally, more than two images can be used to estimate the background, which results in a higher reliability [[Heil2012]].
+An introduction to elemental mapping with Energy Filtering Transmission Electron Microscopy (EFTEM) is given by [Ferdinand Hofer and Othmar Leitner][2] (no longer available). EFTEMj uses the Maximum Likelihood Estimation (MLE) [[Unser1987]] to estimate the background signal, but is is possible to switch the least squares and Levenberg–Marquardt algorithm. Additionally, more than two images can be used to estimate the background, which results in a higher reliability [[Heil2012]].
 
 ## Spatially resolved electron energy loss spectroscopy (SR-EELS)
 
@@ -31,11 +31,13 @@ For more information you can have a look at my [presentation][slides] created wi
 ## References
 
 - [[Heil2012]] T. Heil et al., Ultramicroscopy **118** (2012), 11-16
-- [Unser1987] M. Unser et al., Journal of Microscopy **145** (1987), 245-256
+- [[Unser1987]] M. Unser et al., Journal of Microscopy **145** (1987), 245-256
 - [[Reimer1988]] L. Reimer et al., Ultramicroscopy **24** (1988) 339-354.
 
 [eels]: https://en.wikipedia.org/wiki/Electron_energy_loss_spectroscopy
-[ij]: http://rsbweb.nih.gov/ij/
+[ij]: http://imagej.net
+[fiji]: http://imagej.net/Fiji
+[updater]: http://imagej.net/Updater
 [1]: http://www.imagingbook.com/
 [2]: http://www.electroiq.com/articles/sst/print/volume-43/issue-3/features/metrology-test/metrology-eftem-provides-elemental-mapping-at-nanometer-resolution.html
 [Heil2012]: http://dx.doi.org/10.1016/j.ultramic.2012.04.009
