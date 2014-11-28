@@ -1,8 +1,8 @@
 /*
  * file:	SR-EELS_characterisation.ijm
  * author:	Michael Entrup b. Epping (michael.entrup@wwu.de)
- * version:	20141127
- * date:	27.11.2014
+ * version:	20141128
+ * date:	28.11.2014
  * info:	This macro is used to characterise the distortions of an Zeiss in-column energy filter when using SR-EELS.
  * 			A series of calibration data sets is necessary to run the characterisation.
  * 			Place all data sets (images) at a single folder and run this macro.
@@ -98,7 +98,7 @@ var thresholds = newArray("Li");
   * 	2 = 95.45%
   * 	3 = 99.73%
   */
-sigma_weighting = 3;
+var sigma_weighting = 3;
 /*
  * Set options for plotting:
  * Width and height are set for the coordinate system. The size of the resulting image is larger.
@@ -113,6 +113,17 @@ run("Profile Plot Options...", "width=" + plot_width + " height=" + plot_height 
  * 1	create plots/images to check the quality of the characterisation
  */
 var detailed_results = 1;
+/*
+ * This is the actual size of the used camera in pixels.
+ * These Values are used to determine the binning of the characterisation images.
+ */
+var camera_width = 4096; var camera_height = 4096;
+/*
+ * By default the distortion is described in coordinates of camera pixels.
+ * Binning reduces the number of pixels in an image and we will scale them up.
+ * Set this value to 'false' if you don't want to correct for binning.
+ */
+var correct_binning = true;
 /*
  * End of Parameters
  */
@@ -144,7 +155,8 @@ var array_pos_all; var array_width_all; var array_pos_all_calc; var array_width_
  * y	width of the spectrum
  */
 var array_x1; var array_x2 = newArray(); var array_y = newArray();
-/*
+
+/*
  * global arrays to store all values needed for fitting all borders with a function series
  * x1		energy loss
  * x2		lateral position of the border/centre at x1=0
@@ -156,11 +168,17 @@ var array_borders_x1; var array_borders_x2; var array_borders_y; var array_borde
  * global variables for use in 'analyse_dataset()'
  */
 var threshold;
+/*
+ * The camera binning that has been used to record the calibration images.
+ * By default this is 1, as no assignment is done, if 'correct_binning = false'.
+ */
+var binning = 1;
 
 /*
  * This function shows some dialogues to set up the macro.
  */
 setup_macro();
+
 
 /*
  * Start a timer.
@@ -176,12 +194,14 @@ for(m=0; m < thresholds.length; m++) {
 	if (skip_threshold[m] == false) {
 		threshold = thresholds[m];
 		/*
-		 * This is the main function of this macro.
+		 * This is the main function of this macro
+.
 		 */
-		analyse_dataset();		
+		analyse_dataset();
+		
 		if (detailed_results >= 1) {
 			/*
-			 * Create the file that contains the values for plotting/fitting a 2D polynomial.
+			 * Create the file that contains the values for plotting/fitting a 2D polynomial.
 			 */
 			prepareFileForPolynomial2DFit();
 			/*
@@ -263,11 +283,13 @@ function analyse_dataset() {
 		 */
 		run("Flip Horizontally");
 		/*
-		 * Use pixel as coordinates instead of calibrated values.
+		 * Use pixel as coordinates
+ instead of calibrated values.
 		 */
 		run("Properties...", "unit=[] pixel_width=1 pixel_height=1 origin=0,0");
 		/*
-		 *  Remove the outliers and smooth the image.
+		 *  Remove the outliers and smooth
+ the image.
 		 */
 		run("Remove Outliers...", "radius=" + filter_radius + " threshold=32 which=Bright");
 		run("Remove Outliers...", "radius=" + filter_radius + " threshold=32 which=Dark");
@@ -307,23 +329,27 @@ function analyse_dataset() {
 			 */
 			gauss_centre = Fit.p(2);
 			/*
-			 * Sigma is used to estimate the region that is used for thresholding.
+			 * Sigma is used to estimate the region that is used for thresholding
+.
 			 * Fit.p(3) = d
 			 */
 			gauss_sigma =  Fit.p(3);
 			/*
-			 * If the fit has a low r², sigma will be increased.
+			 * If the fit has a low r², sigma will be increased
+.
 			 */
 			sigma_weighed = sigma_weighting * gauss_sigma / pow(Fit.rSquared(), 2);
 			/*
-			 * All further measurements use the coordinates of a duplicated selection.
+			 * All further measurements use the coordinates of a duplicated selection
+.
 			 */
 			x_offset = maxOf(x_offset + round(gauss_centre - sigma_weighed), 0);
 			roi_width = round(2 * sigma_weighed);
 			makeRectangle(x_offset, y_pos + energy_border_lower, roi_width, step_size);
 			/*
 			 * Create a temporary image:
-			 * 		Only the rectangle selection gets duplicated.
+			 * 		Only the rectangle selection gets duplicated
+.
 			 */
 			run("Duplicate...", "temp");
 			/*
@@ -351,20 +377,21 @@ function analyse_dataset() {
 			 * The mean width of all 'step_size' energy channels:
 			 */
 			spec_width = List.getValue("IntDen") / List.getValue("Mean") / step_size;
-			array_width[index] = spec_width;
+			array_width[index] = binning * spec_width;
 			/*
 			 * The centre of mass in x-direction:
 			 * We need to add 'x_offset', because the measurement is done on a cropped image.
 
 			 */
 			XM = List.getValue("XM");
-			array_pos_x[index] = XM + x_offset;
+			array_pos_x[index] = binning * (XM + x_offset);
 			/*
 			 * The centre of mass in y-direction:
-			 * We need to add 'y_pos', because the measurement is done on a cropped image.
+			 * We need to add 'y_pos', because the measurement is done on a cropped image
+.
 			 */
 			YM = List.getValue("YM") + y_pos + energy_border_lower;
-			array_pos_y[index] = YM;
+			array_pos_y[index] = binning * YM;
 			/*
 			 * Detect left and right border:
 			 * Replace NaN by '-1000'.
@@ -387,7 +414,7 @@ function analyse_dataset() {
 			getMinAndMax(min, max);
 			run("Find Maxima...", "output=[Point Selection]");
 			getSelectionBounds(x, y, w, h);
-			array_left[index] = x + x_offset;
+			array_left[index] = binning * (x + x_offset);
 			run("Select None");
 			/*
 			 *  Right border:
@@ -396,7 +423,7 @@ function analyse_dataset() {
 			getMinAndMax(min, max);
 			run("Find Maxima...", "output=[Point Selection]");
 			getSelectionBounds(x, y, w, h);
-			array_right[index] = x + w + x_offset;
+			array_right[index] = binning * (x + w + x_offset);
 			/*
 			 * Calculate the width by using the borders positions:
 			 */
@@ -406,7 +433,8 @@ function analyse_dataset() {
 			 */
 			close();
 			/*
-			 * Check if the given value of 'energy_pos' is inside the current energy interval.
+			 * Check if the given value of 'energy_pos' is inside the current energy interval
+.
 			 */
 			if (abs(round(YM) - energy_pos * height) <= (step_size  / 2)) {
 				save_pos_and_width(i, array_pos_x[index], array_width[index], array_left[index], array_right[index]);
@@ -550,12 +578,14 @@ function setup_macro() {
 	if (skip_gui == false) {
 		input_dir = getDirectory("Choose a Directory ");
 		/*
-		 * If cancel was selected, the script will stop.
+		 * If cancel was selected, the script will stop
+.
 		 */
 		if (input_dir == "") exit();
 	}
 	/*
-	 *  Only select tif and dm3 files. Ignore sub-folders. See below this function.
+	 *  Only select tif and dm3 files. Ignore sub-folders
+. See below this function.
 	 */
 	list = filter_images();
 	open(list[0]);
@@ -565,13 +595,15 @@ function setup_macro() {
 	id = getImageID();
 	if (skip_gui == false) {
 		/*
-		 * Create an overlay to simplify the next user choice.
+		 * Create an overlay to simplify the next user choice
+.
 		 */
 		draw_axes_as_overlay();
 		/*
 		 * Normally no images are shown in batch mode.
 		 */
-		setBatchMode("show");
+		
+setBatchMode("show");
 		/*
 		 * This name is a bit strange.
 		 * We will rotate the image if doRotate == false.
@@ -581,7 +613,7 @@ function setup_macro() {
 		doRotate = getBoolean("The macro requires the following configuration:\nx: energy axis\ny: lateral axis\n\nRotate the images?");
 		run("Remove Overlay");
 	}
-	if (!doRotate) {
+	if (doRotate == false) {
 		width = getWidth;
 		height = getHeight;
 	} else {
@@ -591,6 +623,16 @@ function setup_macro() {
 		 */
 		height = getWidth;
 		width = getHeight;
+	}
+	if (correct_binning == true) {
+		bin_x = camera_width / getWidth;		
+		bin_y = camera_height / getHeight;
+		if (bin_x == bin_y && bin_x == round(bin_x)) {
+			binning = bin_x;
+		} else {
+			print("The following values have been determined as binning:\nx binning: " + bin_x + "\ny binning: " + bin_y + "\nThe binning has to be an integer and equal for both axes.");
+			exit();
+		}
 	}
 	/*
 	 * We will open the image again, when entering the function 'analyse_dataset'.
@@ -611,7 +653,8 @@ function setup_macro() {
 	if (filter_radius == -1) {
 		filter_radius = round(sqrt(step_size));
 	}
-	if (skip_gui == false) {
+	
+if (skip_gui == false) {
 		/*
 		 * A dialogue will be created to modify the previous determined values.
 		 */
@@ -641,7 +684,8 @@ function setup_macro() {
 	skip_threshold = newArray(thresholds.length);
 	for(m=0; m<thresholds.length; m++) {
 		/*
-		 * The folder name contains the parameters.
+		 * The folder name contains the parameters
+.
 		 */
 		result_dirs[m] = input_dir + "results_" +  toString(step_size) + toString(energy_border_lower) + toString(energy_border_higher) + toString(filter_radius) + thresholds[m] + File.separator;
 		if (File.isDirectory(result_dirs[m])) {
@@ -816,7 +860,7 @@ function addPointsToOverlay(xPos, yPos, overlayColorIndex) {
 		}
 	run("Point Tool...", "type=Hybrid color=" + color[overlayColorIndex] + " size=" + markerSize);
 	for (i=0; i<xPos.length; i++) {
-		makePoint(xPos[i], yPos[i]);
+		makePoint(xPos[i] / binning, yPos[i] / binning);
 		run("Add Selection...");
 	}
 }
