@@ -98,7 +98,7 @@ var thresholds = newArray("Li");
   * 	2 = 95.45%
   * 	3 = 99.73%
   */
-sigma_weighting = 3;
+var sigma_weighting = 3;
 /*
  * Set options for plotting:
  * Width and height are set for the coordinate system. The size of the resulting image is larger.
@@ -113,6 +113,17 @@ run("Profile Plot Options...", "width=" + plot_width + " height=" + plot_height 
  * 1	create plots/images to check the quality of the characterisation
  */
 var detailed_results = 1;
+/*
+ * This is the actual size of the used camera in pixels.
+ * These Values are used to determine the binning of the characterisation images.
+ */
+var camera_width = 4096; var camera_height = 4096;
+/*
+ * By default the distortion is described in coordinates of camera pixels.
+ * Binning reduces the number of pixels in an image and we will scale them up.
+ * Set this value to 'false' if you don't want to correct for binning.
+ */
+var correct_binning = true;
 /*
  * End of Parameters
  */
@@ -156,6 +167,11 @@ var array_borders_x1; var array_borders_x2; var array_borders_y; var array_borde
  * global variables for use in 'analyse_dataset()'
  */
 var threshold;
+/*
+ * The camera binning that has been used to record the calibration images.
+ * By default this is 1, as no assignment is done, if 'correct_binning = false'.
+ */
+var binning = 1;
 
 /*
  * This function shows some dialogues to set up the macro.
@@ -351,20 +367,20 @@ function analyse_dataset() {
 			 * The mean width of all 'step_size' energy channels:
 			 */
 			spec_width = List.getValue("IntDen") / List.getValue("Mean") / step_size;
-			array_width[index] = spec_width;
+			array_width[index] = binning * spec_width;
 			/*
 			 * The centre of mass in x-direction:
 			 * We need to add 'x_offset', because the measurement is done on a cropped image.
 
 			 */
 			XM = List.getValue("XM");
-			array_pos_x[index] = XM + x_offset;
+			array_pos_x[index] = binning * (XM + x_offset);
 			/*
 			 * The centre of mass in y-direction:
 			 * We need to add 'y_pos', because the measurement is done on a cropped image.
 			 */
 			YM = List.getValue("YM") + y_pos + energy_border_lower;
-			array_pos_y[index] = YM;
+			array_pos_y[index] = binning * YM;
 			/*
 			 * Detect left and right border:
 			 * Replace NaN by '-1000'.
@@ -387,7 +403,7 @@ function analyse_dataset() {
 			getMinAndMax(min, max);
 			run("Find Maxima...", "output=[Point Selection]");
 			getSelectionBounds(x, y, w, h);
-			array_left[index] = x + x_offset;
+			array_left[index] = binning * (x + x_offset);
 			run("Select None");
 			/*
 			 *  Right border:
@@ -396,7 +412,7 @@ function analyse_dataset() {
 			getMinAndMax(min, max);
 			run("Find Maxima...", "output=[Point Selection]");
 			getSelectionBounds(x, y, w, h);
-			array_right[index] = x + w + x_offset;
+			array_right[index] = binning * (x + w + x_offset);
 			/*
 			 * Calculate the width by using the borders positions:
 			 */
@@ -581,7 +597,7 @@ function setup_macro() {
 		doRotate = getBoolean("The macro requires the following configuration:\nx: energy axis\ny: lateral axis\n\nRotate the images?");
 		run("Remove Overlay");
 	}
-	if (!doRotate) {
+	if (doRotate == false) {
 		width = getWidth;
 		height = getHeight;
 	} else {
@@ -591,6 +607,16 @@ function setup_macro() {
 		 */
 		height = getWidth;
 		width = getHeight;
+	}
+	if (correct_binning == true) {
+		bin_x = camera_width / getWidth;		
+		bin_y = camera_height / getHeight;
+		if (bin_x == bin_y && bin_x == round(bin_x)) {
+			binning = bin_x;
+		} else {
+			print("The following values have been determined as binning:\nx binning: " + bin_x + "\ny binning: " + bin_y + "\nThe binning has to be an integer and equal for both axes.");
+			exit();
+		}
 	}
 	/*
 	 * We will open the image again, when entering the function 'analyse_dataset'.
@@ -816,7 +842,7 @@ function addPointsToOverlay(xPos, yPos, overlayColorIndex) {
 		}
 	run("Point Tool...", "type=Hybrid color=" + color[overlayColorIndex] + " size=" + markerSize);
 	for (i=0; i<xPos.length; i++) {
-		makePoint(xPos[i], yPos[i]);
+		makePoint(xPos[i] / binning, yPos[i] / binning);
 		run("Add Selection...");
 	}
 }
