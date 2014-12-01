@@ -17,6 +17,9 @@ public class Polynomial_2D extends LMAMultiDimFunction {
     private final int n;
     private double[] params;
 
+    public static final int BORDERS = 1;
+    public static final int WIDTH_VS_POS = 2;
+
     public static double val(final double[] x, final double[] params, final int m, final int n) {
 	assert x.length == 2;
 	assert params.length == (m + 1) * (n + 1);
@@ -175,5 +178,68 @@ public class Polynomial_2D extends LMAMultiDimFunction {
 	final double[] paramsInit = new double[(m + 1) * (n + 1)];
 	Arrays.fill(paramsInit, 1.);
 	return paramsInit;
+    }
+
+    public String getGnuplotCommands(int functionType) {
+	String filename = "";
+	String using = "";
+	switch (functionType) {
+	case BORDERS:
+	    filename = "Borders.txt";
+	    using = "using ($1-2048):($2-2048):($3-2048):4";
+	    break;
+	case WIDTH_VS_POS:
+	    filename = "Polynomial2D.txt";
+	    using = "using ($1-2048):($2-2048):3:(1)";
+	    break;
+	default:
+	    break;
+	}
+	String function = "f(x,y) = ";
+	String fit = "fit f(x,y) '" + filename + "' " + using + " via ";
+	String splot = "splot '" + filename + "' " + using + " notitle, f(x,y) notitle";
+	for (int i = 0; i <= m; i++) {
+	    for (int j = 0; j <= n; j++) {
+		function += String.format("a%d%d*x**%d*y**%d", i, j, i, j);
+		fit += String.format("a%d%d", i, j);
+		if (i != m | j != n) {
+		    function += " + ";
+		    fit += ",";
+		}
+	    }
+	}
+	return function + "\n" + fit + "\n" + splot;
+    }
+
+    public String compareParameters(int functionType, double[] compareParams) {
+	String filename = "";
+	String using = "";
+	switch (functionType) {
+	case BORDERS:
+	    filename = "Borders.txt";
+	    using = "using ($1-2048):($2-2048):($3-2048):4";
+	    break;
+	case WIDTH_VS_POS:
+	    filename = "Polynomial2D.txt";
+	    using = "using ($1-2048):($2-2048):3:(1)";
+	    break;
+	default:
+	    break;
+	}
+	String splot = "splot '" + filename + "' " + using
+		+ " notitle, f(x,y) title 'Gnuplot', fJ(x,y) title 'Java LMA'";
+	String function = "fJ(x,y) = ";
+	String compare = "#Java LMA\t\t\tGnuplot";
+	for (int i = 0; i <= m; i++) {
+	    for (int j = 0; j <= n; j++) {
+		compare += String.format("\naJ%d%d = %+6e\t\t# %+6e", i, j, params[(n + 1) * i + j],
+			compareParams[(n + 1) * i + j]);
+		function += String.format("a%d%d*x**%d*y**%d", i, j, i, j);
+		if (i != m | j != n) {
+		    function += " + ";
+		}
+	    }
+	}
+	return compare + "\n\n" + function + "\n" + splot;
     }
 }

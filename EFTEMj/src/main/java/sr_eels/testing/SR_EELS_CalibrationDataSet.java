@@ -30,23 +30,22 @@ public class SR_EELS_CalibrationDataSet {
 		dataSetFiles.add(new SR_EELS_CalibrationDataSetFile(path + file));
 	    }
 	}
-	System.out.println(dataSetFiles.size());
     }
 
     public static void main(final String[] cmdline) {
 	final SR_EELS_CalibrationDataSet dataSet = new SR_EELS_CalibrationDataSet();
-	final Polynomial_2D func = new Polynomial_2D(2, 2);
+	final Polynomial_2D func = new Polynomial_2D(3, 2);
 	final double[][] vals = dataSet.prepareValuesForPolynomial2DFit();
 	final double[] a_fit = func.getInitialParameters();
 	final LMA lma1 = new LMA(func, a_fit, vals);
 	lma1.fit();
-	final double[] a_gnuplot = { 301.177, 0.00301992, -4.38781e-005, -0.0140776, 2.1228e-006, -4.28352e-009,
-		2.53962e-006, 2.19209e-010, -4.12894e-013 };
+
+	final double[] a_gnuplot = { 185.193, 0.0114697, -0.000230046, -0.0142633, 4.09706e-006, -3.30355e-008,
+		1.02076e-007, 1.17627e-009, -1.5941e-012, 5.4138e-011, 4.61404e-013, 8.10883e-016 };
 	System.out.println("");
-	for (int i = 0; i < a_fit.length; i++) {
-	    System.out
-		    .println(a_fit[i] + "\t\t" + a_gnuplot[i] + "\t\t" + Math.abs(a_gnuplot[i] - a_fit[i]) / a_fit[i]);
-	}
+	System.out.println(func.getGnuplotCommands(Polynomial_2D.WIDTH_VS_POS));
+	System.out.println("");
+	System.out.println(func.compareParameters(Polynomial_2D.WIDTH_VS_POS, a_gnuplot));
 	System.out.println("");
 
 	final Polynomial_2D func2 = new Polynomial_2D(2, 2);
@@ -54,13 +53,12 @@ public class SR_EELS_CalibrationDataSet {
 	final double[] b_fit = func2.getInitialParameters();
 	final LMA lma2 = new LMA(func2, b_fit, vals2);
 	lma2.fit();
-	final double[] b_gnuplot = { 301.177, 0.00301992, -4.38781e-005, -0.0140776, 2.1228e-006, -4.28352e-009,
-		2.53962e-006, 2.19209e-010, -4.12894e-013 };
+	final double[] b_gnuplot = { 15.4528, 0.862132, -1.35147e-005, 0.00716796, -6.30902e-005, -6.46892e-009,
+		7.99608e-007, 4.07466e-009, -4.64831e-012 };
 	System.out.println("");
-	for (int i = 0; i < b_fit.length; i++) {
-	    System.out
-		    .println(b_fit[i] + "\t\t" + b_gnuplot[i] + "\t\t" + Math.abs(b_gnuplot[i] - a_fit[i]) / b_fit[i]);
-	}
+	System.out.println(func2.getGnuplotCommands(Polynomial_2D.BORDERS));
+	System.out.println("");
+	System.out.println(func2.compareParameters(Polynomial_2D.BORDERS, b_gnuplot));
 	System.out.println("");
     }
 
@@ -76,8 +74,8 @@ public class SR_EELS_CalibrationDataSet {
 	final double[][] vals = new double[y_vals.size()][3];
 	for (int i = 0; i < vals.length; i++) {
 	    vals[i][0] = y_vals.get(i);
-	    vals[i][1] = x1_vals.get(i) - 1024;
-	    vals[i][2] = x2_vals.get(i) - 1024;
+	    vals[i][1] = x1_vals.get(i) - 2048;
+	    vals[i][2] = x2_vals.get(i) - 2048;
 	}
 	return vals;
     }
@@ -107,9 +105,9 @@ public class SR_EELS_CalibrationDataSet {
 	}
 	final double[][] vals = new double[y_vals.size()][3];
 	for (int i = 0; i < vals.length; i++) {
-	    vals[i][0] = y_vals.get(i) - 1024;
-	    vals[i][1] = x1_vals.get(i) - 1024;
-	    vals[i][2] = x2_vals.get(i) - 1024;
+	    vals[i][0] = y_vals.get(i) - 2048;
+	    vals[i][1] = x1_vals.get(i) - 2048;
+	    vals[i][2] = x2_vals.get(i) - 2048;
 	}
 	return vals;
     }
