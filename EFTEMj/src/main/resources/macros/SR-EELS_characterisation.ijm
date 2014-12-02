@@ -203,7 +203,7 @@ for(m=0; m < thresholds.length; m++) {
 			/*
 			 * Create the file that contains the values for plotting/fitting a 2D polynomial.
 			 */
-			prepareFileForPolynomial2DFit();
+			prepareFileForWidthFit();
 			/*
 			 * Create the file that contains the values for plotting/fitting a all borders with a function series.
 			 */
@@ -866,12 +866,12 @@ function addPointsToOverlay(xPos, yPos, overlayColorIndex) {
 }
 
 /*
- * function: prepareFileForPolynomial2DFit:
- * description: We need to combine the results of all analysed images to fit the 2D polynomial.
+ * function: prepareFileForWidthFit:
+ * description: We need to combine the results of all analysed images to fit the 2D polynomial width (y) versus position (x1, x2).
  * 				This function writes the data stored in 3 arrays to a file.
  */
-function prepareFileForPolynomial2DFit() {
-	f = File.open(result_dirs[m] + "Polynomial2D.txt");
+function prepareFileForWidthFit() {
+	f = File.open(result_dirs[m] + "Width.txt");
 	print(f, "#x1-position\tx2-position\ty-value");
 	for (p=0; p<array_x1.length; p++) {
 		print(f, array_x1[p] + "\t" + array_x2[p] + "\t" + array_y[p]);
