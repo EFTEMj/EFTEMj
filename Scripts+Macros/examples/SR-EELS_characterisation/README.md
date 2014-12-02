@@ -22,5 +22,5 @@ This steps are valid for a Zeiss Libra 200FE with in-column Omega-Filter.
 ![SR-EELS_cal.png](SR-EELS_cal.png)
 **Figure 2:** This is the montage of the SR-EELS images used for the characterisation. You can download these file: [SR-EELS_characterisation_SM315_QSinK7=0.zip][SR-EELS_chara_example].
 
-[SR-EELS_chara]: https://github.com/EFTEMj/EFTEMj/blob/master/Scripts%2BMacros/SR-EELS_characterisation.ijm
+[SR-EELS_chara]: https://github.com/EFTEMj/EFTEMj/blob/master/EFTEMj/src/main/resources/macros/SR-EELS_characterisation.ijm
 [SR-EELS_chara_example]: http://eftemj.entrup.com.de/SR-EELS_characterisation_SM315_QSinK7=0.zip
