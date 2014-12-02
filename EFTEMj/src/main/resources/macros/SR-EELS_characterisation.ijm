@@ -107,6 +107,15 @@ var plot_width = 1200;
 var plot_height = 900;
 run("Profile Plot Options...", "width=" + plot_width + " height=" + plot_height + " minimum=0 maximum=0 interpolate draw");
 /*
+ * Set the size of the jpeg image. 
+ * The given height is only applied for images with a height that is a multiple of the given height.
+ * 'jpeg_bin = round(height / jpeg_height)' is used.
+ * Reduce the jpeg quality to reduce the size of the jpeg images.
+ */
+var jpeg_height = 1024;
+var jpeg_quality = 50;
+run("Input/Output...", "jpeg=" + jpeg_quality + " gif=-1 file=.txt use_file copy_row save_row");
+/*
  * This is some kind of debug level:
  * A check box at the GUI allows to switch between the configured value and 0.
  * 0	create text/data files only
@@ -128,7 +137,11 @@ var correct_binning = true;
  * End of Parameters
  */
 
-
+/*
+ * The macro will change some settings.
+ * The current settings will be restored when the macro has finished.
+ */
+saveSettings()
 /*
  * Close all open images to avoid problems.
  * Batch mode will speed up the macro.
@@ -173,6 +186,10 @@ var threshold;
  * By default this is 1, as no assignment is done, if 'correct_binning = false'.
  */
 var binning = 1;
+/*
+ * This value is used to create smaller jpeg images.
+ */
+var jpeg_bin;
 
 /*
  * This function shows some dialogues to set up the macro.
@@ -219,6 +236,7 @@ for(m=0; m < thresholds.length; m++) {
  */
 setBatchMode("exit and display");
 showMessage("<html><p>The evaluation finished.</p><p>Elapsed time: " + (getTime() - start) / 1000 + "s</p>");
+restoreSettings();
 /*
  * End of macro:
  * The following code contains function definitions only.
@@ -451,6 +469,8 @@ function analyse_dataset() {
 			 */
 			selectImage(id);
 			run("Select None");
+			jpeg_bin = round(height/jpeg_height);
+			run("Bin...", "x="+ jpeg_bin + " y=" + jpeg_bin + " bin=Average");
 			run("Log");
 			run("Enhance Contrast", "saturated=0.35");
 			addPointsToOverlay(array_left, array_pos_y, 0);
@@ -581,7 +601,7 @@ function setup_macro() {
 		 * If cancel was selected, the script will stop
 .
 		 */
-		if (input_dir == "") exit();
+		if (input_dir == "") stopMacro("");
 	}
 	/*
 	 *  Only select tif and dm3 files. Ignore sub-folders
@@ -631,7 +651,7 @@ setBatchMode("show");
 			binning = bin_x;
 		} else {
 			print("The following values have been determined as binning:\nx binning: " + bin_x + "\ny binning: " + bin_y + "\nThe binning has to be an integer and equal for both axes.");
-			exit();
+			stopMacro("");
 		}
 	}
 	/*
@@ -707,7 +727,7 @@ if (skip_gui == false) {
 			 */
 			File.makeDirectory(result_dirs[m]);
 			if (!File.exists(result_dirs[m])) {
-				exit("Unable to create the directory:\n" + result_dirs[m]);
+				stopMacro("Unable to create the directory:\n" + result_dirs[m]);
 			}
 			skip_threshold[m] = false;
 		}
@@ -860,7 +880,7 @@ function addPointsToOverlay(xPos, yPos, overlayColorIndex) {
 		}
 	run("Point Tool...", "type=Hybrid color=" + color[overlayColorIndex] + " size=" + markerSize);
 	for (i=0; i<xPos.length; i++) {
-		makePoint(xPos[i] / binning, yPos[i] / binning);
+		makePoint(xPos[i] / (binning * jpeg_bin), yPos[i] / (binning * jpeg_bin));
 		run("Add Selection...");
 	}
 }
@@ -891,4 +911,15 @@ function prepareFileForBordersFit() {
 		print(f, array_borders_x1[p] + "\t" + array_borders_x2[p] + "\t" + array_borders_y[p] + "\t" + array_borders_weight[p]);
 	}
 	File.close(f);
+}
+
+/*
+ * function: stopMacro
+ * description: When the macro is canceled, this function is used to restore the previous settings.
+ */
+function stopMacro(message) {
+	restoreSettings();
+	if (message != "") {
+		exit(message);
+	}
 }
