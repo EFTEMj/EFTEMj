@@ -1,5 +1,6 @@
 package sr_eels.testing;
 
+import eftemj.EFTEMj;
 import ij.measure.CurveFitter;
 
 import java.io.BufferedReader;
@@ -16,15 +17,25 @@ import libs.lma.implementations.Polynomial_2D;
 
 public class SR_EELS_CalibrationDataSet {
 
-    Vector<SR_EELS_CalibrationDataSetFile> dataSetFiles;
+    private static final String FOLDER_DATA_SET = "sr_eels/lma/results_642562568Li";
+    private Vector<SR_EELS_CalibrationDataSetFile> dataSetFiles;
+    private String path;
 
     public SR_EELS_CalibrationDataSet() {
-	dataSetFiles = new Vector<SR_EELS_CalibrationDataSet.SR_EELS_CalibrationDataSetFile>();
+	selectDataSet();
+	loadDataSet();
+    }
+
+    private void selectDataSet() {
 	final JFileChooser fChooser = new JFileChooser("C:\\Temp");
 	fChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 	fChooser.showOpenDialog(null);
-	final String path = fChooser.getSelectedFile().getAbsolutePath() + File.separatorChar;
-	final String[] files = fChooser.getSelectedFile().list();
+	path = fChooser.getSelectedFile().getAbsolutePath() + File.separatorChar;
+    }
+
+    private void loadDataSet() {
+	dataSetFiles = new Vector<SR_EELS_CalibrationDataSet.SR_EELS_CalibrationDataSetFile>();
+	final String[] files = new File(path).list();
 	for (final String file : files) {
 	    if (file.contains("values_")) {
 		dataSetFiles.add(new SR_EELS_CalibrationDataSetFile(path + file));
@@ -32,8 +43,17 @@ public class SR_EELS_CalibrationDataSet {
 	}
     }
 
+    public SR_EELS_CalibrationDataSet(final boolean loadFromJAR) {
+	if (loadFromJAR == false) {
+	    selectDataSet();
+	} else {
+	    path = getClass().getResource(EFTEMj.PATH_TESTING + FOLDER_DATA_SET).getPath() + File.separator;
+	}
+	loadDataSet();
+    }
+
     public static void main(final String[] cmdline) {
-	final SR_EELS_CalibrationDataSet dataSet = new SR_EELS_CalibrationDataSet();
+	final SR_EELS_CalibrationDataSet dataSet = new SR_EELS_CalibrationDataSet(true);
 	final Polynomial_2D func = new Polynomial_2D(3, 2);
 	final double[][] vals = dataSet.prepareValuesForPolynomial2DFit();
 	final double[] a_fit = func.getInitialParameters();

@@ -40,7 +40,6 @@ public class JARTool {
 	    // read a block and append any characters
 	    while ((n = isr.read(b)) > 0)
 		sb.append(b, 0, n);
-	    // display the text in a TextWindow
 	    text = sb.toString();
 	} catch (final IOException e) {
 	    String msg = e.getMessage();

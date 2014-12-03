@@ -47,6 +47,11 @@ public class EFTEMj {
     public static final String PATH_MACROS = "/macros/";
 
     /**
+     * The path inside the JAR file where files for testing are located.
+     */
+    public static final String PATH_TESTING = "/testing/";
+
+    /**
      * @param classToParse
      *            can be any {@link Object}.
      * @return the name of the passed {@link Object} without the package prefix.
