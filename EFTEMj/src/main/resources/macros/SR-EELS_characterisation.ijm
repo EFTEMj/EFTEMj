@@ -196,7 +196,6 @@ var jpeg_bin;
  */
 setup_macro();
 
-
 /*
  * Start a timer.
  */
@@ -211,8 +210,7 @@ for(m=0; m < thresholds.length; m++) {
 	if (skip_threshold[m] == false) {
 		threshold = thresholds[m];
 		/*
-		 * This is the main function of this macro
-.
+		 * This is the main function of this macro.
 		 */
 		analyse_dataset();
 		
@@ -301,13 +299,11 @@ function analyse_dataset() {
 		 */
 		run("Flip Horizontally");
 		/*
-		 * Use pixel as coordinates
- instead of calibrated values.
+		 * Use pixel as coordinates instead of calibrated values.
 		 */
 		run("Properties...", "unit=[] pixel_width=1 pixel_height=1 origin=0,0");
 		/*
-		 *  Remove the outliers and smooth
- the image.
+		 *  Remove the outliers and smooth the image.
 		 */
 		run("Remove Outliers...", "radius=" + filter_radius + " threshold=32 which=Bright");
 		run("Remove Outliers...", "radius=" + filter_radius + " threshold=32 which=Dark");
@@ -347,27 +343,23 @@ function analyse_dataset() {
 			 */
 			gauss_centre = Fit.p(2);
 			/*
-			 * Sigma is used to estimate the region that is used for thresholding
-.
+			 * Sigma is used to estimate the region that is used for thresholding.
 			 * Fit.p(3) = d
 			 */
 			gauss_sigma =  Fit.p(3);
 			/*
-			 * If the fit has a low r², sigma will be increased
-.
+			 * If the fit has a low r², sigma will be increased.
 			 */
 			sigma_weighed = sigma_weighting * gauss_sigma / pow(Fit.rSquared(), 2);
 			/*
-			 * All further measurements use the coordinates of a duplicated selection
-.
+			 * All further measurements use the coordinates of a duplicated selection.
 			 */
 			x_offset = maxOf(x_offset + round(gauss_centre - sigma_weighed), 0);
 			roi_width = round(2 * sigma_weighed);
 			makeRectangle(x_offset, y_pos + energy_border_lower, roi_width, step_size);
 			/*
 			 * Create a temporary image:
-			 * 		Only the rectangle selection gets duplicated
-.
+			 * 		Only the rectangle selection gets duplicated.
 			 */
 			run("Duplicate...", "temp");
 			/*
@@ -405,8 +397,7 @@ function analyse_dataset() {
 			array_pos_x[index] = binning * (XM + x_offset);
 			/*
 			 * The centre of mass in y-direction:
-			 * We need to add 'y_pos', because the measurement is done on a cropped image
-.
+			 * We need to add 'y_pos', because the measurement is done on a cropped image.
 			 */
 			YM = List.getValue("YM") + y_pos + energy_border_lower;
 			array_pos_y[index] = binning * YM;
@@ -451,8 +442,7 @@ function analyse_dataset() {
 			 */
 			close();
 			/*
-			 * Check if the given value of 'energy_pos' is inside the current energy interval
-.
+			 * Check if the given value of 'energy_pos' is inside the current energy interval.
 			 */
 			if (abs(round(YM) - energy_pos * height) <= (step_size  / 2)) {
 				save_pos_and_width(i, array_pos_x[index], array_width[index], array_left[index], array_right[index]);
@@ -598,14 +588,13 @@ function setup_macro() {
 	if (skip_gui == false) {
 		input_dir = getDirectory("Choose a Directory ");
 		/*
-		 * If cancel was selected, the script will stop
-.
+		 * If cancel was selected, the script will stop.
 		 */
 		if (input_dir == "") stopMacro("");
 	}
 	/*
-	 *  Only select tif and dm3 files. Ignore sub-folders
-. See below this function.
+	 *  Only select tif and dm3 files. Ignore sub-folders. 
+	 *  See below this function.
 	 */
 	list = filter_images();
 	open(list[0]);
@@ -615,15 +604,13 @@ function setup_macro() {
 	id = getImageID();
 	if (skip_gui == false) {
 		/*
-		 * Create an overlay to simplify the next user choice
-.
+		 * Create an overlay to simplify the next user choice.
 		 */
 		draw_axes_as_overlay();
 		/*
 		 * Normally no images are shown in batch mode.
-		 */
-		
-setBatchMode("show");
+		 */		
+		setBatchMode("show");
 		/*
 		 * This name is a bit strange.
 		 * We will rotate the image if doRotate == false.
@@ -704,8 +691,7 @@ if (skip_gui == false) {
 	skip_threshold = newArray(thresholds.length);
 	for(m=0; m<thresholds.length; m++) {
 		/*
-		 * The folder name contains the parameters
-.
+		 * The folder name contains the parameters.
 		 */
 		result_dirs[m] = input_dir + "results_" +  toString(step_size) + toString(energy_border_lower) + toString(energy_border_higher) + toString(filter_radius) + thresholds[m] + File.separator;
 		if (File.isDirectory(result_dirs[m])) {
