@@ -70,11 +70,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     private final String NO_FILE_SELECTED = "No file selected.";
     private String path_borders = NO_FILE_SELECTED;
     private String path_width = NO_FILE_SELECTED;
-    private int subdivision;
-    private int oversampling;
     private ImagePlus inputImage;
     private ImagePlus outputImage;
-    private final int binning = 1;
     /**
      * This field indicates the progress. A static method is used to increase the value by 1. It is necessary to use
      * volatile because different {@link Thread}s call the related method.
@@ -114,6 +111,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 		inputImage.getHeight(), new double[inputImage.getWidth() * inputImage.getHeight()]));
 	final FloatProcessor output = (FloatProcessor) outputImage.getProcessor();
 	progressSteps = inputImage.getHeight();
+	// TODO Implement Threads for concurrent processing.
 	for (int x2 = 0; x2 < inputImage.getHeight(); x2++) {
 	    for (int x1 = 0; x1 < inputImage.getWidth(); x1++) {
 		output.setf(x2 * output.getWidth() + x1, intensityCorrection.getIntensity(x1, x2));
@@ -128,17 +126,15 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     private SR_EELS_Polynomial_2D getFunctionBorders() {
 	final DataImporter importer = new DataImporter(path_borders, true);
 	final double[][] vals = importer.vals;
-	final int m = 3;
+	final int m = 2;
 	final int n = 2;
 	final SR_EELS_Polynomial_2D func = new SR_EELS_Polynomial_2D(m, n);
 	final double[] a_fit = new double[(m + 1) * (n + 1)];
 	Arrays.fill(a_fit, 1.);
 	final LMA lma = new LMA(func, a_fit, vals);
 	lma.fit();
-	for (int i = 0; i <= m; i++) {
-	    for (int j = 0; j <= n; j++) {
-		System.out.printf("a%d%d = %g\n", i, j, a_fit[i * m + j]);
-	    }
+	if (true) {
+	    System.out.println(func.compareWithGnuplot(SR_EELS_Polynomial_2D.BORDERS));
 	}
 	return new SR_EELS_Polynomial_2D(m, n, a_fit);
     }
@@ -149,17 +145,15 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     private SR_EELS_Polynomial_2D getFunctionWidth() {
 	final DataImporter importer = new DataImporter(path_width, false);
 	final double[][] vals = importer.vals;
-	final int m = 3;
+	final int m = 2;
 	final int n = 2;
 	final SR_EELS_Polynomial_2D func = new SR_EELS_Polynomial_2D(m, n);
 	final double[] b_fit = new double[(m + 1) * (n + 1)];
 	Arrays.fill(b_fit, 1.);
 	final LMA lma = new LMA(func, b_fit, vals);
 	lma.fit();
-	for (int i = 0; i <= m; i++) {
-	    for (int j = 0; j <= n; j++) {
-		System.out.printf("b%d%d = %g\n", i, j, b_fit[i * m + j]);
-	    }
+	if (true) {
+	    System.out.println(func.compareWithGnuplot(SR_EELS_Polynomial_2D.WIDTH_VS_POS));
 	}
 	return new SR_EELS_Polynomial_2D(m, n, b_fit);
     }
@@ -188,8 +182,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 		gd.addRadioButtonGroup(SR_EELS.FILENAME_WIDTH, files_poly, found_poly.size(), 1, found_poly.get(0));
 	    }
 	    if (found_borders.size() > 1) {
-		String[] files_borders = new String[found_poly.size()];
-		files_borders = found_poly.toArray(files_borders);
+		String[] files_borders = new String[found_borders.size()];
+		files_borders = found_borders.toArray(files_borders);
 		gd.addRadioButtonGroup(SR_EELS.FILENAME_BORDERS, files_borders, found_borders.size(), 1,
 			found_borders.get(0));
 	    }
@@ -257,8 +251,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	final GenericDialogPlus gd = new GenericDialogPlus(title + " - set parameters", IJ.getInstance());
 	gd.addFileField(SR_EELS.FILENAME_WIDTH, path_width);
 	gd.addFileField(SR_EELS.FILENAME_BORDERS, path_borders);
-	gd.addNumericField("Pixel_subdivision", 10, 0);
-	gd.addNumericField("Oversampling", 3, 0);
+	// TODO Add drop down menu for correction method.
 	gd.setResizable(false);
 	gd.showDialog();
 	if (gd.wasCanceled()) {
@@ -266,8 +259,6 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	}
 	path_width = gd.getNextString();
 	path_borders = gd.getNextString();
-	subdivision = (int) gd.getNextNumber();
-	oversampling = (int) gd.getNextNumber();
 	return OK;
     }
 
