@@ -13,53 +13,20 @@ import libs.lma.LMAMultiDimFunction;
  */
 public class Polynomial_2D extends LMAMultiDimFunction {
 
-    private final int m;
-    private final int n;
-    private double[] params;
-
-    public static final int BORDERS = 1;
-    public static final int WIDTH_VS_POS = 2;
-
-    public static double val(final double[] x, final double[] params, final int m, final int n) {
-	assert x.length == 2;
-	assert params.length == (m + 1) * (n + 1);
-	double value = 0.;
-	for (int i = 0; i <= m; i++) {
-	    for (int j = 0; j <= n; j++) {
-		value += params[(n + 1) * i + j] * Math.pow(x[0], i) * Math.pow(x[1], j);
-	    }
-	}
-	return value;
-    }
-
     /**
-     * This is a static version of the gradient calculation.
-     *
-     * @param x
-     *            is the coordinate (x1,x2).
-     * @param params
-     *            is an array that contains all the necessary parameters. The order f the parameters is:<br />
-     *            a_00 , a_01 , ... , a_0n , a_10 , ... , a_m0 , ... , a_mn
-     * @param m
-     *            is the maximal order of x1.
-     * @param n
-     *            is the maximal order of x2.
-     * @param param
-     *            is the index of the parameter.
-     * @return the element of the gradient vector with the given index.
+     * The order of the polynomial in x1.
      */
-    public static double grad(final double[] x, final double[] params, final int m, final int n, final int param) {
-	assert x.length == 2;
-	assert params.length == (m + 1) * (n + 1);
-	assert param < params.length;
-	for (int i = 0; i <= m; i++) {
-	    for (int j = 0; j <= n; j++) {
-		if (param == (n + 1) * i + j)
-		    return Math.pow(x[0], i) * Math.pow(x[1], j);
-	    }
-	}
-	return 0.;
-    }
+    protected final int m;
+    /**
+     * The order of the polynomial in x2.
+     */
+    protected final int n;
+    /**
+     * The (m+1)x(n+1) parameters of the polynomial.
+     * <p>
+     * <code>a<sub>00</sub>, a<sub>01</sub>, ... a<sub>0n</sub>, ... a<sub>10</sub>, ... a<sub>mn</sub></code>
+     */
+    protected double[] params;
 
     /**
      * This constructor creates a new 2D polynomial with given orders and all parameters = 1.<br />
@@ -84,9 +51,8 @@ public class Polynomial_2D extends LMAMultiDimFunction {
      * @param n
      *            is the maximal order of x2.
      * @param params
-     *
-     *            is an array that contains all the necessary parameters. The order f the parameters is:<br />
-     *            a_00 , a_01 , ... , a_0n , a_10 , ... , a_m0 , ... , a_mn
+     *            is an array that contains all the necessary parameters. The order f the parameters is:
+     *            <code>a<sub>00</sub>, a<sub>01</sub>, ... a<sub>0n</sub>, ... a<sub>10</sub>, ... a<sub>mn</sub></code>
      */
     public Polynomial_2D(final int m, final int n, final double[] params) {
 	assert params.length == (m + 1) * (n + 1);
@@ -172,74 +138,5 @@ public class Polynomial_2D extends LMAMultiDimFunction {
     public double getPartialDerivate(final double[] x, final double[] a, final int parameterIndex) {
 	updateParams(a);
 	return grad(x, parameterIndex);
-    }
-
-    public double[] getInitialParameters() {
-	final double[] paramsInit = new double[(m + 1) * (n + 1)];
-	Arrays.fill(paramsInit, 1.);
-	return paramsInit;
-    }
-
-    public String getGnuplotCommands(int functionType) {
-	String filename = "";
-	String using = "";
-	switch (functionType) {
-	case BORDERS:
-	    filename = "Borders.txt";
-	    using = "using ($1-2048):($2-2048):($3-2048):4";
-	    break;
-	case WIDTH_VS_POS:
-	    filename = "Polynomial2D.txt";
-	    using = "using ($1-2048):($2-2048):3:(1)";
-	    break;
-	default:
-	    break;
-	}
-	String function = "f(x,y) = ";
-	String fit = "fit f(x,y) '" + filename + "' " + using + " via ";
-	String splot = "splot '" + filename + "' " + using + " notitle, f(x,y) notitle";
-	for (int i = 0; i <= m; i++) {
-	    for (int j = 0; j <= n; j++) {
-		function += String.format("a%d%d*x**%d*y**%d", i, j, i, j);
-		fit += String.format("a%d%d", i, j);
-		if (i != m | j != n) {
-		    function += " + ";
-		    fit += ",";
-		}
-	    }
-	}
-	return function + "\n" + fit + "\n" + splot;
-    }
-
-    public String compareParameters(int functionType, double[] compareParams) {
-	String filename = "";
-	String using = "";
-	switch (functionType) {
-	case BORDERS:
-	    filename = "Borders.txt";
-	    using = "using ($1-2048):($2-2048):($3-2048):4";
-	    break;
-	case WIDTH_VS_POS:
-	    filename = "Polynomial2D.txt";
-	    using = "using ($1-2048):($2-2048):3:(1)";
-	    break;
-	default:
-	    break;
-	}
-	String splot = "splot '" + filename + "' " + using
-		+ " notitle, f(x,y) title 'Gnuplot', fJ(x,y) title 'Java LMA'";
-	String function = "fJ(x,y) = ";
-	String compare = "#Java LMA\t\t\tGnuplot";
-	for (int i = 0; i <= m; i++) {
-	    for (int j = 0; j <= n; j++) {
-		compare += String.format("\naJ%d%d = %+6e\t\t# %+6e", i, j, params[(n + 1) * i + j],
-			compareParams[(n + 1) * i + j]);
-		function += String.format("a%d%d*x**%d*y**%d", i, j, i, j);
-		if (i != m | j != n) {
-		    function += " + ";
-		}
-	    }
-	}
-	return compare + "\n\n" + function + "\n" + splot;
     }
 }
