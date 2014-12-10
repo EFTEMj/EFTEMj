@@ -35,7 +35,6 @@ import java.util.Arrays;
 import java.util.Vector;
 
 import libs.lma.LMA;
-import libs.lma.implementations.JAMAMatrix;
 import libs.lma.implementations.Polynomial_2D;
 import sr_eels.testing.SR_EELS_characterisation;
 
@@ -61,10 +60,12 @@ public class SR_EELS_CorrectionFunction {
 	getParametersB(path_poly2D);
     }
 
-    public double[] transform(final double x1, final double x2) {
+    public double[] transform(final double x1_in, final double x2_in) {
+	double x1 = x1_in - 2048;
+	double x2 = x2_in - 2048;
 	final double y1 = calc_y1(x1, x2);
 	final double y2 = calc_y2(x1, x2);
-	final double[] point = { y1, y2 };
+	final double[] point = { y1 + 2048, y2 + 2048 };
 	return point;
     }
 
@@ -83,7 +84,7 @@ public class SR_EELS_CorrectionFunction {
 
     private double calc_yn(final double x2) {
 	// TODO optimise this method by using the full 3d polynomial.
-	return (x2 * x2 * x2 * b[0][2] / 3 + x2 * x2 * b[0][1] / 2 + x2 * b[0][0]) - offset;
+	return (x2 * x2 * x2 * b[0][2] / 3 + x2 * x2 * b[0][1] / 2 + x2 * b[0][0]) - offset - 2048;
     }
 
     private double arcsinh(final double x) {
@@ -97,15 +98,13 @@ public class SR_EELS_CorrectionFunction {
      */
     private void getParametersA(final String path_borders) {
 	final DataImporter importer = new DataImporter(path_borders, true);
-	final double[][] x_vals = importer.x_vals;
-	final double[] y_vals = importer.y_vals;
-	final double[] weights = importer.weights;
-	final int m = 2;
+	final double[][] vals = importer.vals;
+	final int m = 3;
 	final int n = 2;
 	final Polynomial_2D func = new Polynomial_2D(m, n);
 	final double[] a_fit = new double[(m + 1) * (n + 1)];
 	Arrays.fill(a_fit, 1.);
-	final LMA lma = new LMA(func, a_fit, y_vals, x_vals, weights, new JAMAMatrix(a_fit.length, a_fit.length));
+	final LMA lma = new LMA(func, a_fit, vals);
 	lma.fit();
 	a = convertParameterArray(a_fit, m, n);
 	for (int i = 0; i <= m; i++) {
@@ -122,22 +121,13 @@ public class SR_EELS_CorrectionFunction {
      */
     private void getParametersB(final String path_poly2D) {
 	final DataImporter importer = new DataImporter(path_poly2D, false);
-	final double[][] x_vals = importer.x_vals;
-	final double[] y_vals = importer.y_vals;
-	final double[] weights = new double[y_vals.length];
-	final double[] y_vals_sorted = Arrays.copyOf(y_vals, y_vals.length);
-	Arrays.sort(y_vals_sorted);
-	final double max = y_vals_sorted[y_vals_sorted.length - 1];
-	for (int i = 0; i < weights.length; i++) {
-	    weights[i] = y_vals[i] / max;
-	}
-	final int m = 2;
+	final double[][] vals = importer.vals;
+	final int m = 3;
 	final int n = 2;
 	final Polynomial_2D func = new Polynomial_2D(m, n);
 	final double[] b_fit = new double[(m + 1) * (n + 1)];
 	Arrays.fill(b_fit, 1.);
-	Arrays.fill(weights, 1.);
-	final LMA lma = new LMA(func, b_fit, y_vals, x_vals, weights, new JAMAMatrix(b_fit.length, b_fit.length));
+	final LMA lma = new LMA(func, b_fit, vals);
 	lma.fit();
 	b = convertParameterArray(b_fit, m, n);
 	for (int i = 0; i <= m; i++) {
@@ -188,8 +178,7 @@ public class SR_EELS_CorrectionFunction {
      */
     private static class DataImporter {
 
-	protected double[][] x_vals;
-	protected double[] y_vals;
+	protected double[][] vals;
 	protected double[] weights;
 
 	/**
@@ -198,7 +187,8 @@ public class SR_EELS_CorrectionFunction {
 	 * @param dataFilePath
 	 *            is the path to the file that contains the data set.
 	 */
-	public DataImporter(final String dataFilePath, boolean readWeights) {
+	public DataImporter(final String dataFilePath, final boolean readWeights) {
+	    boolean isBordersTxt = false;
 	    final File file = new File(dataFilePath);
 	    final Vector<Double[]> values = new Vector<Double[]>();
 	    try {
@@ -216,8 +206,9 @@ public class SR_EELS_CorrectionFunction {
 			    final String[] splitLine = line.split("\\s+");
 			    if (readWeights == true) {
 				if (splitLine.length >= 4) {
-				    final Double[] point = { Double.valueOf(splitLine[2]),
-					    Double.valueOf(splitLine[1]), Double.valueOf(splitLine[0]),
+				    isBordersTxt = true;
+				    final Double[] point = { Double.valueOf(splitLine[0]),
+					    Double.valueOf(splitLine[1]), Double.valueOf(splitLine[2]),
 					    Double.valueOf(splitLine[3]) };
 				    values.add(point);
 				}
@@ -237,13 +228,16 @@ public class SR_EELS_CorrectionFunction {
 	    } catch (final IOException exc) {
 		exc.printStackTrace();
 	    }
-	    x_vals = new double[values.size()][2];
-	    y_vals = new double[values.size()];
+	    vals = new double[values.size()][3];
 	    weights = new double[values.size()];
 	    for (int i = 0; i < values.size(); i++) {
-		x_vals[i][0] = values.get(i)[0];
-		x_vals[i][1] = values.get(i)[1];
-		y_vals[i] = values.get(i)[2];
+		if (isBordersTxt) {
+		    vals[i][0] = values.get(i)[2] - 2048;
+		} else {
+		    vals[i][0] = values.get(i)[2];
+		}
+		vals[i][1] = values.get(i)[0] - 2048;
+		vals[i][2] = values.get(i)[1] - 2048;
 		if (readWeights == true) {
 		    weights[i] = values.get(i)[3];
 		}

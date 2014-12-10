@@ -54,7 +54,7 @@ public class SR_EELS {
     /**
      * This is the name of the file that stores the data points used to describe the change of the spectrum width.
      */
-    protected static final String FILENAME_POLINOMIAL_2D = "Polynomial2D.txt";
+    protected static final String FILENAME_WIDTH = "Width.txt";
 
     /**
      * This is the name of the file that stores the data points used to describe the spectrum borders.

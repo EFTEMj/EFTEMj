@@ -28,6 +28,7 @@ package sr_eels;
 
 import ij.IJ;
 import ij.ImagePlus;
+import ij.plugin.Histogram;
 import ij.process.FloatProcessor;
 
 import java.util.Arrays;
@@ -104,7 +105,6 @@ public class SR_EELS_Correction {
      */
     public void showResult() {
 	output.show();
-
     }
 
     /**
@@ -139,55 +139,69 @@ public class SR_EELS_Correction {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.lang.Runnable#run()
 	 */
 	@Override
 	public void run() {
+
 	    for (int x1 = 0; x1 < input.getWidth(); x1++) {
-		output.getProcessor().setf(x1, x2, (float) getCorrectetIntensity(x1 * bin, x2 * bin));
+		// output.getProcessor().setf(x1, x2, (float) getCorrectetIntensity(x1 * bin, x2 * bin));
+		try {
+		    if (x2 % 512 == 0) {
+			double[] point = function.transform(x1, x2);
+			output.getProcessor().setf((int) Math.round(point[0]), (int) Math.round(point[1]),
+				(x2 / 512) + 1);
+		    }
+		} catch (Exception e) {
+		    output.getProcessor().setf(x1, x2, -1f);
+		}
 	    }
 	    SR_EELS_Correction.updateProgress();
 	}
 
 	private double getCorrectetIntensity(final int x1Binned, final int x2Binned) {
 	    double intensity = 0.0;
-	    final double[] point00 = function.transform(x1Binned, x2Binned);
-	    final double[] point01 = function.transform(x1Binned, x2Binned + bin);
-	    final double[] point10 = function.transform(x1Binned + bin, x2Binned);
-	    final double[] point11 = function.transform(x1Binned + bin, x2Binned + bin);
-	    final double rectangle_l = Math.floor(subdivision * Math.min(point00[0], point01[0])) / subdivision;
-	    final double rectangle_b = Math.ceil(subdivision * Math.max(point01[1], point11[1])) / subdivision;
-	    final double rectangle_r = Math.ceil(subdivision * Math.max(point10[0], point11[0])) / subdivision;
-	    final double rectangle_t = Math.floor(subdivision * Math.min(point00[1], point10[1])) / subdivision;
-	    if (rectangle_l < 0 | rectangle_t < 0 | rectangle_r >= width | rectangle_b >= height)
-		return intensity;
-	    final double rectangle_width = rectangle_r - rectangle_l;
-	    final double rectangle_height = rectangle_b - rectangle_t;
-	    final int temp_width = (int) Math.ceil(rectangle_width / bin * subdivision) + 1;
-	    final int temp_height = (int) Math.ceil(rectangle_height / bin * subdivision) + 1;
-	    final int[] pixels_temp = new int[temp_width * temp_height];
-	    Arrays.fill(pixels_temp, 0);
-	    for (int z2 = 0; z2 < oversampling * subdivision; z2++) {
-		final double z2d = 1.0 * z2 / (oversampling * subdivision);
-		for (int z1 = 0; z1 < oversampling * subdivision; z1++) {
-		    final double z1d = 1.0 * z1 / (oversampling * subdivision);
-		    final double[] point = function.transform(x1Binned + bin * z1d, x2Binned + bin * z2d);
-		    final double y1 = Math.round(subdivision * (point[0] - rectangle_l) / bin);
-		    final double y2 = Math.round(subdivision * (point[1] - rectangle_t) / bin);
-		    final int index = (int) (y1 + y2 * temp_width);
-		    pixels_temp[index] = 1;
-		}
-	    }
-	    for (int y2i = 0; y2i < temp_height; y2i++) {
-		final double y2 = y2i / subdivision + rectangle_t / bin;
-		for (int y1i = 0; y1i < temp_width; y1i++) {
-		    final double y1 = y1i / subdivision + rectangle_l / bin;
-		    if (pixels_temp[y1i + y2i * temp_width] == 1) {
-			final int index = (int) (Math.floor(y1) + Math.floor(y2) * input.getWidth());
-			intensity += input.getProcessor().getf(index) / Math.pow(subdivision, 2);
+	    try {
+		final double[] point00 = function.transform(x1Binned, x2Binned);
+		final double[] point01 = function.transform(x1Binned, x2Binned + bin);
+		final double[] point10 = function.transform(x1Binned + bin, x2Binned);
+		final double[] point11 = function.transform(x1Binned + bin, x2Binned + bin);
+		final double rectangle_l = Math.floor(subdivision * Math.min(point00[0], point01[0])) / subdivision;
+		final double rectangle_b = Math.ceil(subdivision * Math.max(point01[1], point11[1])) / subdivision;
+		final double rectangle_r = Math.ceil(subdivision * Math.max(point10[0], point11[0])) / subdivision;
+		final double rectangle_t = Math.floor(subdivision * Math.min(point00[1], point10[1])) / subdivision;
+		if (rectangle_l < 0 | rectangle_t < 0 | rectangle_r >= width | rectangle_b >= height)
+		    return intensity;
+		final double rectangle_width = rectangle_r - rectangle_l;
+		final double rectangle_height = rectangle_b - rectangle_t;
+		final int temp_width = (int) Math.ceil(rectangle_width / bin * subdivision) + 1;
+		final int temp_height = (int) Math.ceil(rectangle_height / bin * subdivision) + 1;
+		final int[] pixels_temp = new int[temp_width * temp_height];
+		Arrays.fill(pixels_temp, 0);
+		for (int z2 = 0; z2 < oversampling * subdivision; z2++) {
+		    final double z2d = 1.0 * z2 / (oversampling * subdivision);
+		    for (int z1 = 0; z1 < oversampling * subdivision; z1++) {
+			final double z1d = 1.0 * z1 / (oversampling * subdivision);
+			final double[] point = function.transform(x1Binned + bin * z1d, x2Binned + bin * z2d);
+			final double y1 = Math.round(subdivision * (point[0] - rectangle_l) / bin);
+			final double y2 = Math.round(subdivision * (point[1] - rectangle_t) / bin);
+			final int index = (int) (y1 + y2 * temp_width);
+			pixels_temp[index] = 1;
 		    }
 		}
+		for (int y2i = 0; y2i < temp_height; y2i++) {
+		    final double y2 = y2i / subdivision + rectangle_t / bin;
+		    for (int y1i = 0; y1i < temp_width; y1i++) {
+			final double y1 = y1i / subdivision + rectangle_l / bin;
+			if (pixels_temp[y1i + y2i * temp_width] == 1) {
+			    final int index = (int) (Math.floor(y1) + Math.floor(y2) * input.getWidth());
+			    intensity += input.getProcessor().getf(index) / Math.pow(subdivision, 2);
+			}
+		    }
+		}
+	    } catch (Exception e) {
+		return intensity;
 	    }
 	    return intensity;
 	}

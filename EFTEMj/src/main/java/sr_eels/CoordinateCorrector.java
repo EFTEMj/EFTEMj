@@ -1,21 +1,28 @@
 package sr_eels;
 
-import libs.lma.implementations.Polynomial_2D;
+import sr_eels.testing.SR_EELS_Polynomial_2D;
 
 public abstract class CoordinateCorrector {
 
-    Polynomial_2D functionWidth;
-    Polynomial_2D functionBorder;
+    SR_EELS_Polynomial_2D functionWidth;
+    SR_EELS_Polynomial_2D functionBorder;
+    float offset = 2048;
 
-    public float[] transformCoordinate(float x1, float x2) {
-	float[] point = new float[2];
-	float y2n = calcY2n(x1, x2);
-	point[0] = calcY1(x1, y2n);
-	point[1] = calcY2(point[0], y2n);
-	return point;
+    public CoordinateCorrector(final SR_EELS_Polynomial_2D functionWidth, final SR_EELS_Polynomial_2D functionBorder) {
+	this.functionWidth = functionWidth;
+	this.functionBorder = functionBorder;
     }
 
-    abstract float calcY2n(float x1, float x2);
+    public float[] transformCoordinate(final float x1, final float x2) throws SR_EELS_Exception {
+	final float[] pointIn = new float[] { x1 - offset, x2 - offset };
+	final float[] pointOut = new float[2];
+	final float y2n = calcY2n(pointIn[0], pointIn[1]);
+	pointOut[0] = calcY1(pointIn[0], y2n) + offset;
+	pointOut[1] = calcY2(pointOut[0], y2n) + offset;
+	return pointOut;
+    }
+
+    abstract float calcY2n(float x1, float x2) throws SR_EELS_Exception;
 
     abstract float calcY1(float x1, float y2n);
 

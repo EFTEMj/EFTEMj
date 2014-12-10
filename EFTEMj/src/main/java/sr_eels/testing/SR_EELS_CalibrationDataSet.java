@@ -8,12 +8,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Vector;
 
 import javax.swing.JFileChooser;
 
 import libs.lma.LMA;
-import libs.lma.implementations.Polynomial_2D;
 
 public class SR_EELS_CalibrationDataSet {
 
@@ -54,35 +54,37 @@ public class SR_EELS_CalibrationDataSet {
 
     public static void main(final String[] cmdline) {
 	final SR_EELS_CalibrationDataSet dataSet = new SR_EELS_CalibrationDataSet(true);
-	final Polynomial_2D func = new Polynomial_2D(3, 2);
-	final double[][] vals = dataSet.prepareValuesForPolynomial2DFit();
-	final double[] a_fit = func.getInitialParameters();
+	final SR_EELS_Polynomial_2D func = new SR_EELS_Polynomial_2D(2, 2);
+	final double[][] vals = dataSet.prepareValuesForWidthFit();
+	final double[] a_fit = new double[9];
+	Arrays.fill(a_fit, 1.);
 	final LMA lma1 = new LMA(func, a_fit, vals);
 	lma1.fit();
 
 	final double[] a_gnuplot = { 185.193, 0.0114697, -0.000230046, -0.0142633, 4.09706e-006, -3.30355e-008,
 		1.02076e-007, 1.17627e-009, -1.5941e-012, 5.4138e-011, 4.61404e-013, 8.10883e-016 };
 	System.out.println("");
-	System.out.println(func.getGnuplotCommands(Polynomial_2D.WIDTH_VS_POS));
+	System.out.println(func.getGnuplotCommands(SR_EELS_Polynomial_2D.WIDTH_VS_POS));
 	System.out.println("");
-	System.out.println(func.compareParameters(Polynomial_2D.WIDTH_VS_POS, a_gnuplot));
+	System.out.println(func.compareParameters(SR_EELS_Polynomial_2D.WIDTH_VS_POS, a_gnuplot));
 	System.out.println("");
 
-	final Polynomial_2D func2 = new Polynomial_2D(2, 2);
+	final SR_EELS_Polynomial_2D func2 = new SR_EELS_Polynomial_2D(2, 2);
 	final double[][] vals2 = dataSet.prepareValuesForBordersFit();
-	final double[] b_fit = func2.getInitialParameters();
+	final double[] b_fit = new double[9];
+	Arrays.fill(b_fit, 1.);
 	final LMA lma2 = new LMA(func2, b_fit, vals2);
 	lma2.fit();
 	final double[] b_gnuplot = { 15.4528, 0.862132, -1.35147e-005, 0.00716796, -6.30902e-005, -6.46892e-009,
 		7.99608e-007, 4.07466e-009, -4.64831e-012 };
 	System.out.println("");
-	System.out.println(func2.getGnuplotCommands(Polynomial_2D.BORDERS));
+	System.out.println(func2.getGnuplotCommands(SR_EELS_Polynomial_2D.BORDERS));
 	System.out.println("");
-	System.out.println(func2.compareParameters(Polynomial_2D.BORDERS, b_gnuplot));
+	System.out.println(func2.compareParameters(SR_EELS_Polynomial_2D.BORDERS, b_gnuplot));
 	System.out.println("");
     }
 
-    private double[][] prepareValuesForPolynomial2DFit() {
+    private double[][] prepareValuesForWidthFit() {
 	final Vector<Double> x1_vals = new Vector<Double>();
 	final Vector<Double> x2_vals = new Vector<Double>();
 	final Vector<Double> y_vals = new Vector<Double>();
