@@ -44,6 +44,9 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Vector;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import libs.lma.LMA;
 import sr_eels.testing.SR_EELS_Polynomial_2D;
@@ -103,6 +106,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      */
     @Override
     public void run(final ImageProcessor ip) {
+	final ExecutorService executorService = Executors
+		.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 	final SimpleCoordinateCorrection coordinateCorrection = new SimpleCoordinateCorrection(getFunctionWidth(),
 		getFunctionBorders());
 	final NoIntensityCorrection intensityCorrection = new NoIntensityCorrection(
@@ -111,12 +116,34 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 		inputImage.getHeight(), new double[inputImage.getWidth() * inputImage.getHeight()]));
 	final FloatProcessor output = (FloatProcessor) outputImage.getProcessor();
 	progressSteps = inputImage.getHeight();
-	// TODO Implement Threads for concurrent processing.
-	for (int x2 = 0; x2 < inputImage.getHeight(); x2++) {
-	    for (int x1 = 0; x1 < inputImage.getWidth(); x1++) {
-		output.setf(x2 * output.getWidth() + x1, intensityCorrection.getIntensity(x1, x2));
+	final boolean debug = false;
+	if (debug) {
+	    for (int x2 = 0; x2 < output.getHeight(); x2++) {
+		for (int x1 = 0; x1 < inputImage.getWidth(); x1++) {
+		    output.setf(x2 * output.getWidth() + x1, intensityCorrection.getIntensity(x1, x2));
+		}
+		updateProgress();
 	    }
-	    updateProgress();
+	} else {
+	    for (int x2 = 0; x2 < inputImage.getHeight(); x2++) {
+		final int x2Temp = x2;
+		executorService.execute(new Runnable() {
+
+		    @Override
+		    public void run() {
+			for (int x1 = 0; x1 < inputImage.getWidth(); x1++) {
+			    output.setf(x2Temp * output.getWidth() + x1, intensityCorrection.getIntensity(x1, x2Temp));
+			}
+			updateProgress();
+		    }
+		});
+	    }
+	    executorService.shutdown();
+	    try {
+		executorService.awaitTermination(30, TimeUnit.MINUTES);
+	    } catch (final InterruptedException e) {
+		e.printStackTrace();
+	    }
 	}
     }
 
