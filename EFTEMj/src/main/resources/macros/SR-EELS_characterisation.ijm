@@ -9,8 +9,10 @@
  * 			You can find an example SR-EELS series at:
  * 				https://github.com/EFTEMj/EFTEMj/tree/master/Scripts+Macros/examples/SR-EELS_characterisation
  * 			There you will find a instruction on how to record such a series, too.
- * 			
+ *
  * 			This macro is part of the Fiji plugin EFTEMj (https://github.com/EFTEMj/EFTEMj).
+ *
+ * help:	* You can exclude files from the characterisation if '-exclude' is added to the file name.
  */
 
 /*
@@ -30,7 +32,7 @@ var skip_gui = false;
  */
 var input_dir = "C:\\Temp\\folder with cal images\\";
 /*
- * This parameter is only used for 'var skip_gui = true;'. 
+ * This parameter is only used for 'var skip_gui = true;'.
  * A dialogue is presented when working with GUI.
  * Overwrite the results if there are already results with the given parameters.
  */
@@ -39,7 +41,7 @@ var overwrite_results = true;
  * The macro requires the energy loss at the x-axis and the lateral information on the y-axis.
  * Set 'doRotate = true' if your image axes are swapped.
  */
-var doRotate = true; 
+var doRotate = true;
 /*
  *  step_size determines the number of energy channels that will result in one data point of the resulting data set.
  *  Choose '-1' for automatic mode 'abs(height / 64)'
@@ -107,7 +109,7 @@ var plot_width = 1200;
 var plot_height = 900;
 run("Profile Plot Options...", "width=" + plot_width + " height=" + plot_height + " minimum=0 maximum=0 interpolate draw");
 /*
- * Set the size of the jpeg image. 
+ * Set the size of the jpeg image.
  * The given height is only applied for images with a height that is a multiple of the given height.
  * 'jpeg_bin = round(height / jpeg_height)' is used.
  * Reduce the jpeg quality to reduce the size of the jpeg images.
@@ -137,7 +139,8 @@ var correct_binning = true;
  * End of Parameters
  */
 
-/*
+
+/*
  * The macro will change some settings.
  * The current settings will be restored when the macro has finished.
  */
@@ -213,7 +216,7 @@ for(m=0; m < thresholds.length; m++) {
 		 * This is the main function of this macro.
 		 */
 		analyse_dataset();
-		
+
 		if (detailed_results >= 1) {
 			/*
 			 * Create the file that contains the values for plotting/fitting a 2D polynomial.
@@ -239,7 +242,7 @@ restoreSettings();
  * End of macro:
  * The following code contains function definitions only.
  */
- 
+
 
 /*
  * function: analyse_dataset
@@ -593,7 +596,7 @@ function setup_macro() {
 		if (input_dir == "") stopMacro("");
 	}
 	/*
-	 *  Only select tif and dm3 files. Ignore sub-folders. 
+	 *  Only select tif and dm3 files. Ignore sub-folders.
 	 *  See below this function.
 	 */
 	list = filter_images();
@@ -609,7 +612,7 @@ function setup_macro() {
 		draw_axes_as_overlay();
 		/*
 		 * Normally no images are shown in batch mode.
-		 */		
+		 */
 		setBatchMode("show");
 		/*
 		 * This name is a bit strange.
@@ -632,7 +635,7 @@ function setup_macro() {
 		width = getHeight;
 	}
 	if (correct_binning == true) {
-		bin_x = camera_width / getWidth;		
+		bin_x = camera_width / getWidth;
 		bin_y = camera_height / getHeight;
 		if (bin_x == bin_y && bin_x == round(bin_x)) {
 			binning = bin_x;
@@ -660,8 +663,7 @@ function setup_macro() {
 	if (filter_radius == -1) {
 		filter_radius = round(sqrt(step_size));
 	}
-	
-if (skip_gui == false) {
+	if (skip_gui == false) {
 		/*
 		 * A dialogue will be created to modify the previous determined values.
 		 */
@@ -731,13 +733,18 @@ function filter_images() {
 	temp = -1;
 	for (i=0; i<list.length; i++) {
 		path = input_dir + list[i];
-		if (!endsWith(path,"/") && (endsWith(path,".tif") || endsWith(path,".dm3"))) {
-			 if (temp == -1) {
-			 	temp = newArray(1);
-			 	temp[0] = path;
-			 } else {
-			 	temp = Array.concat(temp, path);
-			 }
+		if (endsWith(path,".tif") || endsWith(path,".dm3")) {
+			/*
+			 * You can exclude files from showing up at the dialogue by adding the keyword '-exclude' to the filename.
+			 */
+			if (!matches(list[i], ".*-exclude.*")){
+				 if (temp == -1) {
+				 	temp = newArray(1);
+				 	temp[0] = path;
+				 } else {
+				 	temp = Array.concat(temp, path);
+				 }
+			}
 		}
 	}
 	if (skip_gui == false) {
