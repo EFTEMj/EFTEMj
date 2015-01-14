@@ -783,11 +783,11 @@ function save_pos_and_width(index, pos, width, left, right) {
 	array_width_all_calc[index] = right - left;
 	if (index == list.length - 1) {
 		if (detailed_results >= 1){
-			Fit.doFit("3rd Degree Polynomial", array_pos_all, array_width_all);
+			Fit.doFit("2nd Degree Polynomial", array_pos_all, array_width_all);
 			Fit.plot;
 			saveAs("PNG", result_dirs[m] + "width_vs_pos.png");
 			close();
-			Fit.doFit("3rd Degree Polynomial", array_pos_all_calc, array_width_all_calc);
+			Fit.doFit("2nd Degree Polynomial", array_pos_all_calc, array_width_all_calc);
 			Fit.plot;
 			saveAs("PNG", result_dirs[m] + "width_vs_pos_calc.png");
 			close();
