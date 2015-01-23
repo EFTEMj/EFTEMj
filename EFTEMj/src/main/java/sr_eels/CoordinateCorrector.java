@@ -6,19 +6,21 @@ public abstract class CoordinateCorrector {
 
     SR_EELS_Polynomial_2D functionWidth;
     SR_EELS_Polynomial_2D functionBorder;
-    float offset = 2048;
+    CameraSetup camSetup;
 
-    public CoordinateCorrector(final SR_EELS_Polynomial_2D functionWidth, final SR_EELS_Polynomial_2D functionBorder) {
+    public CoordinateCorrector(final SR_EELS_Polynomial_2D functionWidth, final SR_EELS_Polynomial_2D functionBorder,
+	    CameraSetup camSetup) {
 	this.functionWidth = functionWidth;
 	this.functionBorder = functionBorder;
+	this.camSetup = camSetup;
     }
 
     public float[] transformCoordinate(final float x1, final float x2) throws SR_EELS_Exception {
-	final float[] pointIn = new float[] { x1 - offset, x2 - offset };
+	final float[] pointIn = new float[] { x1 - camSetup.getCameraOffsetX1(), x2 - camSetup.getCameraOffsetX2() };
 	final float[] pointOut = new float[2];
 	final float y2n = calcY2n(pointIn[0], pointIn[1]);
-	pointOut[0] = calcY1(pointIn[0], y2n) + offset;
-	pointOut[1] = calcY2(pointOut[0], y2n) + offset;
+	pointOut[0] = calcY1(pointIn[0], y2n) + camSetup.getCameraOffsetX1();
+	pointOut[1] = calcY2(pointOut[0], y2n) + camSetup.getCameraOffsetX2();
 	return pointOut;
     }
 

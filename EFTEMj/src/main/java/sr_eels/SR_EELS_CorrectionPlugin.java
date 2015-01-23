@@ -87,7 +87,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see ij.plugin.filter.PlugInFilter#setup(java.lang.String, ij.ImagePlus)
      */
     @Override
@@ -101,17 +101,20 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see ij.plugin.filter.PlugInFilter#run(ij.process.ImageProcessor)
      */
     @Override
     public void run(final ImageProcessor ip) {
+	final CameraSetup camSetup = new CameraSetup(inputImage);
 	final ExecutorService executorService = Executors
 		.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+	// final AnalyticalCoordinateCorrection coordinateCorrection = new AnalyticalCoordinateCorrection(
+	// getFunctionWidth(), getFunctionBorders());
 	final SimpleCoordinateCorrection coordinateCorrection = new SimpleCoordinateCorrection(getFunctionWidth(),
-		getFunctionBorders());
+		getFunctionBorders(), camSetup);
 	final NoIntensityCorrection intensityCorrection = new NoIntensityCorrection(
-		(FloatProcessor) inputImage.getProcessor(), coordinateCorrection);
+		(FloatProcessor) inputImage.getProcessor(), coordinateCorrection, camSetup);
 	outputImage = new ImagePlus(inputImage.getTitle() + "_corrected", new FloatProcessor(inputImage.getWidth(),
 		inputImage.getHeight(), new double[inputImage.getWidth() * inputImage.getHeight()]));
 	final FloatProcessor output = (FloatProcessor) outputImage.getProcessor();
@@ -120,7 +123,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	if (debug) {
 	    for (int x2 = 0; x2 < output.getHeight(); x2++) {
 		for (int x1 = 0; x1 < inputImage.getWidth(); x1++) {
-		    output.setf(x2 * output.getWidth() + x1, intensityCorrection.getIntensity(x1, x2));
+		    output.setf(x2 * output.getWidth() + x1, intensityCorrection.getIntensity(camSetup.getBinningX1()
+			    * x1, camSetup.getBinningX2() * x2));
 		}
 		updateProgress();
 	    }
@@ -132,7 +136,10 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 		    @Override
 		    public void run() {
 			for (int x1 = 0; x1 < inputImage.getWidth(); x1++) {
-			    output.setf(x2Temp * output.getWidth() + x1, intensityCorrection.getIntensity(x1, x2Temp));
+			    output.setf(
+				    x2Temp * output.getWidth() + x1,
+				    intensityCorrection.getIntensity(camSetup.getBinningX1() * x1,
+					    camSetup.getBinningX2() * x2Temp));
 			}
 			updateProgress();
 		    }
@@ -187,7 +194,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see ij.plugin.filter.ExtendedPlugInFilter#showDialog(ij.ImagePlus, java.lang.String,
      * ij.plugin.filter.PlugInFilterRunner)
      */
@@ -298,7 +305,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see ij.plugin.filter.ExtendedPlugInFilter#setNPasses(int)
      */
     @Override
@@ -398,12 +405,12 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	    weights = new double[values.size()];
 	    for (int i = 0; i < values.size(); i++) {
 		if (isBordersTxt) {
-		    vals[i][0] = values.get(i)[2] - 2048;
+		    vals[i][0] = values.get(i)[2] - CameraSetup.getFullHeight() / 2;
 		} else {
 		    vals[i][0] = values.get(i)[2];
 		}
-		vals[i][1] = values.get(i)[0] - 2048;
-		vals[i][2] = values.get(i)[1] - 2048;
+		vals[i][1] = values.get(i)[0] - CameraSetup.getFullWidth() / 2;
+		vals[i][2] = values.get(i)[1] - CameraSetup.getFullHeight() / 2;
 		if (readWeights == true) {
 		    weights[i] = values.get(i)[3];
 		}

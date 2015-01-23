@@ -3,6 +3,7 @@ package sr_eels.testing;
 import java.util.HashMap;
 
 import libs.lma.implementations.Polynomial_2D;
+import sr_eels.CameraSetup;
 import sr_eels.SR_EELS_Exception;
 
 public class SR_EELS_Polynomial_2D extends Polynomial_2D {
@@ -12,7 +13,6 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 
     public SR_EELS_Polynomial_2D(final int m, final int n) {
 	super(m, n);
-	// TODO Auto-generated constructor stub
     }
 
     public SR_EELS_Polynomial_2D(final int m, final int n, final double[] params) {
@@ -22,20 +22,22 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
     public String getGnuplotCommands(final int functionType) {
 	String filename = "";
 	String using = "";
+	assert (CameraSetup.getFullWidth() == CameraSetup.getFullHeight());
+	final String offset = "offset = " + CameraSetup.getFullWidth() / 2;
 	switch (functionType) {
 	case BORDERS:
 	    filename = "Borders.txt";
-	    using = "using ($1-2048):($2-2048):($3-2048):4";
+	    using = "using ($1-offset):($2-offset):($3-offset):4";
 	    break;
 	case WIDTH_VS_POS:
 	    filename = "Width.txt";
-	    using = "using ($1-2048):($2-2048):3:(1)";
+	    using = "using ($1-offset):($2-offset):3:(1)";
 	    break;
 	default:
 	    break;
 	}
 	String function = "f(x,y) = ";
-	String fit = "fit f(x,y) '" + filename + "' " + using + " via ";
+	String fit = "fit f(x,y) '" + filename + "' " + using + " zerror via ";
 	for (int i = 0; i <= m; i++) {
 	    for (int j = 0; j <= n; j++) {
 		function += String.format("a%d%d*x**%d*y**%d", i, j, i, j);
@@ -46,7 +48,7 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 		}
 	    }
 	}
-	return function + "\n" + fit;
+	return offset + "\n" + function + "\n" + fit;
     }
 
     public String compareWithGnuplot(final int functionType) {
@@ -57,13 +59,13 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 	switch (functionType) {
 	case BORDERS:
 	    filename = "Borders.txt";
-	    using = "using ($1-2048):($2-2048):($3-2048)";
-	    residuals = "using ($1-2048):($2-2048):(abs( $3 - 2048 - fJ($1-2048,$2-2048))**2)";
+	    using = "using ($1-offset):($2-offset):($3-offset)";
+	    residuals = "using ($1-offset):($2-offset):(abs( $3 - offset - fJ($1-offset,$2-offset))**2)";
 	    break;
 	case WIDTH_VS_POS:
 	    filename = "Width.txt";
-	    using = "using ($1-2048):($2-2048):3";
-	    residuals = "using ($1-2048):($2-2048):(abs( $3 - fJ($1-2048,$2-2048))**2)";
+	    using = "using ($1-offset):($2-offset):3";
+	    residuals = "using ($1-offset):($2-offset):(abs( $3 - fJ($1-offset,$2-offset))**2)";
 	    break;
 	default:
 	    break;
@@ -138,6 +140,33 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 	calculatedMax.put(x[0], yMax);
 	return new double[] { x[0], yMaxPos };
 
+    }
+
+    public double getY1(final double arcLength, final double x2) {
+	final double a = getA(x2);
+	final double b = getB(x2);
+	return 1
+		/ Math.sqrt(getA(x2))
+		* Math.log(2 * Math.sqrt(a * (a * arcLength * arcLength + b * arcLength + getC(x2))) + 2 * a
+			* arcLength + b);
+    }
+
+    private double getA(final double x2) {
+	final double a2 = params[6] + params[7] * x2 * params[8] * x2 * x2;
+	final double a = 4 * a2;
+	return a;
+    }
+
+    private double getB(final double x2) {
+	final double a1 = params[3] + params[4] * x2 * params[5] * x2 * x2;
+	final double a2 = params[6] + params[7] * x2 * params[8] * x2 * x2;
+	final double b = 4 * a1 * a2;
+	return b;
+    }
+
+    private double getC(final double x2) {
+	final double a1 = params[3] + params[4] * x2 * params[5] * x2 * x2;
+	return a1 * a1 + 1;
     }
 
 }

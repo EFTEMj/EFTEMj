@@ -43,7 +43,7 @@ public class SR_EELS {
      * <code>PREFIX + KEYS.dispersion + "." + number</code>
      */
     public static enum KEYS {
-	specMagValues, specMagIndex, dispersion, binningIndex, binningUser, offsetIndex, offsetLoss, offsetAbsolute
+	specMagValues, specMagIndex, dispersion, binningIndex, binningUser, offsetIndex, offsetLoss, offsetAbsolute, cameraWidth, cameraHeight
     }
 
     /**
@@ -60,5 +60,4 @@ public class SR_EELS {
      * This is the name of the file that stores the data points used to describe the spectrum borders.
      */
     public static final String FILENAME_BORDERS = "Borders.txt";
-
 }

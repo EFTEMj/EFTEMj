@@ -5,9 +5,8 @@ import sr_eels.testing.SR_EELS_Polynomial_2D;
 public class SimpleCoordinateCorrection extends CoordinateCorrector {
 
     public SimpleCoordinateCorrection(final SR_EELS_Polynomial_2D functionWidth,
-	    final SR_EELS_Polynomial_2D functionBorder) {
-	super(functionWidth, functionBorder);
-	// TODO Auto-generated constructor stub
+	    final SR_EELS_Polynomial_2D functionBorder, CameraSetup camSetup) {
+	super(functionWidth, functionBorder, camSetup);
     }
 
     @Override
