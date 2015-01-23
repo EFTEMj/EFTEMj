@@ -7,7 +7,6 @@ public class AnalyticalCoordinateCorrection extends CoordinateCorrector {
     public AnalyticalCoordinateCorrection(final SR_EELS_Polynomial_2D functionWidth,
 	    final SR_EELS_Polynomial_2D functionBorder, CameraSetup camSetup) {
 	super(functionWidth, functionBorder, camSetup);
-	// TODO Auto-generated constructor stub
     }
 
     @Override

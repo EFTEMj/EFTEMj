@@ -71,8 +71,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      */
     private final int FLAGS = DOES_32 | NO_CHANGES | FINAL_PROCESSING;
     private final String NO_FILE_SELECTED = "No file selected.";
-    private String path_borders = NO_FILE_SELECTED;
-    private String path_width = NO_FILE_SELECTED;
+    private String pathBorders = NO_FILE_SELECTED;
+    private String pathWidth = NO_FILE_SELECTED;
     private ImagePlus inputImage;
     private ImagePlus outputImage;
     /**
@@ -110,7 +110,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	final ExecutorService executorService = Executors
 		.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 	// final AnalyticalCoordinateCorrection coordinateCorrection = new AnalyticalCoordinateCorrection(
-	// getFunctionWidth(), getFunctionBorders());
+	// getFunctionWidth(), getFunctionBorders(), camSetup);
 	final SimpleCoordinateCorrection coordinateCorrection = new SimpleCoordinateCorrection(getFunctionWidth(),
 		getFunctionBorders(), camSetup);
 	final NoIntensityCorrection intensityCorrection = new NoIntensityCorrection(
@@ -154,11 +154,19 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	}
     }
 
+    public ImagePlus correctImage(final ImagePlus input_image, final String path_borders, final String path_width) {
+	this.inputImage = input_image;
+	this.pathBorders = path_borders;
+	this.pathWidth = path_width;
+	run(null);
+	return outputImage;
+    }
+
     /**
      * The parameters of two 3D polynomials are parsed from a file and stored at individual arrays.
      */
     private SR_EELS_Polynomial_2D getFunctionBorders() {
-	final DataImporter importer = new DataImporter(path_borders, true);
+	final DataImporter importer = new DataImporter(pathBorders, true);
 	final double[][] vals = importer.vals;
 	final int m = 2;
 	final int n = 2;
@@ -177,7 +185,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      * The parameters of two 3D polynomials are parsed from a file and stored at individual arrays.
      */
     private SR_EELS_Polynomial_2D getFunctionWidth() {
-	final DataImporter importer = new DataImporter(path_width, false);
+	final DataImporter importer = new DataImporter(pathWidth, false);
 	final double[][] vals = importer.vals;
 	final int m = 2;
 	final int n = 2;
@@ -228,27 +236,27 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 		return NO_CHANGES | DONE;
 	    }
 	    if (found_poly.size() > 1) {
-		path_width = gd.getNextRadioButton();
+		pathWidth = gd.getNextRadioButton();
 	    }
 	    if (found_borders.size() > 1) {
-		path_borders = gd.getNextRadioButton();
+		pathBorders = gd.getNextRadioButton();
 	    }
 	}
 	/*
 	 * If only one file has been found, this one automatically is passed to the parameters dialog.
 	 */
 	if (found_poly.size() == 1) {
-	    path_width = found_poly.getFirst();
+	    pathWidth = found_poly.getFirst();
 	}
 	if (found_borders.size() == 1) {
-	    path_borders = found_borders.getFirst();
+	    pathBorders = found_borders.getFirst();
 	}
 	do {
 	    if (showParameterDialog(command) == CANCEL) {
 		canceled();
 		return NO_CHANGES | DONE;
 	    }
-	} while (!path_width.contains(".txt") | !path_borders.contains(".txt"));
+	} while (!pathWidth.contains(".txt") | !pathBorders.contains(".txt"));
 	inputImage = imp;
 	return FLAGS;
     }
@@ -283,16 +291,16 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      */
     private int showParameterDialog(final String title) {
 	final GenericDialogPlus gd = new GenericDialogPlus(title + " - set parameters", IJ.getInstance());
-	gd.addFileField(SR_EELS.FILENAME_WIDTH, path_width);
-	gd.addFileField(SR_EELS.FILENAME_BORDERS, path_borders);
+	gd.addFileField(SR_EELS.FILENAME_WIDTH, pathWidth);
+	gd.addFileField(SR_EELS.FILENAME_BORDERS, pathBorders);
 	// TODO Add drop down menu for correction method.
 	gd.setResizable(false);
 	gd.showDialog();
 	if (gd.wasCanceled()) {
 	    return CANCEL;
 	}
-	path_width = gd.getNextString();
-	path_borders = gd.getNextString();
+	pathWidth = gd.getNextString();
+	pathBorders = gd.getNextString();
 	return OK;
     }
 
