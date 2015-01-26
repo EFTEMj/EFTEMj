@@ -137,7 +137,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 		    public void run() {
 			for (int x1 = 0; x1 < inputImage.getWidth(); x1++) {
 			    output.setf(
-				    x2Temp * output.getWidth() + x1,
+				    x1,
+				    x2Temp,
 				    intensityCorrection.getIntensity(camSetup.getBinningX1() * x1,
 					    camSetup.getBinningX2() * x2Temp));
 			}

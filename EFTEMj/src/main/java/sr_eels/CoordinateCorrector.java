@@ -23,10 +23,7 @@ public abstract class CoordinateCorrector {
 	// }
 	final float y2n = calcY2n(pointIn[0], pointIn[1]);
 	/*
-	 * To calculate the correct y1, I have to shift the polynomial.
-	 * 
-	 * Where x1=-2048 it has to be x1=0. This is
-	 * 
+	 * To calculate the correct y1, I have to shift the polynomial. Where x1=-2048 it has to be x1=0. This is
 	 * because I use the inverse of the arc length to calculate y1.
 	 */
 	pointOut[0] = calcY1(pointIn[0], y2n) + camSetup.getCameraOffsetX1();

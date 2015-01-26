@@ -1,10 +1,7 @@
 package sr_eels.testing;
 
-import java.util.HashMap;
-
 import libs.lma.implementations.Polynomial_2D;
 import sr_eels.CameraSetup;
-import sr_eels.SR_EELS_Exception;
 
 public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 
@@ -87,45 +84,33 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 	return fit + "\n\n" + function + "\n\n" + compare + "\n\n" + splot;
     }
 
-    public double intDX2(final double[] x) {
+    public double intDX2(final double[] x, final double[] shiftedParams) {
 	double value = 0;
 	for (int i = 0; i <= m; i++) {
 	    for (int j = 0; j <= n; j++) {
-		value += params[(n + 1) * i + j] * Math.pow(x[0], i) * Math.pow(x[1], j + 1) / (j + 1);
+		value += shiftedParams[(n + 1) * i + j] * Math.pow(x[0], i) * Math.pow(x[1], j + 1) / (j + 1);
 	    }
 	}
 	return value;
     }
 
-    HashMap<Double, Double> calculatedIntMax = new HashMap<Double, Double>();
-
-    public double normAreaToMax(final double[] x) throws SR_EELS_Exception {
-	if (val(x) <= 0) {
-	    throw new SR_EELS_Exception();
+    public double normAreaToMax(final double[] x) {
+	final double[] shiftedParams = params.clone();
+	if (val(x) < 0) {
+	    shiftedParams[0] = params[0] - val(x);
 	}
-	double value;
-	if (calculatedIntMax.containsKey(x[0])) {
-	    value = calculatedIntMax.get(x[0]) - intDX2(x);
-	} else {
-	    final double intMax = intDX2(getMaxPos(x));
-	    value = intMax - intDX2(x);
-	    calculatedIntMax.put(x[0], intMax);
-	}
-	return value / calculatedMax.get(x[0]);
+	final double intMax = intDX2(getMaxPos(x), shiftedParams);
+	final double value = intDX2(x, shiftedParams) - intMax;
+	final double yMax = val(getMaxPos(x));
+	return getMaxPos(x)[1] + value / yMax;
     }
 
-    public double normAreaToMax(final double x2) throws SR_EELS_Exception {
+    public double normAreaToMax(final double x2) {
 	final double[] x = new double[] { 0, x2 };
 	return normAreaToMax(x);
     }
 
-    HashMap<Double, Double> calculatedMaxPos = new HashMap<Double, Double>();
-    HashMap<Double, Double> calculatedMax = new HashMap<Double, Double>();
-
     private double[] getMaxPos(final double[] x) {
-	if (calculatedMaxPos.containsKey(x[0])) {
-	    return new double[] { x[0], calculatedMaxPos.get(x[0]) };
-	}
 	// double b0 = 0;
 	double b1 = 0;
 	double b2 = 0;
@@ -135,9 +120,6 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 	    b2 += params[i * m + 2] * Math.pow(x[0], i);
 	}
 	final double yMaxPos = b1 / (2 * b2);
-	calculatedMaxPos.put(x[0], yMaxPos);
-	final double yMax = val(new double[] { x[0], yMaxPos });
-	calculatedMax.put(x[0], yMax);
 	return new double[] { x[0], yMaxPos };
 
     }
