@@ -70,7 +70,7 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 	for (int i = 0; i <= m; i++) {
 	    for (int j = 0; j <= n; j++) {
 		compare += String.format("\naJ%d%d = %+6e", i, j, params[(n + 1) * i + j]);
-		functionJava += String.format("a%d%d*x**%d*y**%d", i, j, i, j);
+		functionJava += String.format("aJ%d%d*x**%d*y**%d", i, j, i, j);
 		if (i != m | j != n) {
 		    functionJava += " + ";
 		}
