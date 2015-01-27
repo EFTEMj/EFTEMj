@@ -11,7 +11,8 @@ public class SimpleCoordinateCorrection extends CoordinateCorrector {
 
     @Override
     float calcY2n(final float x1, final float x2) throws SR_EELS_Exception {
-	return (float) functionWidth.normAreaToMax(new double[] { 0, x2 });
+	final float y2n = (float) functionWidth.normAreaToMax(new double[] { 0, x2 });
+	return y2n;
     }
 
     @Override
@@ -21,7 +22,7 @@ public class SimpleCoordinateCorrection extends CoordinateCorrector {
 
     @Override
     float calcY2(final float y1, final float y2n) {
-	return (float) functionBorder.val(new double[] { y1, y2n });
+	final float y2 = (float) functionBorder.val(new double[] { y1, y2n });
+	return y2;
     }
-
 }

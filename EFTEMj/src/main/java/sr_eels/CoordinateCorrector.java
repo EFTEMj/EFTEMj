@@ -25,7 +25,7 @@ public abstract class CoordinateCorrector {
 	 * because I use the inverse of the arc length to calculate y1.
 	 */
 	final float y1 = calcY1(pointIn[0], y2n);
-	final float y2 = calcY2(pointOut[0], y2n);
+	final float y2 = calcY2(pointIn[0], y2n);
 	pointOut[0] = (y1 + camSetup.getCameraOffsetX1()) / camSetup.getBinningX1();
 	pointOut[1] = (y2 + camSetup.getCameraOffsetX2()) / camSetup.getBinningX2();
 	return pointOut;
