@@ -17,8 +17,8 @@ public class NoIntensityCorrection extends IntensityCorrector {
 	} catch (final SR_EELS_Exception exc1) {
 	    return 0f;
 	}
-	final int y1 = Math.round(point[0] / camSetup.getBinningX1());
-	final int y2 = Math.round(point[1] / camSetup.getBinningX2());
+	final int y1 = Math.round(point[0]);
+	final int y2 = Math.round(point[1]);
 	try {
 	    return inputImage.getf(y1, y2);
 	} catch (final ArrayIndexOutOfBoundsException exc) {

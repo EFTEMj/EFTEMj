@@ -177,8 +177,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	if (DEBUG) {
 	    for (int x2 = 0; x2 < output.getHeight(); x2++) {
 		for (int x1 = 0; x1 < inputImage.getWidth(); x1++) {
-		    output.setf(x2 * output.getWidth() + x1, intensityCorrection.getIntensity(camSetup.getBinningX1()
-			    * x1, camSetup.getBinningX2() * x2));
+		    final float intensity = intensityCorrection.getIntensity(x1, x2);
+		    output.setf(x1, x2, intensity);
 		}
 		updateProgress();
 	    }
@@ -196,11 +196,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 		    @Override
 		    public void run() {
 			for (int x1 = 0; x1 < inputImage.getWidth(); x1++) {
-			    output.setf(
-				    x1,
-				    x2Temp,
-				    intensityCorrection.getIntensity(camSetup.getBinningX1() * x1,
-					    camSetup.getBinningX2() * x2Temp));
+			    final float intensity = intensityCorrection.getIntensity(x1, x2Temp);
+			    output.setf(x1, x2Temp, intensity);
 			}
 			updateProgress();
 		    }
