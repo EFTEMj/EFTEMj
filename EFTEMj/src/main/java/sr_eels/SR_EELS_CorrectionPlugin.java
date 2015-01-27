@@ -53,11 +53,29 @@ import sr_eels.testing.SR_EELS_Polynomial_2D;
 import sr_eels.testing.SR_EELS_characterisation;
 
 /**
+ * <p>
+ * This plugin is used to correct SR-EELS images.
+ * </p>
+ *
+ * <p>
+ * As it implements {@link ExtendedPlugInFilter} you have to apply it to an image. Additionally there has to be a
+ * SR-EELS characterisation data set. Each data set contains the files <code>Borders.txt</code> and
+ * <code>Width.txt</code> that are necessary to run the correction. The plugin assumes that the data set is can be found
+ * in a sub folder of where the SR-EELS image is stored. If there is more than one characterisation data set, the plugin
+ * presents a dialog to choose the preferred data set.
+ * </p>
+ *
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
  *
  */
 public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 
+    /**
+     * Use this to enable the debug mode.
+     *
+     * For example multithreading is disabled when running in debug mode.
+     */
+    private static final boolean DEBUG = false;
     /**
      * The plugin will be aborted.
      */
@@ -70,10 +88,33 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      * <code>DOES_32 | NO_CHANGES | FINAL_PROCESSING</code>
      */
     private final int FLAGS = DOES_32 | NO_CHANGES | FINAL_PROCESSING;
+    /**
+     * A {@link String} for the file field of the {@link GenericDialogPlus}.
+     */
     private final String NO_FILE_SELECTED = "No file selected.";
+    /**
+     * The path where <code>Borders.txt</code> can be found.
+     */
     private String pathBorders = NO_FILE_SELECTED;
+    /**
+     * The path where <code>Width.txt</code> can be found.
+     */
     private String pathWidth = NO_FILE_SELECTED;
+    /**
+     * <p>
+     * An {@link ImagePlus} that contains the image that will be corrected.
+     * </p>
+     *
+     * <p>
+     * This images will not be changed!
+     * </p>
+     */
     private ImagePlus inputImage;
+    /**
+     * <p>
+     * An {@link ImagePlus} that contains the image that is the result of the correction.
+     * </p>
+     */
     private ImagePlus outputImage;
     /**
      * This field indicates the progress. A static method is used to increase the value by 1. It is necessary to use
@@ -92,6 +133,9 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      */
     @Override
     public int setup(final String arg, final ImagePlus imp) {
+	/*
+	 * This will be called when the run method has finished.
+	 */
 	if (arg == "final") {
 	    outputImage.show();
 	    return NO_CHANGES | DONE;
@@ -107,20 +151,30 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     @Override
     public void run(final ImageProcessor ip) {
 	final CameraSetup camSetup = new CameraSetup(inputImage);
-	final ExecutorService executorService = Executors
-		.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+	/*
+	 * Each correction contains of implementations of the abstract classes CoordinateCorrector and a
+	 * IntensityCorrector that can be can be combined as you want.
+	 * 
+	 * Ba using getFunctionWidth() and getFunctionBorders() the characterisation results are loaded and an
+	 * implementation of the Levenberg–Marquardt algorithm (LMA) is used to fit functions to the discrete values.
+	 */
+	final SimpleCoordinateCorrection coordinateCorrection = new SimpleCoordinateCorrection(
+		getFunctionWidth(camSetup), getFunctionBorders(camSetup), camSetup);
 	// final AnalyticalCoordinateCorrection coordinateCorrection = new AnalyticalCoordinateCorrection(
 	// getFunctionWidth(), getFunctionBorders(), camSetup);
-	final SimpleCoordinateCorrection coordinateCorrection = new SimpleCoordinateCorrection(getFunctionWidth(),
-		getFunctionBorders(), camSetup);
 	final NoIntensityCorrection intensityCorrection = new NoIntensityCorrection(
 		(FloatProcessor) inputImage.getProcessor(), coordinateCorrection, camSetup);
+	/*
+	 * TODO: Add the used correction methods to the image title.
+	 */
 	outputImage = new ImagePlus(inputImage.getTitle() + "_corrected", new FloatProcessor(inputImage.getWidth(),
 		inputImage.getHeight(), new double[inputImage.getWidth() * inputImage.getHeight()]));
 	final FloatProcessor output = (FloatProcessor) outputImage.getProcessor();
+	/*
+	 * Each line of the image is a step that is visualise by the progress bar of ImageJ.
+	 */
 	progressSteps = inputImage.getHeight();
-	final boolean debug = false;
-	if (debug) {
+	if (DEBUG) {
 	    for (int x2 = 0; x2 < output.getHeight(); x2++) {
 		for (int x1 = 0; x1 < inputImage.getWidth(); x1++) {
 		    output.setf(x2 * output.getWidth() + x1, intensityCorrection.getIntensity(camSetup.getBinningX1()
@@ -129,6 +183,12 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 		updateProgress();
 	    }
 	} else {
+	    /*
+	     * The ExecutorService is used to handle the multithreading. see
+	     * http://www.vogella.com/tutorials/JavaConcurrency/article.html#threadpools
+	     */
+	    final ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime()
+		    .availableProcessors());
 	    for (int x2 = 0; x2 < inputImage.getHeight(); x2++) {
 		final int x2Temp = x2;
 		executorService.execute(new Runnable() {
@@ -164,12 +224,33 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     }
 
     /**
-     * The parameters of two 3D polynomials are parsed from a file and stored at individual arrays.
+     * <p>
+     * The results of the {@link SR_EELS_characterisation} plugin are parsed.
+     * </p>
+     *
+     * <p>
+     * This function extracts the values that describe the pathway of the borders of a spectrum.
+     * </p>
+     *
+     * @param camSetup
+     *            is used to shift the point 0,0 to the centre of the camera.
+     * @return a polynomial that fits the given data points
      */
-    private SR_EELS_Polynomial_2D getFunctionBorders() {
+    private SR_EELS_Polynomial_2D getFunctionBorders(final CameraSetup camSetup) {
 	final DataImporter importer = new DataImporter(pathBorders, true);
-	final double[][] vals = importer.vals;
-	final int m = 2;
+	final double[][] vals = new double[importer.vals.length][importer.vals[0].length];
+	for (int i = 0; i < vals.length; i++) {
+	    // y value (this is a position on the x2 axis)
+	    vals[i][0] = importer.vals[i][0] - camSetup.getCameraOffsetX2();
+	    // x1 value
+	    vals[i][1] = importer.vals[i][1] - camSetup.getCameraOffsetX1();
+	    // x2 value
+	    vals[i][2] = importer.vals[i][2] - camSetup.getCameraOffsetX2();
+	}
+	/*
+	 * Define the orders of the 2D polynomial.
+	 */
+	final int m = 3;
 	final int n = 2;
 	final SR_EELS_Polynomial_2D func = new SR_EELS_Polynomial_2D(m, n);
 	final double[] a_fit = new double[(m + 1) * (n + 1)];
@@ -183,11 +264,32 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     }
 
     /**
-     * The parameters of two 3D polynomials are parsed from a file and stored at individual arrays.
+     * <p>
+     * The results of the {@link SR_EELS_characterisation} plugin are parsed.
+     * </p>
+     *
+     * <p>
+     * This function extracts the values that describe the width of a spectrum depending on its position on the camera.
+     * </p>
+     *
+     * @param camSetup
+     *            is used to shift the point 0,0 to the centre of the camera.
+     * @return a polynomial that fits the given data points
      */
-    private SR_EELS_Polynomial_2D getFunctionWidth() {
+    private SR_EELS_Polynomial_2D getFunctionWidth(final CameraSetup camSetup) {
 	final DataImporter importer = new DataImporter(pathWidth, false);
-	final double[][] vals = importer.vals;
+	final double[][] vals = new double[importer.vals.length][importer.vals[0].length];
+	for (int i = 0; i < vals.length; i++) {
+	    // y value (the width is a difference of two x2 values)
+	    vals[i][0] = importer.vals[i][0];
+	    // x1 value
+	    vals[i][1] = importer.vals[i][1] - camSetup.getCameraOffsetX1();
+	    // x2 value
+	    vals[i][2] = importer.vals[i][2] - camSetup.getCameraOffsetX2();
+	}
+	/*
+	 * Define the orders of the 2D polynomial.
+	 */
 	final int m = 2;
 	final int n = 2;
 	final SR_EELS_Polynomial_2D func = new SR_EELS_Polynomial_2D(m, n);
@@ -327,15 +429,36 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	IJ.showProgress(progress, progressSteps);
     }
 
+    /**
+     * <p>
+     * This main method is used for testing. It starts ImageJ, loads a test image and starts the plugin.
+     * </p>
+     *
+     * <p>
+     * User interaction is necessary, as the plugin uses a GUI.
+     * </p>
+     * <p>
+     * <a href='https://github.com/imagej/minimal-ij1-plugin/blob/master/src/main/java/Process_Pixels.java'>see
+     * minimal-ij1-plugin on GitHub</a>
+     * </p>
+     *
+     * @param args
+     */
     public static void main(final String[] args) {
-	// start ImageJ
+	/*
+	 * start ImageJ
+	 */
 	new ImageJ();
 
-	// open the sample stack
-	final ImagePlus image = IJ.openImage("C:\\Temp\\SR_EELS_superposition.tif");
+	/*
+	 * open the test image
+	 */
+	final ImagePlus image = IJ.openImage("C:/Temp/20140507 SM315 -11%/SR-EELS_testImage_small.tif");
 	image.show();
 
-	// run the plugin
+	/*
+	 * run the plugin
+	 */
 	final Class<?> clazz = SR_EELS_CorrectionPlugin.class;
 	IJ.runPlugIn(clazz.getName(), "");
     }
@@ -343,7 +466,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     /**
      * <p>
      * This class is used to load a data file that contains a data set for the fit of a 2D polynomial. For each y-value
-     * there is are pairs of x-values that are stored at a 2D array.
+     * there is are pairs of x-values that is stored at a 2D array.
      * </p>
      *
      * <p>
@@ -360,17 +483,45 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      */
     private static class DataImporter {
 
+	/**
+	 * <p>
+	 * The first index will iterate through all the data points.
+	 * </p>
+	 * <p>
+	 * The second index defines y-value (index 0), the x1-value (index 1) and the x2-value (index 2).
+	 * </p>
+	 */
 	protected double[][] vals;
+	/**
+	 * When loading the file <code>Borders.txt</code> there is a fourth column, that contains the weight. This value
+	 * is stored in a separate array-
+	 */
 	protected double[] weights;
 
 	/**
+	 * <p>
 	 * Create a new data set by loading it from a file.
+	 * </p>
+	 *
+	 * <p>
+	 * This method sopports the files <code>Borders.txt</code> and <code>width.txt</code> that are created by
+	 * {@link SR_EELS_characterisation}.
+	 * </p>
 	 *
 	 * @param dataFilePath
 	 *            is the path to the file that contains the data set.
+	 *
+	 * @param readWeights
+	 *            is used to disable the readout of the fourth column that contains weights.
 	 */
 	public DataImporter(final String dataFilePath, final boolean readWeights) {
+	    /*
+	     * 'Borders.txt' contains a fourth column and has to be handled different than 'Width.txt'.
+	     */
 	    boolean isBordersTxt = false;
+	    /*
+	     * First we read the file and store the values a a vector.
+	     */
 	    final File file = new File(dataFilePath);
 	    final Vector<Double[]> values = new Vector<Double[]>();
 	    try {
@@ -385,6 +536,9 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 			 * Only read the line if if does not contain any comment.
 			 */
 			if (line.indexOf('#') == -1) {
+			    /*
+			     * This RegExpr splits the line at whitespace characters.
+			     */
 			    final String[] splitLine = line.split("\\s+");
 			    if (readWeights == true) {
 				if (splitLine.length >= 4) {
@@ -410,16 +564,19 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	    } catch (final IOException exc) {
 		exc.printStackTrace();
 	    }
+	    /*
+	     * Reading the file is done now.
+	     */
 	    vals = new double[values.size()][3];
 	    weights = new double[values.size()];
 	    for (int i = 0; i < values.size(); i++) {
 		if (isBordersTxt) {
-		    vals[i][0] = values.get(i)[2] - CameraSetup.getFullHeight() / 2;
+		    vals[i][0] = values.get(i)[2];
 		} else {
 		    vals[i][0] = values.get(i)[2];
 		}
-		vals[i][1] = values.get(i)[0] - CameraSetup.getFullWidth() / 2;
-		vals[i][2] = values.get(i)[1] - CameraSetup.getFullHeight() / 2;
+		vals[i][1] = values.get(i)[0];
+		vals[i][2] = values.get(i)[1];
 		if (readWeights == true) {
 		    weights[i] = values.get(i)[3];
 		}
