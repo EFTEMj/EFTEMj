@@ -258,7 +258,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	final LMA lma = new LMA(func, a_fit, vals);
 	lma.fit();
 	if (true) {
-	    System.out.println(func.compareWithGnuplot(SR_EELS_Polynomial_2D.BORDERS));
+	    IJ.log(func.compareWithGnuplot(SR_EELS_Polynomial_2D.BORDERS, camSetup));
 	}
 	return new SR_EELS_Polynomial_2D(m, n, a_fit);
     }
@@ -298,7 +298,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	final LMA lma = new LMA(func, b_fit, vals);
 	lma.fit();
 	if (true) {
-	    System.out.println(func.compareWithGnuplot(SR_EELS_Polynomial_2D.WIDTH_VS_POS));
+	    IJ.log(func.compareWithGnuplot(SR_EELS_Polynomial_2D.WIDTH_VS_POS, camSetup));
 	}
 	return new SR_EELS_Polynomial_2D(m, n, b_fit);
     }

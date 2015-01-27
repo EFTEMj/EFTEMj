@@ -16,53 +16,48 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 	super(m, n, params);
     }
 
-    public String getGnuplotCommands(final int functionType) {
+    public String compareWithGnuplot(final int functionType, final CameraSetup camSetup) {
 	String filename = "";
 	String using = "";
-	assert (CameraSetup.getFullWidth() == CameraSetup.getFullHeight());
-	final String offset = "offset = " + CameraSetup.getFullWidth() / 2;
+	final String offsetX1 = "offsetX1 = " + camSetup.getCameraOffsetX1();
+	final String offsetX2 = "offsetX2 = " + camSetup.getCameraOffsetX2();
 	switch (functionType) {
 	case BORDERS:
 	    filename = "Borders.txt";
-	    using = "using ($1-offset):($2-offset):($3-offset):4";
+	    using = "using ($1-offsetX1):($2-offsetX2):($3-offsetX2):4";
 	    break;
 	case WIDTH_VS_POS:
 	    filename = "Width.txt";
-	    using = "using ($1-offset):($2-offset):3:(1)";
+	    using = "using ($1-offsetX1):($2-offsetX2):3:(1)";
 	    break;
 	default:
 	    break;
 	}
-	String function = "f(x,y) = ";
+	String functionGnu = "f(x,y) = ";
 	String fit = "fit f(x,y) '" + filename + "' " + using + " zerror via ";
 	for (int i = 0; i <= m; i++) {
 	    for (int j = 0; j <= n; j++) {
-		function += String.format("a%d%d*x**%d*y**%d", i, j, i, j);
+		functionGnu += String.format("a%d%d*x**%d*y**%d", i, j, i, j);
 		fit += String.format("a%d%d", i, j);
 		if (i != m | j != n) {
-		    function += " + ";
+		    functionGnu += " + ";
 		    fit += ",";
 		}
 	    }
 	}
-	return offset + "\n" + function + "\n" + fit;
-    }
-
-    public String compareWithGnuplot(final int functionType) {
-	final String fit = getGnuplotCommands(functionType);
-	String filename = "";
-	String using = "";
+	final String title = String.format("%n#####%n# Fit of '%s':%n#####%n", filename);
+	fit = title + "\n" + offsetX1 + "\n" + offsetX2 + "\n" + functionGnu + "\n" + fit;
 	String residuals = "";
 	switch (functionType) {
 	case BORDERS:
 	    filename = "Borders.txt";
-	    using = "using ($1-offset):($2-offset):($3-offset)";
-	    residuals = "using ($1-offset):($2-offset):(abs( $3 - offset - fJ($1-offset,$2-offset))**2)";
+	    using = "using ($1-offsetX1):($2-offsetX2):($3-offsetX2)";
+	    residuals = "using ($1-offsetX1):($2-offsetX2):(abs( $3 - offsetX2 - fJ($1-offsetX1,$2-offsetX2))**2)";
 	    break;
 	case WIDTH_VS_POS:
 	    filename = "Width.txt";
-	    using = "using ($1-offset):($2-offset):3";
-	    residuals = "using ($1-offset):($2-offset):(abs( $3 - fJ($1-offset,$2-offset))**2)";
+	    using = "using ($1-offsetX1):($2-offsetX2):3";
+	    residuals = "using ($1-offsetX1):($2-offsetX2):(abs( $3 - fJ($1-offsetX1,$2-offsetX2))**2)";
 	    break;
 	default:
 	    break;
@@ -70,18 +65,18 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 	final String splot = String
 		.format("splot '%s' %s notitle,\\%nf(x,y) title 'Gnuplot', fJ(x,y) title 'Java LMA',\\%n'%1$s' %s title 'residuals'",
 			filename, using, residuals);
-	String function = "fJ(x,y) = ";
+	String functionJava = "fJ(x,y) = ";
 	String compare = "#Java LMA";
 	for (int i = 0; i <= m; i++) {
 	    for (int j = 0; j <= n; j++) {
 		compare += String.format("\naJ%d%d = %+6e", i, j, params[(n + 1) * i + j]);
-		function += String.format("a%d%d*x**%d*y**%d", i, j, i, j);
+		functionJava += String.format("a%d%d*x**%d*y**%d", i, j, i, j);
 		if (i != m | j != n) {
-		    function += " + ";
+		    functionJava += " + ";
 		}
 	    }
 	}
-	return fit + "\n\n" + function + "\n\n" + compare + "\n\n" + splot;
+	return fit + "\n\n" + functionJava + "\n\n" + compare + "\n\n" + splot;
     }
 
     public double intDX2(final double[] x, final double[] shiftedParams) {
