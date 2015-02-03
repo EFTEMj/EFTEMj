@@ -60,7 +60,7 @@ public class SR_EELS_FolderCorrectionPlugin implements PlugIn {
 		}
 	    }
 	}
-	IJ.run("Image Sequence...", "open=[" + image + "] sort");
+	IJ.run("Image Sequence...", "open=[" + image + "] file=Cal_ sort");
 	final ImagePlus stack = IJ.getImage();
 	IJ.run(stack, "Z Project...", "projection=[Sum Slices]");
 	stack.close();
