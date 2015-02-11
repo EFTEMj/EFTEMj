@@ -1,3 +1,16 @@
+/*
+ * file:	correctSR-EELS.ijm
+ * author:	Michael Entrup b. Epping (michael.entrup@wwu.de)
+ * version:	20140807
+ * info:	This macro is only intended for testing.
+ *			It's a draft version of the SR-EELS correction.
+ *			You have to process the SR-EELS characterisation results with Gnuplot [1] to the parameters a<i><j> and b<i><j>.
+ *
+ *			There is a Jython implementation of thi macro.
+ *			
+ * [1] http://www.gnuplot.info/
+ */
+ 
 a00 = -1.437557e+002
 a01 = 1.069277e+000
 a02 = -6.310422e-006

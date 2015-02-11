@@ -19,7 +19,7 @@ public class Tutorial_Drift implements PlugIn {
 
     @Override
     public void run(final String arg) {
-	IJ.runMacro(new JARTool().getText(EFTEMj.PATH_MACROS + filename_ijm_create));
+	IJ.runMacro(new JARTool().getText(EFTEMj.PATH_SCRIPTS_AND_MACROS + filename_ijm_create));
 	// TODO Create the tutorial.
     }
 

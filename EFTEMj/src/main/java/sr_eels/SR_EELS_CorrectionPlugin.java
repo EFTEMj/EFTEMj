@@ -50,7 +50,7 @@ import java.util.concurrent.TimeUnit;
 
 import libs.lma.LMA;
 import sr_eels.testing.SR_EELS_Polynomial_2D;
-import sr_eels.testing.SR_EELS_characterisation;
+import sr_eels.testing.SR_EELS_CharacterisationPlugin;
 
 /**
  * <p>
@@ -222,7 +222,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 
     /**
      * <p>
-     * The results of the {@link SR_EELS_characterisation} plugin are parsed.
+     * The results of the {@link SR_EELS_CharacterisationPlugin} plugin are parsed.
      * </p>
      *
      * <p>
@@ -262,7 +262,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 
     /**
      * <p>
-     * The results of the {@link SR_EELS_characterisation} plugin are parsed.
+     * The results of the {@link SR_EELS_CharacterisationPlugin} plugin are parsed.
      * </p>
      *
      * <p>
@@ -472,7 +472,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      * </p>
      *
      * <p>
-     * The Plugin {@link SR_EELS_characterisation} creates files that can be processed by this class.
+     * The Plugin {@link SR_EELS_CharacterisationPlugin} creates files that can be processed by this class.
      * </p>
      *
      * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
@@ -502,7 +502,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	 *
 	 * <p>
 	 * This method sopports the files <code>Borders.txt</code> and <code>width.txt</code> that are created by
-	 * {@link SR_EELS_characterisation}.
+	 * {@link SR_EELS_CharacterisationPlugin}.
 	 * </p>
 	 *
 	 * @param dataFilePath

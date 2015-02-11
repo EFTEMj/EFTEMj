@@ -1,3 +1,16 @@
+'''
+file:		correctSR-EELS.py
+author:		Michael Entrup b. Epping (michael.entrup@wwu.de)
+version:	20140807
+info:		This script is only intended for testing.
+			It's a draft version of the SR-EELS correction.
+			You have to process the SR-EELS characterisation results with Gnuplot [1] to the parameters a<i><j> and b<i><j>.
+
+			There is an imagej macro implementation of this script.
+
+[1] http://www.gnuplot.info/
+'''
+
 from ij import IJ
 import math
 import time

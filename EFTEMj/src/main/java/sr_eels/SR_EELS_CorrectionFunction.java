@@ -36,7 +36,7 @@ import java.util.Vector;
 
 import libs.lma.LMA;
 import libs.lma.implementations.Polynomial_2D;
-import sr_eels.testing.SR_EELS_characterisation;
+import sr_eels.testing.SR_EELS_CharacterisationPlugin;
 
 /**
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
@@ -170,7 +170,7 @@ public class SR_EELS_CorrectionFunction {
      * </p>
      *
      * <p>
-     * The Plugin {@link SR_EELS_characterisation} creates files that can be processed by this class.
+     * The Plugin {@link SR_EELS_CharacterisationPlugin} creates files that can be processed by this class.
      * </p>
      *
      * @author Michael Entrup b. Epping <michael.entrup@wwu.de>

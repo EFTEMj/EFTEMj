@@ -2,7 +2,6 @@
  * file:	SR-EELS_characterisation.ijm
  * author:	Michael Entrup b. Epping (michael.entrup@wwu.de)
  * version:	20141128
- * date:	28.11.2014
  * info:	This macro is used to characterise the distortions of an Zeiss in-column energy filter when using SR-EELS.
  * 			A series of calibration data sets is necessary to run the characterisation.
  * 			Place all data sets (images) at a single folder and run this macro.

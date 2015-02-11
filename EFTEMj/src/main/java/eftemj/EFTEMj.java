@@ -42,9 +42,9 @@ public class EFTEMj {
     public static final String PREFS_PREFIX = "EFTEMj.";
 
     /**
-     * The path inside the JAR file where the macro files are located.
+     * The path inside the JAR file where the macro and script files are located.
      */
-    public static final String PATH_MACROS = "/macros/";
+    public static final String PATH_SCRIPTS_AND_MACROS = "/macros/";
 
     /**
      * The path inside the JAR file where files for testing are located.

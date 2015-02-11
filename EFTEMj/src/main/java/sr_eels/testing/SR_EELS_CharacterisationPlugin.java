@@ -6,14 +6,13 @@ import ij.ImageJ;
 import ij.plugin.PlugIn;
 import tools.JARTool;
 
-public class SR_EELS_characterisation implements PlugIn {
+public class SR_EELS_CharacterisationPlugin implements PlugIn {
 
-    private final String filename_ijm_characterisation = "SR-EELS_characterisation.ijm";
+    private final String filename_ijm_Characterisation = "SR-EELS_Characterisation.ijm";
 
     @Override
     public void run(final String arg) {
-	IJ.runMacro(new JARTool().getText(EFTEMj.PATH_MACROS + filename_ijm_characterisation));
-	// TODO Create the tutorial.
+	IJ.runMacro(new JARTool().getText(EFTEMj.PATH_SCRIPTS_AND_MACROS + filename_ijm_Characterisation));
     }
 
     public static void main(final String[] args) {
@@ -21,7 +20,7 @@ public class SR_EELS_characterisation implements PlugIn {
 	new ImageJ();
 
 	// run the plugin
-	final Class<?> clazz = SR_EELS_characterisation.class;
+	final Class<?> clazz = SR_EELS_CharacterisationPlugin.class;
 	IJ.runPlugIn(clazz.getName(), "");
     }
 
