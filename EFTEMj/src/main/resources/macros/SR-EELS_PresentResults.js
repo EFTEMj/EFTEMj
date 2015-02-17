@@ -95,7 +95,7 @@ function main() {
 				correctionWriter.append(divStart);
 				var img = "<a href=\"" + montage + "\"><img src=\"" + montage + "\" class=\"img-responsive img-rounded\"></a>\n";
 				correctionWriter.append(img);
-				var desc = "<div class=\"specs\"><ul><li>specMag = " + foundDataSets[i].specMag + "</li><li>QSinK7 = " + foundDataSets[i].qSinK7 + "</li><li>Date: " + foundDataSets[i].date + "</li><li>Parameters: " + foundDataSets[i].paras + "</li></ul></div>\n";
+				var desc = "<div class=\"specs\"><ul><li>specMag = " + foundDataSets[i].specMag + "</li><li>QSinK7 = " + foundDataSets[i].qSinK7 + "</li><li>Date: " + foundDataSets[i].date + "</li><li>Comment: " + foundDataSets[i].comment + "</li><li>Parameters: " + foundDataSets[i].paras + "</li></ul></div>\n";
 				correctionWriter.append(desc);
 				var divEnd = "</div></div>\n";
 				correctionWriter.append(divEnd);
@@ -237,7 +237,8 @@ function Data(type, specMag, qSinK7, date, comment, paras, img) {
 	this.specMag = specMag;
 	this.qSinK7 = qSinK7;
 	this.date = date;
-	this.comment = comment;
+	if (comment != null) this.comment = comment;
+	else this.comment = "-";
 	this.paras = paras;
 	this.img = img;
 }
