@@ -112,7 +112,7 @@ function createMontage(resultPath) {
 	var projectionPath = pattern1.exec(resultPath)[1] + "projection.tif";
 	var filePath = pattern1.exec(resultPath)[1] + "montage_" + pattern2.exec(resultPath)[1] + ".png";
 	var file = new File(filePath);
-	if (file.exists()) {
+	if (!file.exists()) {
 		var imp1 = IJ.openImage(projectionPath);
 		var imp2 = IJ.openImage(resultPath);
 		var stack = new ImageStack(imp1.getWidth(), imp1.getHeight());
@@ -136,7 +136,7 @@ function createMontage(resultPath) {
 		imp.changes = false; // verhinder, das IJ 'Save changes to "Stack"?' fragt.
 		imp.close();
 		//var montage = IJ.getImage();
-		IJ.saveAs(imp, "png", filePath);
+		IJ.saveAs(montage, "png", filePath);
 		montage.close();
 	}
 	return filePath;

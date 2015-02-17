@@ -14,6 +14,8 @@ importClass(Packages.java.io.FileReader);
 importClass(Packages.java.io.FileWriter);
 importClass(Packages.ij.IJ);
 
+IJ.log(arguments.length);
+
 var input = "Q:/Aktuell/SR-EELS Calibration measurements/";
 var output = "Q:/Aktuell/SR-EELS Calibration measurements/HTML-Overview/";
 
