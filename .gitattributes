@@ -12,6 +12,8 @@
 *.config text
 *.ijm text
 *.plt text
+*.js text eol=lf
+*.ijm text eol=lf
 
 # Declare files that will always have CRLF line endings on checkout.
 
