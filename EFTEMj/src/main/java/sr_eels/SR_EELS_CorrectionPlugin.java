@@ -49,8 +49,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import libs.lma.LMA;
-import sr_eels.testing.SR_EELS_Polynomial_2D;
 import sr_eels.testing.SR_EELS_CharacterisationPlugin;
+import sr_eels.testing.SR_EELS_Polynomial_2D;
 
 /**
  * <p>
@@ -297,7 +297,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	if (true) {
 	    IJ.log(func.compareWithGnuplot(SR_EELS_Polynomial_2D.WIDTH_VS_POS, camSetup));
 	}
-	return new SR_EELS_Polynomial_2D(m, n, b_fit);
+	return new SR_EELS_Polynomial_2D(m, n, b_fit, true);
     }
 
     /*

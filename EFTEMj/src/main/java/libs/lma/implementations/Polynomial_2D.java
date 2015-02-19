@@ -61,6 +61,10 @@ public class Polynomial_2D extends LMAMultiDimFunction {
 	this.params = params;
     }
 
+    public double getParam(int i, int j) {
+	return params[(n + 1) * i + j];
+    }
+
     /**
      * @param x
      *            is the coordinate (x1,x2).
