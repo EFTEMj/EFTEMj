@@ -36,11 +36,13 @@ import ij.plugin.filter.PlugInFilterRunner;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 
+import java.awt.Desktop;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Vector;
@@ -448,9 +450,37 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	new ImageJ();
 
 	/*
+	 * Check if the test image is available. Otherwise prompt a message with the download link.
+	 */
+	final File testImage = new File("C:/Temp/20140106 SM125 -20%/SR-EELS_TestImage_small.tif");
+	if (!testImage.exists()) {
+	    final String url = "http://eftemj.entrup.com.de/SR-EELS_TestImage.zip";
+	    /*
+	     * IJ.showMessage("Test image not found", "<html>" + "Please download the file" + "<br />" + "<a href='" +
+	     * url + "'>SR-EELS_TestImage.zip</a> from" + "<br/>" + url + "<br />" + "and extract it to 'C:\\temp\\'." +
+	     * "</html>");
+	     */
+	    final GenericDialog gd = new GenericDialog("Test image not found");
+	    gd.addMessage("Please download the file 'SR-EELS_TestImage.zip' and extract it to 'C:\\temp\\'.");
+	    gd.addMessage("Copy the following link, or click Ok to open it with your default browser.");
+	    gd.addStringField("", url, url.length());
+	    gd.showDialog();
+	    if (gd.wasOKed()) {
+		try {
+		    final URI link = new URI(url);
+		    final Desktop desktop = Desktop.getDesktop();
+		    desktop.browse(link);
+		} catch (final Exception exc) {
+		    IJ.showMessage("An Exception occured", exc.getMessage());
+		    return;
+		}
+	    }
+	    return;
+	}
+	/*
 	 * open the test image
 	 */
-	final ImagePlus image = IJ.openImage("C:/Temp/20140507 SM315 -11%/SR-EELS_testImage_small.tif");
+	final ImagePlus image = IJ.openImage("C:/Temp/20140106 SM125 -20%/SR-EELS_TestImage_small.tif");
 	image.show();
 
 	/*
