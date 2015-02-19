@@ -3,6 +3,7 @@ package sr_eels.testing;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.measure.CurveFitter;
+import ij.plugin.frame.Fitter;
 import ij.process.FloatProcessor;
 
 import java.util.Collection;
@@ -83,7 +84,11 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 		index++;
 	    }
 	    final CurveFitter fit = new CurveFitter(xc, x);
-	    fit.doFit(CurveFitter.POLY3);
+	    try {
+		fit.doFit(CurveFitter.POLY3);
+	    } catch (final ArrayIndexOutOfBoundsException exc) {
+		fit.doFit(CurveFitter.STRAIGHT_LINE);
+	    }
 	    final double[] fitParams = fit.getParams();
 	    IJ.showMessage(map.get((int) rootL) + ", " + map.get((int) rootH));
 	    transformWidth = new FloatProcessor(CameraSetup.getFullWidth(), (int) (2 * Math.max(-rootL, rootH)));
@@ -95,7 +100,7 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 	    }
 	    final ImagePlus imp = new ImagePlus("transform width", transformWidth);
 	    imp.show();
-	    // Fitter.plot(fit);
+	    Fitter.plot(fit);
 	}
     }
 
@@ -162,39 +167,6 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 	return fit + "\n\n" + functionJava + "\n\n" + compare + "\n\n" + splot;
     }
 
-    public double intDX2(final double[] x, final double[] shiftedParams) {
-	double value = 0;
-	for (int i = 0; i <= m; i++) {
-	    for (int j = 0; j <= n; j++) {
-		value += shiftedParams[(n + 1) * i + j] * Math.pow(x[0], i) * Math.pow(x[1], j + 1) / (j + 1);
-	    }
-	}
-	return value;
-    }
-
-    public double normAreaToMax(final double[] x) {
-	return transformWidth.getf((int) x[0] + 2048, (int) x[1] + 2048);
-    }
-
-    public double normAreaToMax(final double x2) {
-	final double[] x = new double[] { 0, x2 };
-	return normAreaToMax(x);
-    }
-
-    private double[] getMaxPos(final double[] x) {
-	// double b0 = 0;
-	double b1 = 0;
-	double b2 = 0;
-	for (int i = 0; i < m; i++) {
-	    // b0 += params[i * m] * Math.pow(x[0], i);
-	    b1 += params[i * m + 1] * Math.pow(x[0], i);
-	    b2 += params[i * m + 2] * Math.pow(x[0], i);
-	}
-	final double yMaxPos = b1 / (2 * b2);
-	return new double[] { x[0], yMaxPos };
-
-    }
-
     public double getY1(final double arcLength, final double x2) {
 	final double a = getA(x2);
 	final double b = getB(x2);
@@ -220,6 +192,10 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
     private double getC(final double x2) {
 	final double a1 = params[3] + params[4] * x2 * params[5] * x2 * x2;
 	return a1 * a1 + 1;
+    }
+
+    public float getY2n(final double[] x2) {
+	return transformWidth.getf((int) x2[0] + 2048, (int) x2[1] + 2048);
     }
 
 }

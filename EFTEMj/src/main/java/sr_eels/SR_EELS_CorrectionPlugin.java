@@ -77,7 +77,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      *
      * For example multithreading is disabled when running in debug mode.
      */
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
     /**
      * The plugin will be aborted.
      */
@@ -157,13 +157,11 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	 * Each correction contains of implementations of the abstract classes CoordinateCorrector and a
 	 * IntensityCorrector that can be can be combined as you want.
 	 * 
-	 * Ba using getFunctionWidth() and getFunctionBorders() the characterisation results are loaded and an
+	 * By using getFunctionWidth() and getFunctionBorders() the characterisation results are loaded and an
 	 * implementation of the Levenberg–Marquardt algorithm (LMA) is used to fit functions to the discrete values.
 	 */
 	final SimpleCoordinateCorrection coordinateCorrection = new SimpleCoordinateCorrection(
 		getFunctionWidth(camSetup), getFunctionBorders(camSetup), camSetup);
-	// final AnalyticalCoordinateCorrection coordinateCorrection = new AnalyticalCoordinateCorrection(
-	// getFunctionWidth(), getFunctionBorders(), camSetup);
 	final NoIntensityCorrection intensityCorrection = new NoIntensityCorrection(
 		(FloatProcessor) inputImage.getProcessor(), coordinateCorrection, camSetup);
 	/*
@@ -214,6 +212,17 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	}
     }
 
+    /**
+     * Use this method for batch processing. Values that are set up by the GUI have to be paased as parameters.
+     * 
+     * @param input_image
+     *            is the image to correct.
+     * @param path_borders
+     *            is the text file that contains the characterisation results for the borders.
+     * @param path_width
+     *            is the text file that contains the characterisation results for the width.
+     * @return the corrected image.
+     */
     public ImagePlus correctImage(final ImagePlus input_image, final String path_borders, final String path_width) {
 	this.inputImage = input_image;
 	this.pathBorders = path_borders;
