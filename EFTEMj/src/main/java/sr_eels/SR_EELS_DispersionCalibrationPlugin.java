@@ -41,6 +41,8 @@ import ij.process.ImageProcessor;
 import java.awt.Choice;
 import java.awt.Rectangle;
 import java.awt.TextField;
+import java.util.Enumeration;
+import java.util.Hashtable;
 
 import tools.EFTEMjLogTool;
 
@@ -103,7 +105,11 @@ public class SR_EELS_DispersionCalibrationPlugin extends SR_EELS implements Exte
     /**
      * A prefix used to create key for accessing IJ_Prefs.txt by the class {@link Prefs}.
      */
-    private static final String PREFIX = SR_EELS_DispersionConfigurationPlugin.PREFIX;
+    private static final String PREFIX_SETTINGS = PREFS_PREFIX + KEYS.dispersionSettings;
+    /**
+     * A prefix used to create key for accessing IJ_Prefs.txt by the class {@link Prefs}.
+     */
+    private static final String PREFIX_DISPERSION = PREFS_PREFIX + KEYS.dispersionEloss;
     /**
      * An instance of {@link EFTEMjLogTool}.
      */
@@ -188,26 +194,32 @@ public class SR_EELS_DispersionCalibrationPlugin extends SR_EELS implements Exte
      * @return FLAGS if the initialisation was successful.
      */
     private int init() {
-	final String empty = "empty";
-	final String values = Prefs.get(PREFIX + KEYS.specMagValues, empty);
-	if (values == empty) {
+	/*
+	 * We use a local variable as dispersionStorage is only used to build a String array.
+	 */
+	final Hashtable<Integer, Double> dispersionStorage = SR_EELS_DispersionConfigurationPlugin
+		.buildDispersionStorage();
+	if (dispersionStorage.size() == 0) {
 	    IJ.showMessage("No Spec. Mag values found", "The IJ_Prefs.txt contains no Spec. Mag values." + "\n"
 		    + "You can ente some values by using the dispersion configuration.");
 	    return DONE;
 	}
-	// The Keys to access the dispersion are stored as a string like "125;163;200;250;315".
-	final String[] keys = values.split(";");
-	specMagValues = new String[keys.length];
-	for (int i = 0; i < keys.length; i++) {
-	    specMagValues[i] = keys[i];
+	specMagValues = new String[dispersionStorage.size()];
+	int index = 0;
+	for (final Enumeration<Integer> e = dispersionStorage.keys(); e.hasMoreElements();) {
+	    final int key = e.nextElement();
+	    specMagValues[index] = "" + key;
+	    index++;
 	}
-	// Load the values that were saved at the last usage of this plugin.
-	specMagIndex = (int) Prefs.get(PREFIX + KEYS.specMagIndex, 0);
-	binningIndex = (int) Prefs.get(PREFIX + KEYS.binningIndex, 0);
-	binningUser = (int) Prefs.get(PREFIX + KEYS.binningUser, 1);
-	offsetIndex = (int) Prefs.get(PREFIX + KEYS.offsetIndex, 0);
-	offsetLoss = Prefs.get(PREFIX + KEYS.offsetLoss, 0);
-	offsetAbsolute = (int) Prefs.get(PREFIX + KEYS.offsetAbsolute, 0);
+	/*
+	 * Load the values that were saved at the last usage of this plugin.
+	 */
+	specMagIndex = (int) Prefs.get(PREFIX_SETTINGS + KEYS.specMagIndex, 0);
+	binningIndex = (int) Prefs.get(PREFIX_SETTINGS + KEYS.binningIndex, 0);
+	binningUser = (int) Prefs.get(PREFIX_SETTINGS + KEYS.binningUser, 1);
+	offsetIndex = (int) Prefs.get(PREFIX_SETTINGS + KEYS.offsetIndex, 0);
+	offsetLoss = Prefs.get(PREFIX_SETTINGS + KEYS.offsetLoss, 0);
+	offsetAbsolute = (int) Prefs.get(PREFIX_SETTINGS + KEYS.offsetAbsolute, 0);
 	return FLAGS;
     }
 
@@ -218,7 +230,7 @@ public class SR_EELS_DispersionCalibrationPlugin extends SR_EELS implements Exte
      */
     @Override
     public void run(final ImageProcessor ip) {
-	final double dispersion = Prefs.get(PREFIX + specMagValues[specMagIndex], 1);
+	final double dispersion = Prefs.get(PREFIX_DISPERSION + specMagValues[specMagIndex], 1);
 	int offsetValue = 0;
 	int binning;
 	if (BINNING.toStringArray()[binningIndex].equals(BINNING.BINNING_OTHER.toString())) {
@@ -228,11 +240,15 @@ public class SR_EELS_DispersionCalibrationPlugin extends SR_EELS implements Exte
 	}
 	switch (offsetIndex) {
 	case 0:
-	    // absolute value
+	    /*
+	     * absolute value
+	     */
 	    offsetValue = offsetAbsolute;
 	    break;
 	case 1:
-	    // peak selection
+	    /*
+	     * peak selection
+	     */
 	    if (orientation == 0) {
 		offsetValue = -((int) Math.round(offsetLoss / dispersion / binning - point.x));
 	    } else {
@@ -241,7 +257,9 @@ public class SR_EELS_DispersionCalibrationPlugin extends SR_EELS implements Exte
 	    input.setRoi(null, false);
 	    break;
 	case 2:
-	    // center loss
+	    /*
+	     * center loss
+	     */
 	    double offsetCenter;
 	    if (orientation == 0) {
 		offsetCenter = 1.0 * input.getWidth() / 2;
@@ -251,11 +269,15 @@ public class SR_EELS_DispersionCalibrationPlugin extends SR_EELS implements Exte
 	    offsetValue = -((int) Math.round(offsetLoss / dispersion / binning - offsetCenter));
 	    break;
 	case 3:
-	    // lowest loss
+	    /*
+	     * lowest loss
+	     */
 	    offsetValue = -((int) Math.round(offsetLoss / dispersion / binning));
 	    break;
 	case 4:
-	    // highest loss
+	    /*
+	     * highest loss
+	     */
 	    if (orientation == 0) {
 		offsetValue = -((int) Math.round(offsetLoss / dispersion / binning - input.getWidth()));
 	    } else {
@@ -268,13 +290,17 @@ public class SR_EELS_DispersionCalibrationPlugin extends SR_EELS implements Exte
 	final Calibration cal = new Calibration(input);
 	if (orientation == 0) {
 	    cal.pixelWidth = dispersion * binning;
-	    // If you use setXUnit() it's the same like using setUnit().
+	    /*
+	     * If you use setXUnit() it's the same like using setUnit().
+	     */
 	    cal.setXUnit("eV");
 	    cal.xOrigin = offsetValue;
 	} else {
 	    cal.pixelHeight = dispersion * binning;
 	    cal.setYUnit("eV");
-	    // there is a filed called yunit but it is not yet used by the GUI.
+	    /*
+	     * there is a filed called yunit but it is not yet used by the GUI.
+	     */
 	    cal.setUnit("eV");
 	    cal.yOrigin = offsetValue;
 	}
@@ -293,7 +319,9 @@ public class SR_EELS_DispersionCalibrationPlugin extends SR_EELS implements Exte
 	logTool = new EFTEMjLogTool(command);
 	final GenericDialog gd = new GenericDialog(command, IJ.getInstance());
 	final String[] items = { "x-axis", "y-axis" };
-	// Try to make a good default selection for the orientation.
+	/*
+	 * Try to make a good default selection for the orientation.
+	 */
 	final String selectedItem = ((input.getWidth() >= input.getHeight()) ? items[0] : items[1]);
 	gd.addChoice("Energy_axis:", items, selectedItem);
 	gd.addChoice("Spec_Mag:", specMagValues, specMagValues[specMagIndex]);
@@ -306,17 +334,17 @@ public class SR_EELS_DispersionCalibrationPlugin extends SR_EELS implements Exte
 	if (gd.wasOKed()) {
 	    orientation = gd.getNextChoiceIndex();
 	    specMagIndex = gd.getNextChoiceIndex();
-	    Prefs.set(PREFIX + KEYS.specMagIndex, specMagIndex);
+	    Prefs.set(PREFIX_SETTINGS + KEYS.specMagIndex, specMagIndex);
 	    binningIndex = gd.getNextChoiceIndex();
-	    Prefs.set(PREFIX + KEYS.binningIndex, binningIndex);
+	    Prefs.set(PREFIX_SETTINGS + KEYS.binningIndex, binningIndex);
 	    binningUser = (int) gd.getNextNumber();
-	    Prefs.set(PREFIX + KEYS.binningUser, binningUser);
+	    Prefs.set(PREFIX_SETTINGS + KEYS.binningUser, binningUser);
 	    offsetIndex = gd.getNextChoiceIndex();
-	    Prefs.set(PREFIX + KEYS.offsetIndex, offsetIndex);
+	    Prefs.set(PREFIX_SETTINGS + KEYS.offsetIndex, offsetIndex);
 	    offsetLoss = gd.getNextNumber();
-	    Prefs.set(PREFIX + KEYS.offsetLoss, offsetLoss);
+	    Prefs.set(PREFIX_SETTINGS + KEYS.offsetLoss, offsetLoss);
 	    offsetAbsolute = (int) gd.getNextNumber();
-	    Prefs.set(PREFIX + KEYS.offsetAbsolute, offsetAbsolute);
+	    Prefs.set(PREFIX_SETTINGS + KEYS.offsetAbsolute, offsetAbsolute);
 	    Prefs.savePreferences();
 	    if (offsetIndex == 1) { // peak selection
 		boolean ok;
@@ -327,7 +355,9 @@ public class SR_EELS_DispersionCalibrationPlugin extends SR_EELS implements Exte
 		    cancel();
 		    return DONE | NO_CHANGES;
 		}
-		// A point is a rectangle with width = height = 0.
+		/*
+		 * A point is a rectangle with width = height = 0.
+		 */
 		point = input.getRoi().getBounds();
 	    }
 	    return FLAGS;

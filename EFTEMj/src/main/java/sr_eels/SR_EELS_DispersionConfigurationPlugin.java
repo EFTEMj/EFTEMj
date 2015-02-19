@@ -26,6 +26,7 @@
  */
 package sr_eels;
 
+import eftemj.EFTEMj_Prefs;
 import ij.IJ;
 import ij.ImageJ;
 import ij.Prefs;
@@ -36,6 +37,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Vector;
 
 /**
  * This plugin will setup the energy dispersion values used by {@link SR_EELS_DispersionCalibrationPlugin}.
@@ -47,11 +49,11 @@ public class SR_EELS_DispersionConfigurationPlugin extends SR_EELS implements Pl
     /**
      * A prefix used to create key for accessing IJ_Prefs.txt by the class {@link Prefs}.
      */
-    protected static final String PREFIX = PREFS_PREFIX + KEYS.dispersion + ".";
+    protected static final String PREFIX = PREFS_PREFIX + KEYS.dispersionEloss + ".";
     /**
      * This {@link Hashtable} is used to manage the SpecMag-dispersion pairs.
      */
-    private Hashtable<Double, Double> dispersionStorage;
+    private Hashtable<Integer, Double> dispersionStorage;
     private boolean somethingChanged = false;
 
     /*
@@ -62,22 +64,8 @@ public class SR_EELS_DispersionConfigurationPlugin extends SR_EELS implements Pl
     @Override
     public void run(final String arg) {
 	boolean showAgain;
-	dispersionStorage = new Hashtable<Double, Double>();
-	final String empty = "";
-	/*
-	 * The Keys to access the dispersion are stored as a string like "125;163;200;250;315".
-	 */
-	String specMags = Prefs.get(PREFIX + KEYS.specMagValues, empty);
-	String[] keys;
-	if (!specMags.equals(empty)) {
-	    keys = specMags.split(";");
-	    for (final String key : keys) {
-		final String value = Prefs.get(PREFIX + key, empty);
-		if (!value.equals(empty)) {
-		    dispersionStorage.put(new Double(key), new Double(value));
-		}
-	    }
-	} else {
+	dispersionStorage = buildDispersionStorage();
+	if (dispersionStorage.size() == 0) {
 	    /*
 	     * Show the dialog again, until the user presses cancel.
 	     */
@@ -97,19 +85,27 @@ public class SR_EELS_DispersionConfigurationPlugin extends SR_EELS implements Pl
 	 * We have to write the dispersion to the preferences only if the user changed a value.
 	 */
 	if (somethingChanged == true) {
-	    specMags = "";
-	    for (final Enumeration<Double> e = dispersionStorage.keys(); e.hasMoreElements();) {
-		final double key = e.nextElement();
-		if (specMags.length() > 0) {
-		    specMags += ";";
-		}
-		specMags += key;
+	    for (final Enumeration<Integer> e = dispersionStorage.keys(); e.hasMoreElements();) {
+		final int key = e.nextElement();
 		final double val = dispersionStorage.get(key);
-		Prefs.set(PREFIX + Double.toString(key), val);
+		Prefs.set(PREFIX + Integer.toString(key), val);
 	    }
-	    Prefs.set(PREFIX + KEYS.specMagValues, specMags);
 	    Prefs.savePreferences();
 	}
+    }
+
+    public static Hashtable<Integer, Double> buildDispersionStorage() {
+	final Hashtable<Integer, Double> dispersionStorage = new Hashtable<Integer, Double>();
+	final Vector<String> keys = EFTEMj_Prefs.getAllKeys(KEYS.dispersionEloss.toString());
+	for (final String key : keys) {
+	    final String empty = "0.0";
+	    final String valueStr = Prefs.get(key, empty);
+	    if (!valueStr.equals(empty)) {
+		final double value = new Double(valueStr);
+		dispersionStorage.put(new Integer(key.substring(key.lastIndexOf('.') + 1, key.length())), value);
+	    }
+	}
+	return dispersionStorage;
     }
 
     /**
@@ -127,7 +123,7 @@ public class SR_EELS_DispersionConfigurationPlugin extends SR_EELS implements Pl
 	gd.addHelp(help);
 	gd.showDialog();
 	if (gd.wasOKed() == true) {
-	    final double key = gd.getNextNumber();
+	    final int key = (int) gd.getNextNumber();
 	    if (key == 0)
 		return true;
 	    final double dispersion = gd.getNextNumber();
@@ -149,8 +145,8 @@ public class SR_EELS_DispersionConfigurationPlugin extends SR_EELS implements Pl
     private boolean showEditDialog() {
 	final GenericDialog gd = new GenericDialog("Edit dispersion values", IJ.getInstance());
 	gd.addMessage("Set the dispersion to 0 to remove an entry.");
-	final Enumeration<Double> e = dispersionStorage.keys();
-	final List<Double> list = Collections.list(e);
+	final Enumeration<Integer> e = dispersionStorage.keys();
+	final List<Integer> list = Collections.list(e);
 	Collections.sort(list);
 	final Object[] keys = list.toArray();
 	for (final Object key : keys) {
@@ -164,14 +160,9 @@ public class SR_EELS_DispersionConfigurationPlugin extends SR_EELS implements Pl
 	if (gd.wasOKed() == true) {
 	    for (final Object key : keys) {
 		final double val = gd.getNextNumber();
-		if (val == 0) {
-		    dispersionStorage.remove(key);
+		if (val != dispersionStorage.get(key)) {
+		    dispersionStorage.put((Integer) key, val);
 		    somethingChanged = true;
-		} else {
-		    if (val != dispersionStorage.get(key)) {
-			dispersionStorage.put((Double) key, val);
-			somethingChanged = true;
-		    }
 		}
 	    }
 	    /*
