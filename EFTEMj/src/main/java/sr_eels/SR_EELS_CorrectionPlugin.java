@@ -26,6 +26,7 @@
  */
 package sr_eels;
 
+import eftemj.EFTEMj;
 import gui.GenericDialogPlus;
 import ij.IJ;
 import ij.ImageJ;
@@ -453,6 +454,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      * @param args
      */
     public static void main(final String[] args) {
+	EFTEMj.debugLevel = EFTEMj.DEBUG_FULL;
 	/*
 	 * start ImageJ
 	 */

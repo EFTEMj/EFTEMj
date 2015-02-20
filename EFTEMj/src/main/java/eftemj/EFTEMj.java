@@ -52,6 +52,42 @@ public class EFTEMj {
     public static final String PATH_TESTING = "/testing/";
 
     /**
+     * Disable all debugging.
+     */
+    public static final int DEBUG_NONE = 0;
+    /**
+     * Reduce the debug logging to the most essential information.
+     */
+    public static final int DEBUG_MINIMAL_LOGGING = 31;
+    /**
+     * Write all debug logs to a file.
+     */
+    public static final int DEBUG_LOGGING = 63;
+    /**
+     * Show all debug logs in the ImageJ log window.
+     */
+    public static final int DEBUG_IN_APP_LOGGING = 127;
+    /**
+     * Display images that have only debugging purpose.
+     */
+    public static final int DEBUG_SHOW_IMAGES = 191;
+    /**
+     * Don't hide any information.
+     */
+    public static final int DEBUG_FULL = 255;
+
+    /**
+     * <p>
+     * All classes will use this field to get the current level of debugging.<br />
+     * The constants with the prefix DEBUG_ define all available levels of debugging.
+     * </p>
+     * <p>
+     * The class {@link EFTEMj_Debug} offers some static methods for debugging, that one should use.
+     * </p>
+     */
+    public static int debugLevel = 0;
+
+    /**
      * @param classToParse
      *            can be any {@link Object}.
      * @return the name of the passed {@link Object} without the package prefix.

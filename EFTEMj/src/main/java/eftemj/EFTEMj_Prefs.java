@@ -10,6 +10,9 @@ import ij.Prefs;
 
 public class EFTEMj_Prefs {
 
+    private final static String PREFS_LOG_FILE_PATH = "path.logFile";
+    private final static String LOG_FILE_PATH = "C:/temp/EFTEMj.log";
+
     public static void main(String[] args) {
 	/*
 	 * start ImageJ
@@ -53,6 +56,11 @@ public class EFTEMj_Prefs {
 	    }
 	}
 	return found;
+    }
+
+    public static String getLogFile() {
+	String path = Prefs.get(EFTEMj.PREFS_PREFIX + PREFS_LOG_FILE_PATH, LOG_FILE_PATH);
+	return path;
     }
 
 }

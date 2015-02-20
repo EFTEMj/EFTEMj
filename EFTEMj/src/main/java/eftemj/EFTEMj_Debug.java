@@ -1,6 +1,11 @@
 package eftemj;
 
+import ij.IJ;
 import ij.ImageJ;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 
 public class EFTEMj_Debug {
 
@@ -22,4 +27,44 @@ public class EFTEMj_Debug {
 	new ImageJ();
     }
 
+    public static void log(final String logText, final boolean highPriority) {
+	LogFileWriter logFileWriter = LogFileWriter.getInstance();
+	if (EFTEMj.debugLevel >= EFTEMj.DEBUG_LOGGING) {
+	    logFileWriter.write(logText);
+	} else if (EFTEMj.debugLevel >= EFTEMj.DEBUG_LOGGING & highPriority) {
+	    logFileWriter.write(logText);
+	}
+	if (EFTEMj.debugLevel >= EFTEMj.DEBUG_IN_APP_LOGGING) {
+	    IJ.log(logText);
+	}
+    }
+
+    private static class LogFileWriter {
+
+	private static LogFileWriter instance = null;
+	private File file;
+
+	private LogFileWriter() {
+	    file = new File(EFTEMj_Prefs.getLogFile());
+	}
+
+	public static LogFileWriter getInstance() {
+	    if (instance == null) {
+		instance = new LogFileWriter();
+	    }
+	    return instance;
+	}
+
+	public void write(final String text) {
+	    try {
+		FileWriter fw = new FileWriter(file, true);
+		fw.write(text);
+		fw.write(String.format("%n"));
+		fw.close();
+	    } catch (final IOException exc) {
+		IJ.showMessage("Can't write to the log file." + "\n" + exc);
+	    }
+	}
+
+    }
 }

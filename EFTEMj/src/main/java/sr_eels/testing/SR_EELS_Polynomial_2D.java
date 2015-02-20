@@ -1,5 +1,6 @@
 package sr_eels.testing;
 
+import eftemj.EFTEMj_Debug;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.measure.CurveFitter;
@@ -53,7 +54,7 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 		rootL = -CameraSetup.getFullHeight() / 2;
 	    if (Double.isNaN(rootH) || rootH > CameraSetup.getFullHeight() / 2 - 1)
 		rootH = CameraSetup.getFullHeight() / 2 - 1;
-	    IJ.log(rootL + ", " + maxPos + ", " + rootH);
+	    EFTEMj_Debug.log(rootL + ", " + maxPos + ", " + rootH, false);
 	    /*
 	     * The second step is to map uncorrected and corrected coordinates. For each uncorrected coordinate the
 	     * corrected coordinate is calculated. The inverse function is hard to determine Instead we switch the axes
@@ -96,7 +97,6 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 		fit.doFit(CurveFitter.STRAIGHT_LINE);
 	    }
 	    final double[] fitParams = fit.getParams();
-	    IJ.log(map.get((int) rootL) + ", " + map.get((int) rootH));
 	    transformWidth = new FloatProcessor(CameraSetup.getFullWidth(), (int) (2 * Math.max(-rootL, rootH)));
 	    for (int x2 = 0; x2 < transformWidth.getHeight(); x2++) {
 		final float value = (float) fit.f(fitParams, x2 - transformWidth.getHeight() / 2);
