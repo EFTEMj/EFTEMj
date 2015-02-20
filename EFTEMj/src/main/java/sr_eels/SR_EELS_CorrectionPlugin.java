@@ -77,7 +77,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      *
      * For example multithreading is disabled when running in debug mode.
      */
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
     /**
      * The plugin will be aborted.
      */
@@ -160,23 +160,23 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	 * By using getFunctionWidth() and getFunctionBorders() the characterisation results are loaded and an
 	 * implementation of the Levenberg–Marquardt algorithm (LMA) is used to fit functions to the discrete values.
 	 */
-	final SimpleCoordinateCorrection coordinateCorrection = new SimpleCoordinateCorrection(
-		getFunctionWidth(camSetup), getFunctionBorders(camSetup), camSetup);
+	final SR_EELS_Polynomial_2D widthFunction = getFunctionWidth(camSetup);
+	final SimpleCoordinateCorrection coordinateCorrection = new SimpleCoordinateCorrection(widthFunction,
+		getFunctionBorders(camSetup), camSetup);
 	final NoIntensityCorrection intensityCorrection = new NoIntensityCorrection(
 		(FloatProcessor) inputImage.getProcessor(), coordinateCorrection, camSetup);
 	/*
 	 * TODO: Add the used correction methods to the image title.
 	 */
-	outputImage = new ImagePlus(inputImage.getTitle() + "_corrected", new FloatProcessor(inputImage.getWidth(),
-		inputImage.getHeight(), new double[inputImage.getWidth() * inputImage.getHeight()]));
-	final FloatProcessor output = (FloatProcessor) outputImage.getProcessor();
+	final FloatProcessor output = widthFunction.createOutputImage(camSetup);
+	outputImage = new ImagePlus(inputImage.getTitle() + "_corrected", output);
 	/*
 	 * Each line of the image is a step that is visualise by the progress bar of ImageJ.
 	 */
-	progressSteps = inputImage.getHeight();
+	progressSteps = output.getHeight();
 	if (DEBUG) {
 	    for (int x2 = 0; x2 < output.getHeight(); x2++) {
-		for (int x1 = 0; x1 < inputImage.getWidth(); x1++) {
+		for (int x1 = 0; x1 < output.getWidth(); x1++) {
 		    final float intensity = intensityCorrection.getIntensity(x1, x2);
 		    output.setf(x1, x2, intensity);
 		}
@@ -189,13 +189,13 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	     */
 	    final ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime()
 		    .availableProcessors());
-	    for (int x2 = 0; x2 < inputImage.getHeight(); x2++) {
+	    for (int x2 = 0; x2 < output.getHeight(); x2++) {
 		final int x2Temp = x2;
 		executorService.execute(new Runnable() {
 
 		    @Override
 		    public void run() {
-			for (int x1 = 0; x1 < inputImage.getWidth(); x1++) {
+			for (int x1 = 0; x1 < output.getWidth(); x1++) {
 			    final float intensity = intensityCorrection.getIntensity(x1, x2Temp);
 			    output.setf(x1, x2Temp, intensity);
 			}
@@ -214,7 +214,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 
     /**
      * Use this method for batch processing. Values that are set up by the GUI have to be paased as parameters.
-     * 
+     *
      * @param input_image
      *            is the image to correct.
      * @param path_borders
@@ -490,6 +490,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	 * open the test image
 	 */
 	final ImagePlus image = IJ.openImage("C:/Temp/20140106 SM125 -20%/SR-EELS_TestImage_small.tif");
+	// final ImagePlus image =
+	// IJ.openImage("Q:/Aktuell/SR-EELS Calibration measurements/20131104 SM125 80%/projection.tif");
 	image.show();
 
 	/*

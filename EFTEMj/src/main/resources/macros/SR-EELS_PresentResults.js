@@ -39,12 +39,15 @@ function main() {
 	var dialog = new GenericDialog("Select Type");
 	var characterisation = "Summarise characterisation results";
 	var correction = "Summarise correction results";
+	var overwrite = "Overwrite existing files";
 	dialog.addCheckbox(characterisation, true);
 	dialog.addCheckbox(correction, true);
+	dialog.addCheckbox(overwrite, false);
 	dialog.showDialog();
 	if (dialog.wasCanceled()) return;
 	var createCharacterisation = dialog.getNextBoolean();
 	var createCorrection = dialog.getNextBoolean();
+	var overwriteOld = dialog.getNextBoolean();
 
 	if (!createCharacterisation & !createCorrection) {
 		IJ.showMessage("Nothing selected.\nAborting.");
@@ -87,9 +90,9 @@ function main() {
 		var fullCount = count;
 		count = 0;
 		for (var i = 0; i < foundDataSets.length; i++) {
-			if (foundDataSets[i].type == 2) {
+			if (foundDataSets[i].type == 2) {overwriteOld
 				count++;
-				var montage = createMontage(foundDataSets[i].img);
+				var montage = createMontage(foundDataSets[i].img, overwriteOld);
 				montage = montage.replace(input, "../");
 				var divStart = "<div class=\"col-md-12 col-lg-6\ outer-tile SM" + foundDataSets[i].specMag + "\"><div class=\"inner-tile\">\n";
 				correctionWriter.append(divStart);
@@ -196,18 +199,22 @@ function writeFoot(writer, footReader) {
 	footReader.close();
 }
 
-function createMontage(correctedImage) {
+function createMontage(correctedImage, overwriteOld) {
 	var pattern1 = /(.*\/)[^\/]+/;
 	var pattern2 = /result_(\d+\w+).*/;
 	var projectionPath = pattern1.exec(correctedImage)[1] + "projection.tif";
 	var filePath = pattern1.exec(correctedImage)[1] + "montage_" + pattern2.exec(correctedImage)[1] + ".png";
 	var file = new File(filePath);
-	if (!file.exists()) {
+	if (overwriteOld | !file.exists()) {
 		var imp1 = IJ.openImage(projectionPath);
 		var imp2 = IJ.openImage(correctedImage);
-		var stack = new ImageStack(imp1.getWidth(), imp1.getHeight());
+		var width = Math.max(imp1.getWidth(), imp2.getWidth());
+		var height = Math.max(imp1.getHeight(), imp2.getHeight());
+		var stack = new ImageStack(width, height);
+		IJ.run(imp1, "Canvas Size...", "width=" + width + " height=" + height + " position=Center");
 		stack.addSlice(imp1.getProcessor());
 		stack.setSliceLabel("Projection", 1);
+		IJ.run(imp2, "Canvas Size...", "width=" + width + " height=" + height + " position=Center");
 		stack.addSlice(imp2.getProcessor());
 		stack.setSliceLabel("Correction", 2);
 		var imp = new ImagePlus("Stack", stack);
@@ -218,8 +225,8 @@ function createMontage(correctedImage) {
 		var font = 32;
 		var height = imp.getHeight();
 		var scale = 1;
-		if (height > 1024 & height <= 2048) scale = 0.5;
-		else if (height > 2048) scale = 0.25;
+		if (height >= 2048 & height < 4096) scale = 0.5;
+		else if (height >= 4096) scale = 0.25;
 		var mm = new MontageMaker();
 		var montage = mm.makeMontage2(imp, 2, 1, scale, 1, 2, 1, border, true);
 		//IJ.run(imp, "Make Montage...", "columns=2 rows=1 scale=" + scale + " first=1 last=2 increment=1 border=" + border + " font=" + font + " label");

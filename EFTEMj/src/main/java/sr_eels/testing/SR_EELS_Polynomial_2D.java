@@ -49,15 +49,16 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 	    final double maxPos = -getParam(0, 1) / (2 * getParam(0, 2));
 	    final double[] maxPoint = { 0, maxPos };
 	    final double maxValue = val(maxPoint);
-	    if (rootL < -CameraSetup.getFullHeight() / 2)
+	    if (Double.isNaN(rootL) || rootL < -CameraSetup.getFullHeight() / 2)
 		rootL = -CameraSetup.getFullHeight() / 2;
-	    if (rootH > CameraSetup.getFullHeight() / 2 - 1)
+	    if (Double.isNaN(rootH) || rootH > CameraSetup.getFullHeight() / 2 - 1)
 		rootH = CameraSetup.getFullHeight() / 2 - 1;
-	    IJ.showMessage(rootL + ", " + maxPos + ", " + rootH);
+	    IJ.log(rootL + ", " + maxPos + ", " + rootH);
 	    /*
 	     * The second step is to map uncorrected and corrected coordinates. For each uncorrected coordinate the
 	     * corrected coordinate is calculated. The inverse function is hard to determine Instead we switch the axes
-	     * and fit a polynomial of 3rd order that fits very well.
+	     * and fit a polynomial of 7rd order that fits very well. For most images a 3rd order polynomial is
+	     * sufficient.
 	     */
 	    final LinkedHashMap<Integer, Double> map = new LinkedHashMap<Integer, Double>();
 	    final double a00 = getParam(0, 0) / maxValue;
@@ -83,14 +84,19 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 		xc[index] = map.get(key);
 		index++;
 	    }
+	    /*
+	     * The minimum and maximum value of xc determine the height of the corrected image.
+	     */
+	    rootL = xc[0];
+	    rootH = xc[xc.length - 1];
 	    final CurveFitter fit = new CurveFitter(xc, x);
 	    try {
-		fit.doFit(CurveFitter.POLY3);
+		fit.doFit(CurveFitter.POLY7);
 	    } catch (final ArrayIndexOutOfBoundsException exc) {
 		fit.doFit(CurveFitter.STRAIGHT_LINE);
 	    }
 	    final double[] fitParams = fit.getParams();
-	    IJ.showMessage(map.get((int) rootL) + ", " + map.get((int) rootH));
+	    IJ.log(map.get((int) rootL) + ", " + map.get((int) rootH));
 	    transformWidth = new FloatProcessor(CameraSetup.getFullWidth(), (int) (2 * Math.max(-rootL, rootH)));
 	    for (int x2 = 0; x2 < transformWidth.getHeight(); x2++) {
 		final float value = (float) fit.f(fitParams, x2 - transformWidth.getHeight() / 2);
@@ -98,8 +104,10 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 		    transformWidth.setf(x1, x2, value);
 		}
 	    }
-	    final ImagePlus imp = new ImagePlus("transform width", transformWidth);
-	    imp.show();
+	    if (false) {
+		final ImagePlus imp = new ImagePlus("transform width", transformWidth);
+		imp.show();
+	    }
 	    Fitter.plot(fit);
 	}
     }
@@ -196,6 +204,12 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 
     public float getY2n(final double[] x2) {
 	return transformWidth.getf((int) x2[0] + 2048, (int) x2[1] + 2048);
+    }
+
+    public FloatProcessor createOutputImage(final CameraSetup camSetup) {
+	final FloatProcessor fp = new FloatProcessor(transformWidth.getWidth() / camSetup.getBinningX1(),
+		transformWidth.getHeight() / camSetup.getBinningX2());
+	return fp;
     }
 
 }
