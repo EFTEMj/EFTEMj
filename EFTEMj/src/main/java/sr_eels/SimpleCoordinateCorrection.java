@@ -1,16 +1,14 @@
 package sr_eels;
 
-
 public class SimpleCoordinateCorrection extends CoordinateCorrector {
 
-    public SimpleCoordinateCorrection(final SR_EELS_Polynomial_2D functionWidth,
-	    final SR_EELS_Polynomial_2D functionBorder, CameraSetup camSetup) {
-	super(functionWidth, functionBorder, camSetup);
+    public SimpleCoordinateCorrection(SR_EELS_FloatProcessor inputProcessor) {
+	super(inputProcessor);
     }
 
     @Override
     float calcY2n(final float x1, final float x2) throws SR_EELS_Exception {
-	final float y2n = functionWidth.getY2n(new double[] { 0, x2 });
+	final float y2n = functionWidth.getY2n(new double[] { x1, x2 });
 	return y2n;
     }
 
@@ -21,7 +19,7 @@ public class SimpleCoordinateCorrection extends CoordinateCorrector {
 
     @Override
     float calcY2(final float y1, final float y2n) {
-	final float y2 = (float) functionBorder.val(new double[] { y1, y2n });
+	final float y2 = (float) functionBorder.getY2(new double[] { y1, y2n });
 	return y2;
     }
 }

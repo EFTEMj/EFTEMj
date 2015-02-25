@@ -72,12 +72,6 @@ import libs.lma.LMA;
 public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 
     /**
-     * Use this to enable the debug mode.
-     *
-     * For example multithreading is disabled when running in debug mode.
-     */
-    private static final boolean DEBUG = false;
-    /**
      * The plugin will be aborted.
      */
     private final int CANCEL = 0;
@@ -103,14 +97,16 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     private String pathWidth = NO_FILE_SELECTED;
     /**
      * <p>
-     * An {@link ImagePlus} that contains the image that will be corrected.
+     * An {@link SR_EELS_FloatProcessor} that contains the image that will be corrected.
      * </p>
      *
      * <p>
-     * This images will not be changed!
+     * The input image will not be changed!
      * </p>
      */
-    private ImagePlus inputImage;
+    private SR_EELS_FloatProcessor inputProcessor;
+    private SR_EELS_FloatProcessor outputProcessor;
+    private String title;
     /**
      * <p>
      * An {@link ImagePlus} that contains the image that is the result of the correction.
@@ -151,7 +147,6 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      */
     @Override
     public void run(final ImageProcessor ip) {
-	final CameraSetup camSetup = new CameraSetup(inputImage);
 	/*
 	 * Each correction contains of implementations of the abstract classes CoordinateCorrector and a
 	 * IntensityCorrector that can be can be combined as you want.
@@ -159,25 +154,27 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	 * By using getFunctionWidth() and getFunctionBorders() the characterisation results are loaded and an
 	 * implementation of the Levenberg–Marquardt algorithm (LMA) is used to fit functions to the discrete values.
 	 */
-	final SR_EELS_Polynomial_2D widthFunction = getFunctionWidth(camSetup);
-	final SimpleCoordinateCorrection coordinateCorrection = new SimpleCoordinateCorrection(widthFunction,
-		getFunctionBorders(camSetup), camSetup);
-	final NoIntensityCorrection intensityCorrection = new NoIntensityCorrection(
-		(FloatProcessor) inputImage.getProcessor(), coordinateCorrection, camSetup);
+	final SR_EELS_Polynomial_2D widthFunction = getFunctionWidth();
+	inputProcessor.setWidthFunction(widthFunction);
+	final SR_EELS_Polynomial_2D borderFunction = getFunctionBorders();
+	inputProcessor.setBorderFunction(borderFunction);
+	final CoordinateCorrector coordinateCorrection = new SimpleCoordinateCorrection(inputProcessor);
+	final NoIntensityCorrection intensityCorrection = new NoIntensityCorrection(inputProcessor,
+		coordinateCorrection);
 	/*
 	 * TODO: Add the used correction methods to the image title.
 	 */
-	final FloatProcessor output = widthFunction.createOutputImage(camSetup);
-	outputImage = new ImagePlus(inputImage.getTitle() + "_corrected", output);
+	outputProcessor = widthFunction.createOutputImage();
+	outputImage = new ImagePlus(title + "_corrected", outputProcessor);
 	/*
 	 * Each line of the image is a step that is visualise by the progress bar of ImageJ.
 	 */
-	progressSteps = output.getHeight();
-	if (DEBUG) {
-	    for (int x2 = 0; x2 < output.getHeight(); x2++) {
-		for (int x1 = 0; x1 < output.getWidth(); x1++) {
+	progressSteps = outputProcessor.getHeight();
+	if (EFTEMj.debugLevel == EFTEMj.DEBUG_FULL) {
+	    for (int x2 = 0; x2 < outputProcessor.getHeight(); x2++) {
+		for (int x1 = 0; x1 < outputProcessor.getWidth(); x1++) {
 		    final float intensity = intensityCorrection.getIntensity(x1, x2);
-		    output.setf(x1, x2, intensity);
+		    outputProcessor.setf(x1, x2, intensity);
 		}
 		updateProgress();
 	    }
@@ -188,15 +185,15 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	     */
 	    final ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime()
 		    .availableProcessors());
-	    for (int x2 = 0; x2 < output.getHeight(); x2++) {
+	    for (int x2 = 0; x2 < outputProcessor.getHeight(); x2++) {
 		final int x2Temp = x2;
 		executorService.execute(new Runnable() {
 
 		    @Override
 		    public void run() {
-			for (int x1 = 0; x1 < output.getWidth(); x1++) {
+			for (int x1 = 0; x1 < outputProcessor.getWidth(); x1++) {
 			    final float intensity = intensityCorrection.getIntensity(x1, x2Temp);
-			    output.setf(x1, x2Temp, intensity);
+			    outputProcessor.setf(x1, x2Temp, intensity);
 			}
 			updateProgress();
 		    }
@@ -223,7 +220,10 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      * @return the corrected image.
      */
     public ImagePlus correctImage(final ImagePlus input_image, final String path_borders, final String path_width) {
-	this.inputImage = input_image;
+	this.inputProcessor = new SR_EELS_FloatProcessor((FloatProcessor) input_image.getProcessor(),
+		CameraSetup.getFullWidth() / input_image.getWidth(), CameraSetup.getFullHeight()
+			/ input_image.getHeight(), input_image.getWidth() / 2, input_image.getHeight() / 2);
+	title = input_image.getTitle();
 	this.pathBorders = path_borders;
 	this.pathWidth = path_width;
 	run(null);
@@ -239,20 +239,18 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      * This function extracts the values that describe the pathway of the borders of a spectrum.
      * </p>
      *
-     * @param camSetup
-     *            is used to shift the point 0,0 to the centre of the camera.
      * @return a polynomial that fits the given data points
      */
-    private SR_EELS_Polynomial_2D getFunctionBorders(final CameraSetup camSetup) {
+    private SR_EELS_Polynomial_2D getFunctionBorders() {
 	final DataImporter importer = new DataImporter(pathBorders, true);
 	final double[][] vals = new double[importer.vals.length][importer.vals[0].length];
 	for (int i = 0; i < vals.length; i++) {
 	    // y value (this is a position on the x2 axis)
-	    vals[i][0] = importer.vals[i][0] - camSetup.getCameraOffsetX2();
+	    vals[i][0] = importer.vals[i][0] - CameraSetup.getFullHeight() / 2;
 	    // x1 value
-	    vals[i][1] = importer.vals[i][1] - camSetup.getCameraOffsetX1();
+	    vals[i][1] = importer.vals[i][1] - CameraSetup.getFullWidth() / 2;
 	    // x2 value
-	    vals[i][2] = importer.vals[i][2] - camSetup.getCameraOffsetX2();
+	    vals[i][2] = importer.vals[i][2] - CameraSetup.getFullHeight() / 2;
 	}
 	/*
 	 * Define the orders of the 2D polynomial.
@@ -265,7 +263,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	final LMA lma = new LMA(func, a_fit, vals);
 	lma.fit();
 	if (true) {
-	    IJ.log(func.compareWithGnuplot(SR_EELS_Polynomial_2D.BORDERS, camSetup));
+	    IJ.log(func.compareWithGnuplot(SR_EELS_Polynomial_2D.BORDERS));
 	}
 	return new SR_EELS_Polynomial_2D(m, n, a_fit);
     }
@@ -279,20 +277,18 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
      * This function extracts the values that describe the width of a spectrum depending on its position on the camera.
      * </p>
      *
-     * @param camSetup
-     *            is used to shift the point 0,0 to the centre of the camera.
      * @return a polynomial that fits the given data points
      */
-    private SR_EELS_Polynomial_2D getFunctionWidth(final CameraSetup camSetup) {
+    private SR_EELS_Polynomial_2D getFunctionWidth() {
 	final DataImporter importer = new DataImporter(pathWidth, false);
 	final double[][] vals = new double[importer.vals.length][importer.vals[0].length];
 	for (int i = 0; i < vals.length; i++) {
 	    // y value (the width is a difference of two x2 values)
 	    vals[i][0] = importer.vals[i][0];
 	    // x1 value
-	    vals[i][1] = importer.vals[i][1] - camSetup.getCameraOffsetX1();
+	    vals[i][1] = importer.vals[i][1] - CameraSetup.getFullWidth() / 2;
 	    // x2 value
-	    vals[i][2] = importer.vals[i][2] - camSetup.getCameraOffsetX2();
+	    vals[i][2] = importer.vals[i][2] - CameraSetup.getFullHeight() / 2;
 	}
 	/*
 	 * Define the orders of the 2D polynomial.
@@ -305,9 +301,9 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	final LMA lma = new LMA(func, b_fit, vals);
 	lma.fit();
 	if (true) {
-	    IJ.log(func.compareWithGnuplot(SR_EELS_Polynomial_2D.WIDTH_VS_POS, camSetup));
+	    IJ.log(func.compareWithGnuplot(SR_EELS_Polynomial_2D.WIDTH_VS_POS));
 	}
-	return new SR_EELS_Polynomial_2D(m, n, b_fit, true);
+	return new SR_EELS_Polynomial_2D(m, n, b_fit);
     }
 
     /*
@@ -367,7 +363,10 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 		return NO_CHANGES | DONE;
 	    }
 	} while (!pathWidth.contains(".txt") | !pathBorders.contains(".txt"));
-	inputImage = imp;
+	inputProcessor = new SR_EELS_FloatProcessor((FloatProcessor) imp.getProcessor(), CameraSetup.getFullWidth()
+		/ imp.getWidth(), CameraSetup.getFullHeight() / imp.getHeight(), imp.getWidth() / 2,
+		imp.getHeight() / 2);
+	title = imp.getTitle();
 	return FLAGS;
     }
 
@@ -396,11 +395,11 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     /**
      * Creates and shows the {@link GenericDialog} that is used to set the parameters for elemental mapping.
      *
-     * @param title
+     * @param dialogTitle
      * @return The constant <code>OK</code> or <code>CANCEL</code>.
      */
-    private int showParameterDialog(final String title) {
-	final GenericDialogPlus gd = new GenericDialogPlus(title + " - set parameters", IJ.getInstance());
+    private int showParameterDialog(final String dialogTitle) {
+	final GenericDialogPlus gd = new GenericDialogPlus(dialogTitle + " - set parameters", IJ.getInstance());
 	gd.addFileField(SR_EELS.FILENAME_WIDTH, pathWidth);
 	gd.addFileField(SR_EELS.FILENAME_BORDERS, pathBorders);
 	// TODO Add drop down menu for correction method.

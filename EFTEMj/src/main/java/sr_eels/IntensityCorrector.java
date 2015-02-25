@@ -4,15 +4,12 @@ import ij.process.FloatProcessor;
 
 public abstract class IntensityCorrector {
 
-    FloatProcessor inputImage;
+    FloatProcessor input;
     CoordinateCorrector coordinateCorrector;
-    CameraSetup camSetup;
 
-    public IntensityCorrector(final FloatProcessor inputImage, final CoordinateCorrector coordinateCorrector,
-	    final CameraSetup camSetup) {
-	this.inputImage = inputImage;
+    public IntensityCorrector(final FloatProcessor inputImage, final CoordinateCorrector coordinateCorrector) {
+	this.input = inputImage;
 	this.coordinateCorrector = coordinateCorrector;
-	this.camSetup = camSetup;
     }
 
     public abstract float getIntensity(int x1, int x2);

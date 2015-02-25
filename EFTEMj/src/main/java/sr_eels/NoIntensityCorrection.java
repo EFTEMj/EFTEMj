@@ -4,9 +4,8 @@ import ij.process.FloatProcessor;
 
 public class NoIntensityCorrection extends IntensityCorrector {
 
-    public NoIntensityCorrection(final FloatProcessor inputImage, final CoordinateCorrector coordinateCorrector,
-	    final CameraSetup camSetup) {
-	super(inputImage, coordinateCorrector, camSetup);
+    public NoIntensityCorrection(final FloatProcessor inputImage, final CoordinateCorrector coordinateCorrector) {
+	super(inputImage, coordinateCorrector);
     }
 
     @Override
@@ -20,7 +19,7 @@ public class NoIntensityCorrection extends IntensityCorrector {
 	final int y1 = Math.round(point[0]);
 	final int y2 = Math.round(point[1]);
 	try {
-	    return inputImage.getf(y1, y2);
+	    return input.getf(y1, y2);
 	} catch (final ArrayIndexOutOfBoundsException exc) {
 	    return 0f;
 	}
