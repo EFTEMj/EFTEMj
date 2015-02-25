@@ -1,4 +1,4 @@
-package sr_eels.testing;
+package sr_eels;
 
 import eftemj.EFTEMj_Debug;
 import ij.IJ;
@@ -12,7 +12,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 
 import libs.lma.implementations.Polynomial_2D;
-import sr_eels.CameraSetup;
 
 public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 

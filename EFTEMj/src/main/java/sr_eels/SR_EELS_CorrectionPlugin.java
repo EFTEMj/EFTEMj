@@ -52,8 +52,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import libs.lma.LMA;
-import sr_eels.testing.SR_EELS_CharacterisationPlugin;
-import sr_eels.testing.SR_EELS_Polynomial_2D;
 
 /**
  * <p>

@@ -1,6 +1,5 @@
 package sr_eels;
 
-import sr_eels.testing.SR_EELS_Polynomial_2D;
 
 public class SimpleCoordinateCorrection extends CoordinateCorrector {
 

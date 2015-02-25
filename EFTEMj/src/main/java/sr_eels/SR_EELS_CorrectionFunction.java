@@ -36,7 +36,6 @@ import java.util.Vector;
 
 import libs.lma.LMA;
 import libs.lma.implementations.Polynomial_2D;
-import sr_eels.testing.SR_EELS_CharacterisationPlugin;
 
 /**
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>

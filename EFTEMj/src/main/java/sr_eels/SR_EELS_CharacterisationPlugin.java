@@ -1,4 +1,4 @@
-package sr_eels.testing;
+package sr_eels;
 
 import eftemj.EFTEMj;
 import ij.IJ;

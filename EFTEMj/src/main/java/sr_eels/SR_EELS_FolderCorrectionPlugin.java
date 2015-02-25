@@ -1,4 +1,4 @@
-package sr_eels.testing;
+package sr_eels;
 
 import ij.IJ;
 import ij.ImageJ;
@@ -9,8 +9,6 @@ import java.io.File;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import sr_eels.SR_EELS_CorrectionPlugin;
 
 public class SR_EELS_FolderCorrectionPlugin implements PlugIn {
 
