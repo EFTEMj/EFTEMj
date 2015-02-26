@@ -16,6 +16,7 @@ public class EFTEMj_Debug {
      *            Not used
      */
     public static void main(final String[] args) {
+	EFTEMj.debugLevel = EFTEMj.DEBUG_SHOW_IMAGES;
 	final Class<?> clazz = EFTEMj_Debug.class;
 	final String url = clazz.getResource("/" + clazz.getName().replace('.', '/') + ".class").toString();
 	// this is the path were maven creates the jar-file
