@@ -3,6 +3,7 @@ package sr_eels;
 import eftemj.EFTEMj;
 import eftemj.EFTEMj_Debug;
 import ij.ImagePlus;
+import ij.WindowManager;
 import ij.measure.CurveFitter;
 import ij.plugin.frame.Fitter;
 
@@ -188,14 +189,16 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
     }
 
     public float getY1(final float[] x2) {
-	if (transformY1.getf((int) x2[0], (int) x2[1]) == 0) {
+	final float[] x2_img = transformY1.convertToImageCoordinates(x2);
+	final float pixel_value = transformY1.getf((int) x2_img[0], (int) x2_img[1]);
+	if (pixel_value == 0) {
 	    final int low = -CameraSetup.getFullWidth() / 2;
 	    final int high = CameraSetup.getFullWidth() / 2;
 	    final LinkedHashMap<Integer, Double> map = new LinkedHashMap<Integer, Double>();
 	    map.put(0, 0.);
 	    for (int i = -1; i >= low; i--) {
 		final double path = map.get(i + 1)
-			+ Math.sqrt(1 + Math
+			- Math.sqrt(1 + Math
 				.pow(val(new double[] { i, x2[1] }) - val(new double[] { i + 1, x2[1] }), 2));
 		map.put(i, path);
 	    }
@@ -226,23 +229,32 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 	    for (int i = 0; i < transformY1.getHeight(); i++) {
 		final float[] x2_func = transformY1.convertToFunctionCoordinates(i, x2[1]);
 		final float value = (float) fit.f(fitParams, x2_func[0]);
-		transformY1.setf(i, (int) x2_func[1], value);
+		transformY1.setf(i, (int) x2_img[1], value);
 	    }
 	    if (EFTEMj.debugLevel >= EFTEMj.DEBUG_SHOW_IMAGES) {
-		final ImagePlus imp = new ImagePlus("transform width", transformWidth);
-		imp.show();
+		final int[] ids = WindowManager.getIDList();
+		boolean found = false;
+		for (final int id : ids) {
+		    if (WindowManager.getImage(id).getTitle() == "transform y1") {
+			WindowManager.getImage(id).updateAndDraw();
+			found = true;
+		    }
+		}
+		if (!found) {
+		    final ImagePlus imp = new ImagePlus("transform y1", transformY1);
+		    imp.show();
+		}
 	    }
 	}
-	float[] x2_img = transformY1.convertToImageCoordinates(x2);
 	final float y1 = transformY1.getf((int) x2_img[0], (int) x2_img[1]);
 	return y1;
     }
 
     public float getY2n(final float[] x2) {
-	float[] x2_img = transformWidth.convertToImageCoordinates(x2);
+	final float[] x2_img = transformWidth.convertToImageCoordinates(x2);
 	try {
 	    return transformWidth.getf((int) x2_img[0], (int) x2_img[1]);
-	} catch (ArrayIndexOutOfBoundsException exc) {
+	} catch (final ArrayIndexOutOfBoundsException exc) {
 	    return -1;
 	}
     }

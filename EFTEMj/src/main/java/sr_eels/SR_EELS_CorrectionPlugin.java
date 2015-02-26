@@ -159,14 +159,14 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	inputProcessor.setWidthFunction(widthFunction);
 	final SR_EELS_Polynomial_2D borderFunction = getFunctionBorders();
 	inputProcessor.setBorderFunction(borderFunction);
-	final CoordinateCorrector coordinateCorrection = new SimpleCoordinateCorrection(inputProcessor);
-	final NoIntensityCorrection intensityCorrection = new NoIntensityCorrection(inputProcessor,
-		coordinateCorrection);
 	/*
 	 * TODO: Add the used correction methods to the image title.
 	 */
 	outputProcessor = widthFunction.createOutputImage();
 	outputImage = new ImagePlus(title + "_corrected", outputProcessor);
+	final CoordinateCorrector coordinateCorrection = new FullCoordinateCorrection(inputProcessor, outputProcessor);
+	final NoIntensityCorrection intensityCorrection = new NoIntensityCorrection(inputProcessor,
+		coordinateCorrection);
 	/*
 	 * Each line of the image is a step that is visualise by the progress bar of ImageJ.
 	 */

@@ -2,8 +2,9 @@ package sr_eels;
 
 public class SimpleCoordinateCorrection extends CoordinateCorrector {
 
-    public SimpleCoordinateCorrection(SR_EELS_FloatProcessor inputProcessor) {
-	super(inputProcessor);
+    public SimpleCoordinateCorrection(final SR_EELS_FloatProcessor inputProcessor,
+	    final SR_EELS_FloatProcessor outputProcessor) {
+	super(inputProcessor, outputProcessor);
     }
 
     @Override
