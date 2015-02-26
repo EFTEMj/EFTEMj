@@ -111,6 +111,8 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 	transformY1 = new SR_EELS_FloatProcessor(transformWidth.getWidth(), transformWidth.getHeight(),
 		transformWidth.getBinningX(), transformWidth.getBinningY(), transformWidth.getOriginX(),
 		transformWidth.getOriginY());
+
+	transformY1.set(Float.NaN);
 	for (int x2 = 0; x2 < transformWidth.getHeight(); x2++) {
 	    final double x2_func = transformWidth.convertToFunctionCoordinates(0, x2)[1];
 	    final float value = (float) fit.f(fitParams, x2_func);
@@ -191,7 +193,7 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
     public float getY1(final float[] x2) {
 	final float[] x2_img = transformY1.convertToImageCoordinates(x2);
 	final float pixel_value = transformY1.getf((int) x2_img[0], (int) x2_img[1]);
-	if (pixel_value == 0) {
+	if (Float.isNaN(pixel_value)) {
 	    final int low = -CameraSetup.getFullWidth() / 2;
 	    final int high = CameraSetup.getFullWidth() / 2;
 	    final LinkedHashMap<Integer, Double> map = new LinkedHashMap<Integer, Double>();
