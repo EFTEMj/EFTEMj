@@ -110,11 +110,10 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 		transformWidth.getBinningX(), transformWidth.getBinningY(), transformWidth.getOriginX(),
 		transformWidth.getOriginY());
 	for (int x2 = 0; x2 < transformWidth.getHeight(); x2++) {
-	    double x2_func = transformWidth.convertToFunctionCoordinates(0, x2)[1];
+	    final double x2_func = transformWidth.convertToFunctionCoordinates(0, x2)[1];
 	    final float value = (float) fit.f(fitParams, x2_func);
 	    for (int x1 = 0; x1 < transformWidth.getWidth(); x1++) {
-		final float valueNew = (float) inputProcessor.convertToImageCoordinates(new double[] { 0, value })[1];
-		transformWidth.setf(x1, x2, valueNew);
+		transformWidth.setf(x1, x2, value);
 	    }
 	}
 	if (EFTEMj.debugLevel >= EFTEMj.DEBUG_SHOW_IMAGES) {
@@ -187,8 +186,7 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 	return fit + "\n\n" + functionJava + "\n\n" + compare + "\n\n" + splot;
     }
 
-    public double getY1(final double[] x2) {
-	final double[] x2_func = inputProcessor.convertToFunctionCoordinates(x2);
+    public float getY1(final float[] x2) {
 	if (transformY1.getf((int) x2[0], (int) x2[1]) == 0) {
 	    final int low = -CameraSetup.getFullWidth() / 2;
 	    final int high = CameraSetup.getFullWidth() / 2;
@@ -196,14 +194,14 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 	    map.put(0, 0.);
 	    for (int i = -1; i >= low; i--) {
 		final double path = map.get(i + 1)
-			+ Math.sqrt(1 + Math.pow(val(new double[] { i, x2_func[1] })
-				- val(new double[] { i + 1, x2_func[1] }), 2));
+			+ Math.sqrt(1 + Math
+				.pow(val(new double[] { i, x2[1] }) - val(new double[] { i + 1, x2[1] }), 2));
 		map.put(i, path);
 	    }
 	    for (int i = 1; i < high; i++) {
 		final double path = map.get(i - 1)
-			+ Math.sqrt(1 + Math.pow(val(new double[] { i, x2_func[1] })
-				- val(new double[] { i - 1, x2_func[1] }), 2));
+			+ Math.sqrt(1 + Math
+				.pow(val(new double[] { i, x2[1] }) - val(new double[] { i - 1, x2[1] }), 2));
 		map.put(i, path);
 	    }
 	    final double[] x = new double[map.size()];
@@ -225,7 +223,8 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 	    }
 	    final double[] fitParams = fit.getParams();
 	    for (int i = 0; i < transformY1.getHeight(); i++) {
-		final float value = (float) fit.f(fitParams, i - transformY1.getWidth() / 2);
+		final float[] x2_func = transformY1.convertToFunctionCoordinates(i, x2[1]);
+		final float value = (float) fit.f(fitParams, x2_func[0]);
 		transformY1.setf(i, (int) x2_func[1], value);
 	    }
 	    if (EFTEMj.debugLevel >= EFTEMj.DEBUG_SHOW_IMAGES) {
@@ -233,12 +232,18 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 		imp.show();
 	    }
 	}
-	final double y1 = transformY1.getf((int) x2[0], (int) x2[1]);
+	float[] x2_img = transformY1.convertToImageCoordinates(x2);
+	final float y1 = transformY1.getf((int) x2_img[0], (int) x2_img[1]);
 	return y1;
     }
 
-    public float getY2n(final double[] x2) {
-	return transformWidth.getf((int) x2[0], (int) x2[1]);
+    public float getY2n(final float[] x2) {
+	float[] x2_img = transformWidth.convertToImageCoordinates(x2);
+	try {
+	    return transformWidth.getf((int) x2_img[0], (int) x2_img[1]);
+	} catch (ArrayIndexOutOfBoundsException exc) {
+	    return -1;
+	}
     }
 
     public SR_EELS_FloatProcessor createOutputImage() {
@@ -248,10 +253,8 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 	return fp;
     }
 
-    public double getY2(final double[] x2) {
-	final double[] x2_func = transformY1.convertToFunctionCoordinates(x2);
-	double value = val(x2_func);
-	double value_image = transformY1.convertToImageCoordinates(0., value)[1];
-	return value_image;
+    public float getY2(final float[] x2) {
+	final float value = (float) val(new double[] { x2[0], x2[1] });
+	return value;
     }
 }

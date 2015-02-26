@@ -22,12 +22,13 @@
  */
 input = "Q:/Aktuell/SR-EELS Calibration measurements/";	//getDirectory("Input directory");
 output = "Q:/Aktuell/SR-EELS Calibration measurements/Plots/";
-gnuplotExe = "P:/PortableApps/gnuplot/bin/wgnuplo.exe";
+gnuplotExe = "P:/PortableApps/gnuplot/bin/wgnuplot.exe";
 
 var fName = ""; // Wird für das Anzeigen der Diagramme mit Gnuplot benötigt.
 
 if (!File.isDirectory(input)) exit("Please set the input path.");
 if (!File.isDirectory(output)) exit("Please set the output path.");
+if (!File.exists(gnuplotExe)) showMessage("The path to 'wgnuplot.exe' is not set.\nOnly '.plt' files are created.");
 
 Dialog.create("Set filter");
 message1 = "Add one ore more SpecMag values.";

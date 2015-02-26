@@ -16,8 +16,8 @@ public class NoIntensityCorrection extends IntensityCorrector {
 	} catch (final SR_EELS_Exception exc1) {
 	    return 0f;
 	}
-	final int y1 = Math.round(point[0]);
-	final int y2 = Math.round(point[1]);
+	final int y1 = (int) Math.floor(point[0]);
+	final int y2 = (int) Math.floor(point[1]);
 	try {
 	    return input.getf(y1, y2);
 	} catch (final ArrayIndexOutOfBoundsException exc) {

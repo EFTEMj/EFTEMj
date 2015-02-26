@@ -52,6 +52,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import libs.lma.LMA;
+import tools.StringManipulator;
 
 /**
  * <p>
@@ -223,7 +224,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	this.inputProcessor = new SR_EELS_FloatProcessor((FloatProcessor) input_image.getProcessor(),
 		CameraSetup.getFullWidth() / input_image.getWidth(), CameraSetup.getFullHeight()
 			/ input_image.getHeight(), input_image.getWidth() / 2, input_image.getHeight() / 2);
-	title = input_image.getTitle();
+	title = StringManipulator.removeExtensionFromTitle(input_image.getTitle());
 	this.pathBorders = path_borders;
 	this.pathWidth = path_width;
 	run(null);
@@ -366,7 +367,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	inputProcessor = new SR_EELS_FloatProcessor((FloatProcessor) imp.getProcessor(), CameraSetup.getFullWidth()
 		/ imp.getWidth(), CameraSetup.getFullHeight() / imp.getHeight(), imp.getWidth() / 2,
 		imp.getHeight() / 2);
-	title = imp.getTitle();
+	title = StringManipulator.removeExtensionFromTitle(imp.getTitle());
 	return FLAGS;
     }
 

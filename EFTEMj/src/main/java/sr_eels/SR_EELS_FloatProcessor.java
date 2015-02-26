@@ -92,27 +92,27 @@ public class SR_EELS_FloatProcessor extends FloatProcessor {
 	return borderFunction;
     }
 
-    public double[] convertToFunctionCoordinates(double[] x2) {
-	double[] point = new double[2];
+    public float[] convertToFunctionCoordinates(float[] x2) {
+	float[] point = new float[2];
 	point[0] = (x2[0] - originX) * binningX;
 	point[1] = (x2[1] - originY) * binningY;
 	return point;
     }
 
-    public double[] convertToFunctionCoordinates(double x1, double x2) {
-	double[] x = new double[] { x1, x2 };
+    public float[] convertToFunctionCoordinates(float x1, float x2) {
+	float[] x = new float[] { x1, x2 };
 	return convertToFunctionCoordinates(x);
     }
 
-    public double[] convertToImageCoordinates(double[] x2) {
-	double[] point = new double[2];
+    public float[] convertToImageCoordinates(float[] x2) {
+	float[] point = new float[2];
 	point[0] = x2[0] / binningX + originX;
 	point[1] = x2[1] / binningY + originY;
 	return point;
     }
 
-    public double[] convertToImageCoordinates(double x1, double x2) {
-	double[] x = new double[] { x1, x2 };
+    public float[] convertToImageCoordinates(float x1, float x2) {
+	float[] x = new float[] { x1, x2 };
 	return convertToImageCoordinates(x);
     }
 }

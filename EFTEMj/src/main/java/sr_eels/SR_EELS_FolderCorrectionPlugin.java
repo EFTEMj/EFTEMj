@@ -21,7 +21,9 @@ public class SR_EELS_FolderCorrectionPlugin implements PlugIn {
 	    return;
 	final String[] list = folder.list();
 	for (final String item : list) {
-	    processDataSet(path + item);
+	    if (item.contains("SM") & item.contains("%")) {
+		processDataSet(path + item);
+	    }
 	}
 	IJ.log("Finished!");
     }
