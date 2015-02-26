@@ -9,6 +9,7 @@ import ij.plugin.frame.Fitter;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 
 import libs.lma.implementations.Polynomial_2D;
 
@@ -144,15 +145,15 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 	String fit = "fit f(x,y) '" + filename + "' " + using + " zerror via ";
 	for (int i = 0; i <= m; i++) {
 	    for (int j = 0; j <= n; j++) {
-		functionGnu += String.format("a%d%d*x**%d*y**%d", i, j, i, j);
-		fit += String.format("a%d%d", i, j);
+		functionGnu += String.format(Locale.UK, "a%d%d*x**%d*y**%d", i, j, i, j);
+		fit += String.format(Locale.UK, "a%d%d", i, j);
 		if (i != m | j != n) {
 		    functionGnu += " + ";
 		    fit += ",";
 		}
 	    }
 	}
-	final String title = String.format("%n#####%n# Fit of '%s':%n#####%n", filename);
+	final String title = String.format(Locale.UK, "%n#####%n# Fit of '%s':%n#####%n", filename);
 	fit = title + "\n" + offsetX1 + "\n" + offsetX2 + "\n" + functionGnu + "\n" + fit;
 	String residuals = "";
 	switch (functionType) {
@@ -176,8 +177,8 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 	String compare = "#Java LMA";
 	for (int i = 0; i <= m; i++) {
 	    for (int j = 0; j <= n; j++) {
-		compare += String.format("\naJ%d%d = %+6e", i, j, params[(n + 1) * i + j]);
-		functionJava += String.format("aJ%d%d*x**%d*y**%d", i, j, i, j);
+		compare += String.format(Locale.UK, "\naJ%d%d = %+6e", i, j, params[(n + 1) * i + j]);
+		functionJava += String.format(Locale.UK, "aJ%d%d*x**%d*y**%d", i, j, i, j);
 		if (i != m | j != n) {
 		    functionJava += " + ";
 		}
