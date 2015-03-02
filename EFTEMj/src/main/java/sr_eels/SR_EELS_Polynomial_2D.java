@@ -106,7 +106,7 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 		inputProcessor.getBinningY(), inputProcessor.getOriginX(), (int) Math.max(-rootL, rootH)
 			/ inputProcessor.getBinningY());
 	/*
-	 * transformY1 is only created but not filled with values. The calculation is done at the method getY1();
+	 * transformY1 is only created but not filled with values. The calculation is done at the method getY1().
 	 */
 	transformY1 = new SR_EELS_FloatProcessor(transformWidth.getWidth(), transformWidth.getHeight(),
 		transformWidth.getBinningX(), transformWidth.getBinningY(), transformWidth.getOriginX(),
@@ -192,7 +192,7 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 
     public float getY1(final float[] x2) {
 	final float[] x2_img = transformY1.convertToImageCoordinates(x2);
-	final float pixel_value = transformY1.getf((int) x2_img[0], (int) x2_img[1]);
+	final float pixel_value = transformY1.getf((int) Math.floor(x2_img[0]), (int) Math.floor(x2_img[1]));
 	if (Float.isNaN(pixel_value)) {
 	    final int low = -CameraSetup.getFullWidth() / 2;
 	    final int high = CameraSetup.getFullWidth() / 2;
@@ -228,7 +228,7 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 		fit.doFit(CurveFitter.STRAIGHT_LINE);
 	    }
 	    final double[] fitParams = fit.getParams();
-	    for (int i = 0; i < transformY1.getHeight(); i++) {
+	    for (int i = 0; i < transformY1.getWidth(); i++) {
 		final float[] x2_func = transformY1.convertToFunctionCoordinates(i, x2[1]);
 		final float value = (float) fit.f(fitParams, x2_func[0]);
 		transformY1.setf(i, (int) x2_img[1], value);
@@ -236,15 +236,17 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 	    if (EFTEMj.debugLevel >= EFTEMj.DEBUG_SHOW_IMAGES) {
 		final int[] ids = WindowManager.getIDList();
 		boolean found = false;
-		for (final int id : ids) {
-		    if (WindowManager.getImage(id).getTitle() == "transform y1") {
-			WindowManager.getImage(id).updateAndDraw();
-			found = true;
+		synchronized (transformY1) {
+		    for (final int id : ids) {
+			if (WindowManager.getImage(id).getTitle() == "transform y1") {
+			    WindowManager.getImage(id).updateAndDraw();
+			    found = true;
+			}
 		    }
-		}
-		if (!found) {
-		    final ImagePlus imp = new ImagePlus("transform y1", transformY1);
-		    imp.show();
+		    if (!found) {
+			final ImagePlus imp = new ImagePlus("transform y1", transformY1);
+			imp.show();
+		    }
 		}
 	    }
 	}
