@@ -155,6 +155,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	 * By using getFunctionWidth() and getFunctionBorders() the characterisation results are loaded and an
 	 * implementation of the Levenberg–Marquardt algorithm (LMA) is used to fit functions to the discrete values.
 	 */
+	IJ.showStatus("Preparing correction...");
 	final SR_EELS_Polynomial_2D widthFunction = getFunctionWidth();
 	inputProcessor.setWidthFunction(widthFunction);
 	final SR_EELS_Polynomial_2D borderFunction = getFunctionBorders();
@@ -170,7 +171,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	/*
 	 * Each line of the image is a step that is visualise by the progress bar of ImageJ.
 	 */
-	progressSteps = outputProcessor.getHeight();
+	setupProgress(outputProcessor.getHeight());
 	if (EFTEMj.debugLevel == EFTEMj.DEBUG_FULL) {
 	    for (int x2 = 0; x2 < outputProcessor.getHeight(); x2++) {
 		for (int x1 = 0; x1 < outputProcessor.getWidth(); x1++) {
@@ -429,6 +430,11 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
     @Override
     public void setNPasses(final int nPasses) {
 	// This method is not used.
+    }
+
+    private static void setupProgress(int fullProgress) {
+	progressSteps = fullProgress;
+	progress = 0;
     }
 
     private static void updateProgress() {
