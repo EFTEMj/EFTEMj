@@ -41,6 +41,7 @@ import ij.process.ImageProcessor;
 import java.awt.Choice;
 import java.awt.Rectangle;
 import java.awt.TextField;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
@@ -109,7 +110,7 @@ public class SR_EELS_DispersionCalibrationPlugin extends SR_EELS implements Exte
     /**
      * A prefix used to create key for accessing IJ_Prefs.txt by the class {@link Prefs}.
      */
-    private static final String PREFIX_DISPERSION = PREFS_PREFIX + KEYS.dispersionEloss;
+    private static final String PREFIX_DISPERSION = PREFS_PREFIX + KEYS.dispersionEloss + ".";
     /**
      * An instance of {@link EFTEMjLogTool}.
      */
@@ -211,6 +212,7 @@ public class SR_EELS_DispersionCalibrationPlugin extends SR_EELS implements Exte
 	    specMagValues[index] = "" + key;
 	    index++;
 	}
+	Arrays.sort(specMagValues);
 	/*
 	 * Load the values that were saved at the last usage of this plugin.
 	 */
