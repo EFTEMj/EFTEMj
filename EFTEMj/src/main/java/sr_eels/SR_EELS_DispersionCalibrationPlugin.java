@@ -104,14 +104,6 @@ public class SR_EELS_DispersionCalibrationPlugin extends SR_EELS implements Exte
      */
     private static final int FLAGS = DOES_ALL | FINAL_PROCESSING;
     /**
-     * A prefix used to create key for accessing IJ_Prefs.txt by the class {@link Prefs}.
-     */
-    private static final String PREFIX_SETTINGS = PREFS_PREFIX + KEYS.dispersionSettings;
-    /**
-     * A prefix used to create key for accessing IJ_Prefs.txt by the class {@link Prefs}.
-     */
-    private static final String PREFIX_DISPERSION = PREFS_PREFIX + KEYS.dispersionEloss + ".";
-    /**
      * An instance of {@link EFTEMjLogTool}.
      */
     private EFTEMjLogTool logTool;
@@ -216,12 +208,12 @@ public class SR_EELS_DispersionCalibrationPlugin extends SR_EELS implements Exte
 	/*
 	 * Load the values that were saved at the last usage of this plugin.
 	 */
-	specMagIndex = (int) Prefs.get(PREFIX_SETTINGS + KEYS.specMagIndex, 0);
-	binningIndex = (int) Prefs.get(PREFIX_SETTINGS + KEYS.binningIndex, 0);
-	binningUser = (int) Prefs.get(PREFIX_SETTINGS + KEYS.binningUser, 1);
-	offsetIndex = (int) Prefs.get(PREFIX_SETTINGS + KEYS.offsetIndex, 0);
-	offsetLoss = Prefs.get(PREFIX_SETTINGS + KEYS.offsetLoss, 0);
-	offsetAbsolute = (int) Prefs.get(PREFIX_SETTINGS + KEYS.offsetAbsolute, 0);
+	specMagIndex = (int) Prefs.get(SR_EELS_PrefsKeys.specMagIndex.getValue(), 0);
+	binningIndex = (int) Prefs.get(SR_EELS_PrefsKeys.binningIndex.getValue(), 0);
+	binningUser = (int) Prefs.get(SR_EELS_PrefsKeys.binningUser.getValue(), 1);
+	offsetIndex = (int) Prefs.get(SR_EELS_PrefsKeys.offsetIndex.getValue(), 0);
+	offsetLoss = Prefs.get(SR_EELS_PrefsKeys.offsetLoss.getValue(), 0);
+	offsetAbsolute = (int) Prefs.get(SR_EELS_PrefsKeys.offsetAbsolute.getValue(), 0);
 	return FLAGS;
     }
 
@@ -232,7 +224,8 @@ public class SR_EELS_DispersionCalibrationPlugin extends SR_EELS implements Exte
      */
     @Override
     public void run(final ImageProcessor ip) {
-	final double dispersion = Prefs.get(PREFIX_DISPERSION + specMagValues[specMagIndex], 1);
+	final double dispersion = Prefs.get(SR_EELS_PrefsKeys.dispersionEloss.getValue() + specMagValues[specMagIndex],
+		1);
 	int offsetValue = 0;
 	int binning;
 	if (BINNING.toStringArray()[binningIndex].equals(BINNING.BINNING_OTHER.toString())) {
@@ -336,17 +329,17 @@ public class SR_EELS_DispersionCalibrationPlugin extends SR_EELS implements Exte
 	if (gd.wasOKed()) {
 	    orientation = gd.getNextChoiceIndex();
 	    specMagIndex = gd.getNextChoiceIndex();
-	    Prefs.set(PREFIX_SETTINGS + KEYS.specMagIndex, specMagIndex);
+	    Prefs.set(SR_EELS_PrefsKeys.specMagIndex.getValue(), specMagIndex);
 	    binningIndex = gd.getNextChoiceIndex();
-	    Prefs.set(PREFIX_SETTINGS + KEYS.binningIndex, binningIndex);
+	    Prefs.set(SR_EELS_PrefsKeys.binningIndex.getValue(), binningIndex);
 	    binningUser = (int) gd.getNextNumber();
-	    Prefs.set(PREFIX_SETTINGS + KEYS.binningUser, binningUser);
+	    Prefs.set(SR_EELS_PrefsKeys.binningUser.getValue(), binningUser);
 	    offsetIndex = gd.getNextChoiceIndex();
-	    Prefs.set(PREFIX_SETTINGS + KEYS.offsetIndex, offsetIndex);
+	    Prefs.set(SR_EELS_PrefsKeys.offsetIndex.getValue(), offsetIndex);
 	    offsetLoss = gd.getNextNumber();
-	    Prefs.set(PREFIX_SETTINGS + KEYS.offsetLoss, offsetLoss);
+	    Prefs.set(SR_EELS_PrefsKeys.offsetLoss.getValue(), offsetLoss);
 	    offsetAbsolute = (int) gd.getNextNumber();
-	    Prefs.set(PREFIX_SETTINGS + KEYS.offsetAbsolute, offsetAbsolute);
+	    Prefs.set(SR_EELS_PrefsKeys.offsetAbsolute.getValue(), offsetAbsolute);
 	    Prefs.savePreferences();
 	    if (offsetIndex == 1) { // peak selection
 		boolean ok;

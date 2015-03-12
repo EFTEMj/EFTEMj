@@ -26,9 +26,6 @@
  */
 package sr_eels;
 
-import eftemj.EFTEMj;
-import ij.Prefs;
-
 /**
  * This class contains constants and utility methods for the sr_eels package.
  *
@@ -36,20 +33,6 @@ import ij.Prefs;
  *
  */
 public class SR_EELS {
-
-    /**
-     * This {@link Enum} holds all {@link Prefs} keys that are used by this package.<br />
-     * When using <code>dispersion</code> you have to add a additional number that indicates the Spec Mag.<br />
-     * <code>PREFIX + KEYS.dispersion + "." + number</code>
-     */
-    public static enum KEYS {
-	specMagValues, specMagIndex, dispersionEloss, dispersionSettings, binningIndex, binningUser, offsetIndex, offsetLoss, offsetAbsolute, cameraWidth, cameraHeight
-    }
-
-    /**
-     * <code>EFTEMj.PREFS_PREFIX + "SR-EELS.".<code>
-     */
-    protected static final String PREFS_PREFIX = EFTEMj.PREFS_PREFIX + "SR-EELS.";
 
     /**
      * This is the name of the file that stores the data points used to describe the change of the spectrum width.

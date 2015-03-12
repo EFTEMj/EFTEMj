@@ -49,7 +49,7 @@ public class SR_EELS_DispersionConfigurationPlugin extends SR_EELS implements Pl
     /**
      * A prefix used to create key for accessing IJ_Prefs.txt by the class {@link Prefs}.
      */
-    protected static final String PREFIX = PREFS_PREFIX + KEYS.dispersionEloss + ".";
+    protected static final String PREFIX = SR_EELS_PrefsKeys.dispersionEloss.getValue();
     /**
      * This {@link Hashtable} is used to manage the SpecMag-dispersion pairs.
      */
@@ -96,7 +96,7 @@ public class SR_EELS_DispersionConfigurationPlugin extends SR_EELS implements Pl
 
     public static Hashtable<Integer, Double> buildDispersionStorage() {
 	final Hashtable<Integer, Double> dispersionStorage = new Hashtable<Integer, Double>();
-	final Vector<String> keys = EFTEMj_Prefs.getAllKeys(KEYS.dispersionEloss.toString());
+	final Vector<String> keys = EFTEMj_Prefs.getAllKeys(SR_EELS_PrefsKeys.dispersionEloss.getValue());
 	for (final String key : keys) {
 	    final String empty = "0.0";
 	    final String valueStr = Prefs.get(key, empty);
