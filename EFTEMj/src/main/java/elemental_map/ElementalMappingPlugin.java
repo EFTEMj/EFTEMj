@@ -42,6 +42,7 @@ import java.awt.Panel;
 import java.awt.Scrollbar;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.concurrent.CancellationException;
 
 import javax.swing.JLabel;
 
@@ -105,7 +106,7 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see ij.plugin.filter.PlugInFilter#setup(java.lang.String, ij.ImagePlus)
      */
     @Override
@@ -120,7 +121,7 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see ij.plugin.filter.PlugInFilter#run(ij.process.ImageProcessor)
      */
     @Override
@@ -154,30 +155,67 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see ij.plugin.filter.ExtendedPlugInFilter#showDialog(ij.ImagePlus, java.lang.String,
      * ij.plugin.filter.PlugInFilterRunner)
      */
     @Override
     public int showDialog(final ImagePlus imp, final String command, final PlugInFilterRunner pfr) {
-	// Check if imp is a stack.
-	if (imp.getStackSize() <= 1) {
-	    // ExtendedStackToImage is a plugin
-	    new ExtendedImagesToStack().convertImagesToStack();
-	    if (IJ.getImage().getStackSize() <= 1) {
+	try {
+	    // Check if imp is a stack.
+	    if (imp.getStackSize() <= 1) {
+		// ExtendedStackToImage is a plugin
+		new ExtendedImagesToStack().convertImagesToStack();
+		if (IJ.getImage().getStackSize() <= 1) {
+		    canceled();
+		    return NO_CHANGES | DONE;
+		}
+		impStack = IJ.getImage();
+	    } else {
+		impStack = imp;
+	    }
+	    calibration = imp.getCalibration();
+	    checkEnergyLosses();
+	    if (showParameterDialog(command) == CANCEL) {
 		canceled();
 		return NO_CHANGES | DONE;
 	    }
-	    impStack = IJ.getImage();
-	} else {
-	    impStack = imp;
+	    return FLAGS;
+	} catch (CancellationException exc) {
+	    IJ.showStatus("Cancelled by user...");
+	    return DONE;
 	}
-	calibration = imp.getCalibration();
-	if (showParameterDialog(command) == CANCEL) {
-	    canceled();
-	    return NO_CHANGES | DONE;
+    }
+
+    /**
+     * Check if any energy loss is 0. The user is asked to enter values.
+     */
+    private void checkEnergyLosses() {
+	initELossArry();
+	for (int i = 0; i < energyLossArray.length; i++) {
+	    if (energyLossArray[i] == 0) {
+		float energy = 0;
+		do {
+		    energy = getFloat("Enter energy loss", "Energy loss at slice " + (1 + i), energyLossArray[i]);
+		} while (energy == 0);
+		energyLossArray[i] = energy;
+		String oldLabel = impStack.getStack().getShortSliceLabel(i + 1);
+		if (oldLabel == null)
+		    oldLabel = "";
+		impStack.getStack().setSliceLabel(oldLabel + "[" + energy + "eV]", i + 1);
+		impStack.changes = true;
+	    }
 	}
-	return FLAGS;
+	impStack.updateAndRepaintWindow();
+    }
+
+    private float getFloat(String title, String text, float init) {
+	GenericDialog gd = new GenericDialog(title);
+	gd.addNumericField(text, init, 2, 7, "eV");
+	gd.showDialog();
+	if (gd.wasCanceled())
+	    throw new CancellationException();
+	return (float) gd.getNextNumber();
     }
 
     /**
@@ -364,7 +402,7 @@ public class ElementalMappingPlugin implements ExtendedPlugInFilter {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see ij.plugin.filter.ExtendedPlugInFilter#setNPasses(int)
      */
     @Override

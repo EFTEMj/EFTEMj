@@ -73,6 +73,8 @@ public abstract class Extractor {
 	} else {
 	    label = stack.getShortSliceLabel(index + 1);
 	}
+	if (label == null)
+	    label = "";
 	return findFloat(label);
     }
 
