@@ -166,7 +166,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	outputProcessor = widthFunction.createOutputImage();
 	outputImage = new ImagePlus(title + "_corrected", outputProcessor);
 	final CoordinateCorrector coordinateCorrection = new FullCoordinateCorrection(inputProcessor, outputProcessor);
-	final NoIntensityCorrection intensityCorrection = new NoIntensityCorrection(inputProcessor,
+	final IntensityCorrector intensityCorrection = new SimpleIntensityCorrection(inputProcessor,
 		coordinateCorrection);
 	/*
 	 * Each line of the image is a step that is visualise by the progress bar of ImageJ.
@@ -432,7 +432,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	// This method is not used.
     }
 
-    private static void setupProgress(int fullProgress) {
+    private static void setupProgress(final int fullProgress) {
 	progressSteps = fullProgress;
 	progress = 0;
     }
