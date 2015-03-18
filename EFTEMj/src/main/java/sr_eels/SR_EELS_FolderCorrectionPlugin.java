@@ -84,7 +84,7 @@ public class SR_EELS_FolderCorrectionPlugin implements PlugIn {
 	    final String params = split[split.length - 1];
 	    final String resultFileName = "result_" + params.substring(0, params.length() - 1) + ".tif";
 	    if (overwrite | !new File(path + resultFileName).exists()) {
-		final ImagePlus projection = IJ.openImage(image);
+		final ImagePlus projection = IJ.openImage(path + projectionFileName);
 		final ImagePlus result = correction.correctImage(projection, dataSets.get(i) + "Borders.txt",
 			dataSets.get(i) + "Width.txt");
 		IJ.save(result, path + resultFileName);
