@@ -1,7 +1,7 @@
 /*
  * file:	SR-EELS_characterisation.ijm
  * author:	Michael Entrup b. Epping (michael.entrup@wwu.de)
- * version:	20141128
+ * version:	20150318
  * info:	This macro is used to characterise the distortions of an Zeiss in-column energy filter when using SR-EELS.
  * 			A series of calibration data sets is necessary to run the characterisation.
  * 			Place all data sets (images) at a single folder and run this macro.
@@ -100,6 +100,11 @@ var thresholds = newArray("Li");
   * 	3 = 99.73%
   */
 var sigma_weighting = 3;
+/*
+ * This value determines the order of the polynominal along the spectrum borders.
+ * Reduche this value to 2 if it is necessary. (default is 3)
+ */
+var polynominal_order = 3;
 /*
  * Set options for plotting:
  * Width and height are set for the coordinate system. The size of the resulting image is larger.
@@ -496,19 +501,26 @@ function analyse_dataset() {
 			/*
 			 * Plot and save the results:
 			 * The created diagrams are used to estimate the quality of the characterisation.
-			 * For final fitting, Gnuplot (http://gnuplot.info/) should be used, which creates far superior results.
+			 * Final fitting is done at the correction plugin.
 			 */
+			/*
+			 * Set the fit function for the next 3 fits:
+			 */
+			var fit_function = "3rd Degree Polynomial";
+			if (polynominal_order == 2) {
+				fit_function = "2nd Degree Polynomial";
+			}
 			/*
 			 * Spectrum width:
 			 */
-			Fit.doFit("3rd Degree Polynomial", array_pos_y, array_width);
+			Fit.doFit(fit_function, array_pos_y, array_width);
 			Fit.plot;
 			saveAs("PNG", result_dirs[m] + "width_" + img_name + ".png");
 			close();
 			/*
 			 * Position of spectrum centre:
-			 */
-			Fit.doFit("3rd Degree Polynomial", array_pos_y, array_pos_x);
+			 */					
+			Fit.doFit(fit_function, array_pos_y, array_pos_x);
 			Fit.plot;
 			temp = newArray(array_pos_x.length);
 			Array.fill(temp, Fit.f(0));
@@ -520,7 +532,7 @@ function analyse_dataset() {
 			/*
 			 * Position of left border:
 			 */
-			Fit.doFit("3rd Degree Polynomial", array_pos_y, array_left);
+			Fit.doFit(fit_function, array_pos_y, array_left);
 			Fit.plot;
 			temp = newArray(array_left.length);
 			Array.fill(temp, Fit.f(0));
@@ -532,7 +544,7 @@ function analyse_dataset() {
 			/*
 			 * Position of right border:
 			 */
-			Fit.doFit("3rd Degree Polynomial", array_pos_y, array_right);
+			Fit.doFit(fit_function, array_pos_y, array_right);
 			Fit.plot;
 			temp = newArray(array_right.length);
 			Array.fill(temp, Fit.f(0));
@@ -673,6 +685,7 @@ function setup_macro() {
 		Dialog.addNumber("Filter radius:", filter_radius, 0, 4, "px");
 		Dialog.addCheckbox("No detailed results", false);
 		Dialog.addSlider("Energy Position:", 0, 1, 0.5);
+		Dialog.addCheckbox("Reduce Polynominal order (3 -> 2)", false);
 		Dialog.show();
 		step_size = Dialog.getNumber();
 		energy_border_lower = Dialog.getNumber();
@@ -682,6 +695,7 @@ function setup_macro() {
 			detailed_results = 0;
 		}
 		energy_pos = Dialog.getNumber();
+		if (Dialog.getCheckbox == true) polynominal_order = 2;
 	}
 	datapoints = ceil((height - energy_border_lower - energy_border_higher) / step_size);
 	/*
