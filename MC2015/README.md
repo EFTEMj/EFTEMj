@@ -4,9 +4,9 @@
 This page contains additional information regarding my abstract for the MC2015.
 
 ###Table of Contents
-1. [Abstract figure](https://github.com/EFTEMj/EFTEMj/MC2015/README.md#Abstract)
-1. [Software correction of image distortions](https://github.com/EFTEMj/EFTEMj/MC2015/README.md#Software)
-1. [EFTEMj - an overview](https://github.com/EFTEMj/EFTEMj/MC2015/README.md#EFTEMj)
+1. [Abstract figure](https://github.com/EFTEMj/EFTEMj/blob/master/MC2015/README.md#Abstract)
+1. [Software correction of image distortions](https://github.com/EFTEMj/EFTEMj/blob/master/MC2015/README.md#Software)
+1. [EFTEMj - an overview](https://github.com/EFTEMj/EFTEMj/blob/master/MC2015/README.md#EFTEMj)
 
 ###Abstract figure
 
