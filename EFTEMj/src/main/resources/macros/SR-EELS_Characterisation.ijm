@@ -293,6 +293,20 @@ function analyse_dataset() {
 		id = getImageID();
 		img_name = File.nameWithoutExtension;
 		/*
+		 * The macro rotates the image to match the default oriantation:
+		 * energy loss on the x-axis.
+		 */
+		if (doRotate == true) {
+			run("Duplicate...", img_name);
+			if (endsWith(list[i], ".dm3")) {
+				replace(list[i], "dm3", "tif");
+			}
+			run("Rotate 90 Degrees Left");
+			saveAs("Tiff", list[i]);
+			close();
+			selectImage(id);
+		}
+		/*
 		 * since 20140620: The default configuration is energy loss on the x-axis.
 		 * But the fastest processing (of this macro) is achieved when the lateral axis is on the x-axis.
 		 * That is why we rotate 'if (doRotate == false)'.
@@ -519,7 +533,7 @@ function analyse_dataset() {
 			close();
 			/*
 			 * Position of spectrum centre:
-			 */					
+			 */
 			Fit.doFit(fit_function, array_pos_y, array_pos_x);
 			Fit.plot;
 			temp = newArray(array_pos_x.length);
