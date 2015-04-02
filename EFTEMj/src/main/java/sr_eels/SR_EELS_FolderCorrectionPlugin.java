@@ -77,6 +77,7 @@ public class SR_EELS_FolderCorrectionPlugin implements PlugIn {
 	    stack.close();
 	    ImagePlus tempImage = IJ.getImage();
 	    IJ.save(tempImage, path + projectionFileName);
+	    tempImage.close();
 	}
 	final SR_EELS_CorrectionPlugin correction = new SR_EELS_CorrectionPlugin();
 	for (int i = 0; i < dataSets.size(); i++) {
