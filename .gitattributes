@@ -14,6 +14,7 @@
 *.plt text
 *.js text eol=lf
 *.ijm text eol=lf
+*.py text eol=lf
 
 # Declare files that will always have CRLF line endings on checkout.
 
