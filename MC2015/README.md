@@ -60,7 +60,7 @@ where each parameter is a 2nd order polynomial. Figure 5 shows this function fit
 **Figure 4:** Top and bottom borders of the SR-EELS image shown in figure 3 are fitted with separate polynomials of third order.
 
 ![Figure5.png](Figure5.png)
-*Figure 5:** The series of 8 SR-EELS images has been analysed. The function f(x,y(x=0)) has been used to fit all borders simultaneously. The y-range is reduced for more details being visible. The lightblue lines show f(x,y(x=0)) for equidistant values of y(x=0).
+**Figure 5:** The series of 8 SR-EELS images has been analysed. The function f(x,y(x=0)) has been used to fit all borders simultaneously. The y-range is reduced for more details being visible. The lightblue lines show f(x,y(x=0)) for equidistant values of y(x=0).
 
 coming soon...
 
