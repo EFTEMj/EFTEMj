@@ -52,7 +52,7 @@ A polynomial of 3rd order (P3i) is used to fit each border. Figure 4 shows fits 
 
 All borders of separate SR-EELS images can be described by only one function. The parameters of the 3rd order polynomial (P3i) vary as a function of the y-offset of each. We choose y0 = P3i(x=0) as the y-offset of the selected third order polynomial. Now we can use
 
-![Poly_f(x,y0).svg](Poly_f(x,y0).svg)
+![Poly1.svg]("Poly1.svg")
 
 where each parameter is a 2nd order polynomial. Figure 5 shows this function fitted to the data points of 8 SR-EELS images. There is nearly a perfect match.
 
