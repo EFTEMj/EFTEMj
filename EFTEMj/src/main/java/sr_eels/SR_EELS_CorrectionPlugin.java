@@ -482,8 +482,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	 * </p>
 	 * <p>
 	 * <a href=
-	 * 'https://github.com/imagej/minimal-ij1-plugin/blob/master/src/main/java/Process_Pixels.
-	 * j a v a ' > s e e minimal-ij1-plugin on GitHub</a>
+	 * 'https://github.com/imagej/minimal-ij1-plugin/blob/master/src/main/java/Process_Pixe
+	 * l s . j a v a ' > s e e minimal-ij1-plugin on GitHub</a>
 	 * </p>
 	 *
 	 * @param args
@@ -500,7 +500,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 		if (os.indexOf("nix") >= 0 || os.indexOf("nux") >= 0 ||
 			os.indexOf("aix") > 0)
 		{
-			baseFolder = "~/Downloads/";
+			String userHome = System.getProperty("user.home");
+			baseFolder = userHome + "/Downloads/";
 		}
 
 		/*
@@ -539,7 +540,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 		 * open the test image
 		 */
 		final ImagePlus image =
-			IJ.openImage("C:/Temp/20140106 SM125 -20%/SR-EELS_TestImage_small.tif");
+			IJ.openImage(baseFolder +
+				"20140106 SM125 -20%/SR-EELS_TestImage_small.tif");
 		// final ImagePlus image =
 		// IJ.openImage("Q:/Aktuell/SR-EELS Calibration measurements/20131104 SM125 80%/projection.tif");
 		image.show();
