@@ -129,7 +129,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see ij.plugin.filter.PlugInFilter#setup(java.lang.String, ij.ImagePlus)
 	 */
 	@Override
@@ -146,7 +146,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see ij.plugin.filter.PlugInFilter#run(ij.process.ImageProcessor)
 	 */
 	@Override
@@ -155,7 +155,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 		 * Each correction contains of implementations of the abstract classes
 		 * CoordinateCorrector and a IntensityCorrector that can be can be combined
 		 * as you want.
-		 * 
+		 *
 		 * By using getFunctionWidth() and getFunctionBorders() the characterisation
 		 * results are loaded and an implementation of the Levenberg–Marquardt
 		 * algorithm (LMA) is used to fit functions to the discrete values.
@@ -330,7 +330,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see ij.plugin.filter.ExtendedPlugInFilter#showDialog(ij.ImagePlus, java.lang.String,
 	 * ij.plugin.filter.PlugInFilterRunner)
 	 */
@@ -454,7 +454,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see ij.plugin.filter.ExtendedPlugInFilter#setNPasses(int)
 	 */
 	@Override
@@ -482,8 +482,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	 * </p>
 	 * <p>
 	 * <a href=
-	 * 'https://github.com/imagej/minimal-ij1-plugin/blob/master/src/main/java/Process_Pixels.java'
-	 * > s e e minimal-ij1-plugin on GitHub</a>
+	 * 'https://github.com/imagej/minimal-ij1-plugin/blob/master/src/main/java/Process_Pixels.
+	 * j a v a ' > s e e minimal-ij1-plugin on GitHub</a>
 	 * </p>
 	 *
 	 * @param args
@@ -495,12 +495,20 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 		 */
 		new ImageJ();
 
+		String baseFolder = "C:/Temp/";
+		String os = System.getProperty("os.name").toLowerCase();
+		if (os.indexOf("nix") >= 0 || os.indexOf("nux") >= 0 ||
+			os.indexOf("aix") > 0)
+		{
+			baseFolder = "~/Downloads/";
+		}
+
 		/*
 		 * Check if the test image is available. Otherwise prompt a message with the
 		 * download link.
 		 */
 		final File testImage =
-			new File("C:/Temp/20140106 SM125 -20%/SR-EELS_TestImage_small.tif");
+			new File(baseFolder + "20140106 SM125 -20%/SR-EELS_TestImage_small.tif");
 		if (!testImage.exists()) {
 			final String url = "http://eftemj.entrup.com.de/SR-EELS_TestImage.zip";
 			/*
@@ -509,7 +517,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 			 * "</html>");
 			 */
 			final GenericDialog gd = new GenericDialog("Test image not found");
-			gd.addMessage("Please download the file 'SR-EELS_TestImage.zip' and extract it to 'C:\\temp\\'.");
+			gd.addMessage("Please download the file 'SR-EELS_TestImage.zip' and extract it to '" +
+				baseFolder + "'.");
 			gd.addMessage("Copy the following link, or click Ok to open it with your default browser.");
 			gd.addStringField("", url, url.length());
 			gd.showDialog();
