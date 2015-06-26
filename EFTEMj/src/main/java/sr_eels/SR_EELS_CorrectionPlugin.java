@@ -223,7 +223,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 
 	/**
 	 * Use this method for batch processing. Values that are set up by the GUI
-	 * have to be paased as parameters.
+	 * have to be passed as parameters.
 	 *
 	 * @param input_image is the image to correct.
 	 * @param path_borders is the text file that contains the characterisation
@@ -482,8 +482,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	 * </p>
 	 * <p>
 	 * <a href=
-	 * 'https://github.com/imagej/minimal-ij1-plugin/blob/master/src/main/java/Process_Pixe
-	 * l s . j a v a ' > s e e minimal-ij1-plugin on GitHub</a>
+	 * "https://github.com/imagej/minimal-ij1-plugin/blob/master/src/main/java/Process_Pixels.java"
+	 * >see minimal-ij1-plugin on GitHub</a>
 	 * </p>
 	 *
 	 * @param args
@@ -496,11 +496,11 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 		new ImageJ();
 
 		String baseFolder = "C:/Temp/";
-		String os = System.getProperty("os.name").toLowerCase();
+		final String os = System.getProperty("os.name").toLowerCase();
 		if (os.indexOf("nix") >= 0 || os.indexOf("nux") >= 0 ||
 			os.indexOf("aix") > 0)
 		{
-			String userHome = System.getProperty("user.home");
+			final String userHome = System.getProperty("user.home");
 			baseFolder = userHome + "/Downloads/";
 		}
 
@@ -542,8 +542,6 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 		final ImagePlus image =
 			IJ.openImage(baseFolder +
 				"20140106 SM125 -20%/SR-EELS_TestImage_small.tif");
-		// final ImagePlus image =
-		// IJ.openImage("Q:/Aktuell/SR-EELS Calibration measurements/20131104 SM125 80%/projection.tif");
 		image.show();
 
 		/*
@@ -594,7 +592,7 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 		 * Create a new data set by loading it from a file.
 		 * </p>
 		 * <p>
-		 * This method sopports the files <code>Borders.txt</code> and
+		 * This method supports the files <code>Borders.txt</code> and
 		 * <code>width.txt</code> that are created by
 		 * {@link SR_EELS_CharacterisationPlugin}.
 		 * </p>
