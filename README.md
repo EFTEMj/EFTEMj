@@ -20,7 +20,7 @@ Due to the specimen drift in a TEM it is necessary to apply a drift correction t
 
 ## Elemental mapping
 
-An introduction to elemental mapping with Energy Filtering Transmission Electron Microscopy (EFTEM) is given by [Ferdinand Hofer and Othmar Leitner][2] (no longer available). EFTEMj uses the Maximum Likelihood Estimation (MLE) [[Unser1987]] to estimate the background signal, but is is possible to switch the least squares and Levenberg–Marquardt algorithm. Additionally, more than two images can be used to estimate the background, which results in a higher reliability [[Heil2012]].
+An introduction to elemental mapping with Energy Filtering Transmission Electron Microscopy (EFTEM) is given by [Ferdinand Hofer and Othmar Leitner][2] (no longer available). EFTEMj uses the Maximum Likelihood Estimation (MLE) [Unser1987] to estimate the background signal, but is is possible to switch the least squares and Levenberg–Marquardt algorithm. Additionally, more than two images can be used to estimate the background, which results in a higher reliability [[Heil2012]].
 
 ## Spatially resolved electron energy loss spectroscopy (SR-EELS)
 
@@ -31,7 +31,7 @@ For more information you can have a look at my [presentation][slides] created wi
 ## References
 
 - [[Heil2012]] T. Heil et al., Ultramicroscopy **118** (2012), 11-16
-- [[Unser1987]] M. Unser et al., Journal of Microscopy **145** (1987), 245-256
+- [Unser1987] M. Unser et al., Journal of Microscopy **145** (1987), 245-256
 - [[Reimer1988]] L. Reimer et al., Ultramicroscopy **24** (1988) 339-354.
 
 [eels]: https://en.wikipedia.org/wiki/Electron_energy_loss_spectroscopy
