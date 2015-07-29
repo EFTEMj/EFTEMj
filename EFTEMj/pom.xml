@@ -8,7 +8,7 @@
 		<groupId>sc.fiji</groupId>
 		<artifactId>pom-fiji</artifactId>
 		<relativePath />
-		<version>10.1.0</version>
+		<version>13.0.1</version>
 	</parent>
 
 	<groupId>EFTEMj</groupId>
