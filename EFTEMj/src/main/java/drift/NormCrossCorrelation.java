@@ -1,7 +1,7 @@
 /**
  * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
  *
- * Copyright (c) 2014, Michael Entrup b. Epping <michael.entrup@wwu.de>
+ * Copyright (c) 2015, Michael Entrup b. Epping <michael.entrup@wwu.de>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,36 +49,37 @@ import ij.process.ImageProcessor;
 public class NormCrossCorrelation {
 
 	/**
-	 * This static field is used to switch on the debug mode.
+	 * <<<<<<< HEAD This static field is used to switch on the debug mode.
 	 */
 	public static boolean debug = false;
 	/**
-	 * This field is used to switch between the calculation of the normalised
-	 * cross-correlation or the normalised cross-correlation coefficient.
+	 * ======= >>>>>>> Enhanced DriftDetectionPlugin: This field is used to switch
+	 * between the calculation of the normalised cross-correlation or the
+	 * normalised cross-correlation coefficient.
 	 */
 	private boolean useCoefficient = true;
 	/**
 	 * This is the target image.
 	 */
-	private ImageProcessor image;
+	private final ImageProcessor image;
 	/**
 	 * This reference image will be compared with the target image.
 	 */
-	private ImageProcessor reference;
+	private final ImageProcessor reference;
 	/**
 	 * A map of normalised cross correlation coefficients. The x- and
 	 * y-coordinates represent all checked image shifts. The width is
 	 * (2*max-x-shift+1) and the height is (2*max-y-shift+1).
 	 */
-	private FloatProcessor normCrossCorrelationMap;
+	private final FloatProcessor normCrossCorrelationMap;
 	/**
 	 * The width of the normCrossCorrelationMap.
 	 */
-	private int mapWidth;
+	private final int mapWidth;
 	/**
 	 * The height of the normCrossCorrelationMap.
 	 */
-	private int mapHeight;
+	private final int mapHeight;
 	/**
 	 * Necessary for the coefficient calculation.
 	 */
@@ -114,37 +115,6 @@ public class NormCrossCorrelation {
 	public NormCrossCorrelation(final ImageProcessor ip1,
 		final ImageProcessor ip2, final int shiftX, final int shiftY)
 	{
-		init(ip1, ip2, shiftX, shiftY);
-	}
-
-	/**
-	 * Creates an instance of {@link NormCrossCorrelation} and prepares the
-	 * calculation of the normalised cross-correlation (coefficient) values. the
-	 * maximum value of shift that is tested is 10% of the image width
-	 * (x-direction) and image height (y-direction).
-	 *
-	 * @param ip1 The reference image
-	 * @param ip2 The target image
-	 */
-	public NormCrossCorrelation(final ImageProcessor ip1,
-		final ImageProcessor ip2)
-	{
-		init(ip1, ip2, (int) Math.ceil(0.1 * ip1.getWidth()), (int) Math.ceil(0.1 *
-			ip1.getHeight()));
-
-	}
-
-	/**
-	 * The constructor calls this method to initialise all fields of the object.
-	 *
-	 * @param ip1 The reference image
-	 * @param ip2 The target image
-	 * @param shiftX The maximum value that is tested as shift in x-direction
-	 * @param shiftY The maximum value that is tested as shift in y-direction
-	 */
-	private void init(final ImageProcessor ip1, final ImageProcessor ip2,
-		final int shiftX, final int shiftY)
-	{
 		image = ip2;
 		ip1.setRoi(shiftX, shiftY, ip1.getWidth() - 2 * shiftX, ip1.getHeight() -
 			2 * shiftY);
@@ -153,9 +123,6 @@ public class NormCrossCorrelation {
 		mapHeight = 2 * shiftY + 1;
 		normCrossCorrelationMap = new FloatProcessor(mapWidth, mapHeight,
 			new double[mapWidth * mapHeight]);
-		if (NormCrossCorrelation.debug == true) {
-			System.out.println("normCrossCorrelationMap: " + mapHeight);
-		}
 		progressSteps = mapHeight;
 	}
 
@@ -185,9 +152,6 @@ public class NormCrossCorrelation {
 		}
 		for (int s = 0; s < mapHeight; s++) {
 			executorService.execute(new NormCrossCorrelationTask(s));
-		}
-		if (NormCrossCorrelation.debug == true) {
-			System.out.println("Creation of " + mapHeight + " tasks competed.");
 		}
 		executorService.shutdown();
 		try {
@@ -234,10 +198,6 @@ public class NormCrossCorrelation {
 			}
 		}
 		sigmaT = Math.sqrt(sigmaSquare);
-		if (NormCrossCorrelation.debug == true) {
-			System.out.println("mean: " + meanT);
-			System.out.println("sigma: " + sigmaT);
-		}
 	}
 
 	/**
@@ -395,5 +355,4 @@ public class NormCrossCorrelation {
 			}
 		}
 	}
-
 }

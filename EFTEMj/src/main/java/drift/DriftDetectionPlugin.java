@@ -1,7 +1,7 @@
 /**
  * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
  *
- * Copyright (c) 2014, Michael Entrup b. Epping <michael.entrup@wwu.de>
+ * Copyright (c) 2015, Michael Entrup b. Epping <michael.entrup@wwu.de>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -135,7 +135,11 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 
 	/*
 	 * (non-Javadoc)
+<<<<<<< HEAD
 	 * 
+=======
+	 *
+>>>>>>> Enhanced DriftDetectionPlugin:
 	 * @see ij.plugin.filter.PlugInFilter#setup(java.lang.String, ij.ImagePlus)
 	 */
 	@Override
@@ -166,7 +170,11 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 
 	/*
 	 * (non-Javadoc)
+<<<<<<< HEAD
 	 * 
+=======
+	 *
+>>>>>>> Enhanced DriftDetectionPlugin:
 	 * @see ij.plugin.filter.PlugInFilter#run(ij.process.ImageProcessor)
 	 */
 	@Override
@@ -201,7 +209,11 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 
 	/*
 	 * (non-Javadoc)
+<<<<<<< HEAD
 	 * 
+=======
+	 *
+>>>>>>> Enhanced DriftDetectionPlugin:
 	 * @see ij.plugin.filter.ExtendedPlugInFilter#showDialog(ij.ImagePlus, java.lang.String,
 	 * ij.plugin.filter.PlugInFilterRunner)
 	 */
@@ -299,7 +311,11 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 
 	/*
 	 * (non-Javadoc)
+<<<<<<< HEAD
 	 * 
+=======
+	 *
+>>>>>>> Enhanced DriftDetectionPlugin:
 	 * @see ij.plugin.filter.ExtendedPlugInFilter#setNPasses(int)
 	 */
 	@Override
@@ -353,6 +369,7 @@ public class DriftDetectionPlugin implements ExtendedPlugInFilter {
 			stackLabels[i] = String.format("%s/%s (%s)", i + 1, stack.getStackSize(),
 				label);
 		}
+		referenceIndex = stack.getSlice();
 		gd.addChoice("Select_reference slice", stackLabels,
 			stackLabels[referenceIndex - 1]);
 		// begin - CheckboxGroup

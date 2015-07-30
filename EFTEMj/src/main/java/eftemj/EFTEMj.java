@@ -1,7 +1,7 @@
 /**
  * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
  *
- * Copyright (c) 2014, Michael Entrup b. Epping <michael.entrup@wwu.de>
+ * Copyright (c) 2015, Michael Entrup b. Epping <michael.entrup@wwu.de>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,17 +39,18 @@ public class EFTEMj {
 	 * <code>EFTEMj.<code>
 	 */
 	public static final String PREFS_PREFIX = "EFTEMj.";
-
 	/**
 	 * The path inside the JAR file where the macro and script files are located.
 	 */
 	public static final String PATH_SCRIPTS_AND_MACROS = "/macros/";
-
+	/**
+	 * The path inside the JAR file where the help files are located.
+	 */
+	public static final String PATH_HELP = "/help/";
 	/**
 	 * The path inside the JAR file where files for testing are located.
 	 */
 	public static final String PATH_TESTING = "/testing/";
-
 	/**
 	 * Disable all debugging.
 	 */

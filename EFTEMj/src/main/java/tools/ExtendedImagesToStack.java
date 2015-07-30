@@ -1,7 +1,7 @@
 /**
  * EFTEMj - Processing of Energy Filtering TEM images with ImageJ
  *
- * Copyright (c) 2014, Michael Entrup b. Epping <michael.entrup@wwu.de>
+ * Copyright (c) 2015, Michael Entrup b. Epping <michael.entrup@wwu.de>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,6 +37,7 @@ import ij.WindowManager;
 import ij.gui.GenericDialog;
 import ij.io.FileInfo;
 import ij.measure.Calibration;
+import ij.plugin.ImagesToStack;
 import ij.plugin.PlugIn;
 import ij.process.ByteProcessor;
 import ij.process.ColorProcessor;
@@ -45,6 +46,15 @@ import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
 
 /**
+ * <p>
+ * This is an extended version of {@link ImagesToStack}. If up to 10 images are
+ * open, you can set the order of these images.
+ * </p>
+ * <p>
+ * It was only possible to add some new features by copying the original code.
+ * The new code is marked by begin and end commends.
+ * </p>
+ *
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
  */
 public class ExtendedImagesToStack implements PlugIn {
@@ -162,8 +172,7 @@ public class ExtendedImagesToStack implements PlugIn {
 			filter = gd.getNextString();
 			// begin - new code of ExtendedImageToStack
 			// if an image is selected twice (or more often), the next image that is
-			// not selected will replace the
-			// other occurrences
+			// not selected will replace the other occurrences
 			if (sortByUser == true) {
 				final int[] positionAtImage = new int[count];
 				final boolean[] positionUsed = new boolean[count];
@@ -193,7 +202,7 @@ public class ExtendedImagesToStack implements PlugIn {
 				}
 				image = temp;
 			}
-			// end -new code of ExtendedImageToStack
+			// end - new code of ExtendedImageToStack
 			if (sizesDiffer == true) bicubic = gd.getNextBoolean();
 			titlesAsLabels = gd.getNextBoolean();
 			keep = gd.getNextBoolean();
