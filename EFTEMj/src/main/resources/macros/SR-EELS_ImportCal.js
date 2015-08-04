@@ -1,7 +1,7 @@
 /*
  * file:	SR-EELS_ImportCal.js
  * author:	Michael Entrup b. Epping (michael.entrup@wwu.de)
- * version:	20150407
+ * version:	20150804
  * info:	This script is used to import calibration images into my "database".
  * 			The "databse" is a folder structure that contains all my calibration images.
  * 			This script trises to gues the acquisition data and all parameters by processing the file path.
@@ -40,7 +40,7 @@ function selectFiles(path) {
 	var list = folder.list();
 	var gd = GenericDialog("Select files");
 	for (var i = 0; i < list.length; i++) {
-		if (new File(path + list[i]).isFile() & list[i].search("Cal") >= 0) {
+		if (new File(path + list[i]).isFile() & list[i].search("Cal") >= 0 & list[i].search("-exclude") < 0) {
 			gd.addCheckbox(list[i], true);
 		} else {
 			gd.addCheckbox(list[i], false);
