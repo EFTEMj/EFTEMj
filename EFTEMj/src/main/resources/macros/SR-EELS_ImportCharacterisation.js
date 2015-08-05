@@ -14,30 +14,47 @@ importClass(Packages.ij.Prefs);
 importClass(Packages.java.io.File);
 importClass(Packages.ij.io.DirectoryChooser);
 importClass(Packages.ij.gui.GenericDialog);
+importClass(Packages.ij.Prefs);
+importClass(Packages.sr_eels.SR_EELS_PrefsKeys);
 
-var databaseKey = "EFTEMj.SR-EELS.database.path";
-var databasePath;
+/*
+ * Read path to database from IJ_Prefs.txt or ask the user to set the path.
+ */
+IJ.showStatus("Loading path of database from IJ_Prefs.txt.");
+var database = Prefs.get(SR_EELS_PrefsKeys.characterisationDatabasePath.getValue(), null);
+if (!database) {
+	database = getDirectory("Set the path to the database...");
+	Prefs.set(SR_EELS_PrefsKeys.characterisationDatabasePath.getValue(), database);
+	Prefs.savePreferences();
+}
 
 main();
 
 function main() {
-	/*
-	 * The path to the databasePath folder is stored in IJ_Prefs.txt.
-	 * If the value is not yet defined, the user is asked to set a directory.
+
+	/* 
+	 *  Step 1
+	 *  Select the folder to import from.
 	 */
-	if ((databasePath = Prefs.get(databaseKey, "")) == "") {
-		if ((databasePath = getDirectory("Path to your SR-EELS database...")) != null) Prefs.set(databaseKey, databasePath);
-		else return;
-	}
 	var path;
-	/*
-	 * Select the files to import.
+	IJ.showStatus("Loading files for import.");
+	if ((path = getDirectory("Characterisation files...")) == null) return;
+	/* 
+	 *  Step 2
+	 *  Show list of files to select from.
 	 */
-	if ((path = getDirectory("Calibration files...")) == null) return;
 	var files;
 	if ((files = selectFiles(path)) == null) return;
+	/* 
+	 *  Step 3
+	 *  Show a dialog to amend the parameters
+	 */
 	var parameters;
 	if ((parameters = getParameters(path)) == null) return;
+	/* 
+	 *  Step 4
+	 *  Import files to the database.
+	 */
 	if (parameters.date != null & parameters.SM != null & parameters.QSinK7 != null) {
 		saveFiles(path, files, parameters);
 	}
@@ -52,19 +69,27 @@ function selectFiles(path) {
 	var folder = new File(path);
 	var list = folder.list();
 	var gd = GenericDialog("Select files");
+	var counter = 0;
 	for (var i = 0; i < list.length; i++) {
-		if (new File(path + list[i]).isFile() & list[i].search("Cal") >= 0 & list[i].search("-exclude") < 0) {
-			gd.addCheckbox(list[i], true);
-		} else {
-			gd.addCheckbox(list[i], false);
+		if (new File(path + list[i]).isFile()) {
+			counter++;
+			if (list[i].search(".dm3") >= 0 & list[i].search("-exclude") < 0) {
+				gd.addCheckbox(list[i], true);
+			} else {
+				gd.addCheckbox(list[i], false);
+			}
 		}
+	}
+	if (counter < 1) {
+		IJ.showMessage("Script aborted", "There are no files to import in\n" + path);
+		return null;
 	}
 	gd.showDialog();
 	if (gd.wasCanceled()) {
 		return null;
 	}
 	var files = new Array();
-	for (var i = 0; i < list.length; i++) {
+	for (var i = 0; i < counter; i++) {
 		if (gd.getNextBoolean()) {
 			files.push(list[i]);
 		}
@@ -73,11 +98,19 @@ function selectFiles(path) {
 }
 
 function getParameters(path) {
+	/*
+	 * For details on JavaScript RegExp see
+	 * http://www.w3schools.com/jsref/jsref_obj_regexp.asp
+	 */
 	var patternDate = /(\d{8})/ig;
 	var patternSM = /(?:SM|SpecMag)(\d{2,3})/ig;
-	var patternQSinK7 = /(QSinK7[\s|=])(-?\+?\d{1,3})%?/ig;
+	var patternQSinK7 = /QSinK7\s?[\s|=]\s?(-?\+?\d{1,3})%?/ig;
 	var parameters = new Parameters();
 	var dateArray;
+	/*
+	 * The while loop is used to find the last match of the given RegExp.
+	 * Index 0 of the array is the complete match. All following indices reference the groups.
+	 */
 	while ((dateArray = patternDate.exec(path)) !== null) {
 		parameters.date = dateArray[1];
 	}
@@ -87,7 +120,7 @@ function getParameters(path) {
 	}
 	var qsinArray;
 	while ((qsinArray = patternQSinK7.exec(path)) !== null) {
-		parameters.QSinK7 = qsinArray[2];
+		parameters.QSinK7 = qsinArray[1];
 	}
 	var gd = GenericDialog("Set parameters");
 	gd.addStringField("date:", parameters.date);
@@ -101,7 +134,12 @@ function getParameters(path) {
 		parameters.date = gd.getNextString();
 		parameters.SM = gd.getNextString();
 		parameters.QSinK7 = gd.getNextString();	
-		parameters.comment = gd.getNextString();		
+		parameters.comment = gd.getNextString();
+		/*
+		 * We replace space by underscore to easily recordnice the complete comment.
+		 * This is usefull wehn further processing is done.
+		 */
+		parameters.comment = parameters.comment.replace(" ", "_");
 	}
 	return parameters;
 }
@@ -120,6 +158,11 @@ function saveFiles(path, files, parameters) {
 	}
 	output += "/";
 	folder = new File(output);
+	if (folder.exists()) {
+		IJ.showMessage("Script aborted", "This data set already exists\n"
+			+ folder.toString().replace(database, ""));
+		return;
+	}
 	folder.mkdir();
 	for (index in files) {
 		imp = IJ.openImage(path + files[index]);
