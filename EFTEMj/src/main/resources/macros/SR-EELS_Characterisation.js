@@ -36,9 +36,9 @@ importClass(Packages.ij.gui.GenericDialog);
 importClass(Packages.ij.Prefs);
 importClass(Packages.sr_eels.SR_EELS_PrefsKeys);
 
- function settings() {
- 	this.path = "Q:\\Aktuell\\SR-EELS Calibration measurements\\20150803 SM125 -15%";
- }
+ var settings {
+ 	path: "Q:\\Aktuell\\SR-EELS Calibration measurements\\20150803 SM125 -15%"
+ };
 
 function runCharacterisation(image) {
 	var result;
