@@ -12,13 +12,13 @@ import ij.Prefs;
  *
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
  */
-enum SR_EELS_PrefsKeys {
+public enum SR_EELS_PrefsKeys {
 		specMagValues("specMagValues"), specMagIndex("specMagIndex"), binningIndex(
 			"binningIndex"), binningUser("binningUser"), offsetIndex("offsetIndex"),
 		offsetLoss("offsetLoss"), offsetAbsolute("offsetAbsolute"), cameraWidth(
 			"cameraWidth"), cameraHeight("cameraHeight"), dispersionEloss(
 				"dispersionEloss."), dispersionSettings("dispersionSettings."), none(
-					"");
+					""), characterisationDatabasePath("characterisationDatabasePath");
 
 	/**
 	 * <code>EFTEMj.PREFS_PREFIX + "SR-EELS.".<code>
@@ -48,6 +48,7 @@ enum SR_EELS_PrefsKeys {
 			case dispersionEloss:
 			case cameraHeight:
 			case cameraWidth:
+			case characterisationDatabasePath:
 			case none:
 			default:
 				return PREFS_PREFIX + value;
