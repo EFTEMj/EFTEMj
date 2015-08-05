@@ -1,8 +1,8 @@
 /*
- * file:	SR-EELS_ImportCal.js
+ * file:	SR-EELS_ImportCharacterisation.js
  * author:	Michael Entrup b. Epping (michael.entrup@wwu.de)
- * version:	20150804
- * info:	This script is used to import calibration images into my "database".
+ * version:	20150805
+ * info:	This script is used to import characterisation images into my "database".
  * 			The "databse" is a folder structure that contains all my calibration images.
  * 			This script trises to gues the acquisition data and all parameters by processing the file path.
  *
