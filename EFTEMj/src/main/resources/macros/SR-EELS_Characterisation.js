@@ -48,17 +48,17 @@ main();
 function main() {
 	var settings = {
 		path: "Q:\\Aktuell\\SR-EELS_characterisation\\",
-		stepSize: 64,
+		stepSize: 128,
 		energyBorderLow: 128,
 		energyBorderHigh: 256,
-		filterRadius: Math.sqrt(this.stepSize),
 		energyPosition: 0.5,
 		threshold: "Li",
 		sigmaWeight: 3,
 		polynomialOrder: 3,
-		useThresholding: treu,
+		useThresholding: true,
 		debug: true
 	}
+	settings.filterRadius = Math.sqrt(settings.stepSize);
 
 	try {
 		var images = getImages(settings);
@@ -157,18 +157,22 @@ function runCharacterisation(settings, images) {
 		var yValues = new Array();
 		var leftValues = new Array();
 		var rightValues = new Array();
+		var widthValues = new Array();
 		var limit = new Array();
 		for (var j in res) {
 			xValues.push(res[j].y);
 			yValues.push(res[j].x);
 			leftValues.push(res[j].left);
 			rightValues.push(res[j].right);
+			widthValues.push(res[j].right - res[j].left);
 			limit.push(res[j].limit);
 		}
 		var plot = new Plot("JavaScript", "Spec of " + images[i] + " (" + settings.useThresholding + ")", "position x", "position y", xValues, yValues);
 		plot.add("", xValues, leftValues);
 		plot.add("", xValues, rightValues);
-		if (!settings.useThresholding) plot.add("", xValues, limit);
+		if (!settings.useThresholding) plot.add("CROSS", xValues, limit);
+		plot.setColor(java.awt.Color.RED);
+		plot.add("", xValues, widthValues);
 		plot.setLimits(0, image.imp.getHeight() - 1, 0, image.imp.getWidth() - 1);
 		plot.show();
 	}
@@ -178,7 +182,7 @@ function runCharacterisation(settings, images) {
 function runCharacterisationSub(subImage, doThresholding) {
 	var stepSize = subImage.imp.getHeight();
 	if (doThresholding == true) {
-		IJ.setAutoThreshold(subImage.imp, subImage.threshold);
+		IJ.setAutoThreshold(subImage.imp, subImage.threshold + " dark");
 		IJ.run(subImage.imp, "NaN Background", "");
 		var measurements = Measurements.MEAN + Measurements.INTEGRATED_DENSITY + Measurements.CENTER_OF_MASS;
 		var statistic = ImageStatistics.getStatistics(subImage.imp.getProcessor(), measurements, null);
@@ -186,19 +190,16 @@ function runCharacterisationSub(subImage, doThresholding) {
 		var specWidth = statistic.area / subImage.imp.getHeight();
 		var xm = statistic.xCenterOfMass;
 		var ym = statistic.yCenterOfMass;
-		IJ.run(subImage.imp, "Macro...", "code=[if(isNaN(v)) v=-1000;]");
+		IJ.run(subImage.imp, "Macro...", "code=[if(isNaN(v)) v=-10000;]");
 		IJ.run(subImage.imp, "Find Edges", "");
-		IJ.run(subImage.imp, "Bin...", "x=1 y=" + subImage.imp.getHeight() + " bin=Average");
 		subImage.imp.setRoi(new Rectangle(Math.max(xm - specWidth, 0), 0, xm - Math.max(xm - specWidth, 0), subImage.imp.getHeight()));
-		IJ.run(subImage.imp, "Find Maxima...", "output=[Point Selection]");
+		IJ.run(subImage.imp, "Find Maxima...", "output=[Point Selection] exclude");
 		var roi = subImage.imp.getRoi().getBounds();
 		var xLeft = roi.x;
-		var yLeft = roi.y;
 		subImage.imp.setRoi(new Rectangle(xm, 0, subImage.imp.getWidth() - Math.max(xm - specWidth, 0), subImage.imp.getHeight()));
-		IJ.run(subImage.imp, "Find Maxima...", "output=[Point Selection]");
+		IJ.run(subImage.imp, "Find Maxima...", "output=[Point Selection] exclude");
 		var roi = subImage.imp.getRoi().getBounds();
-		var xRight = roi.x;
-		var yRight = roi.y;
+		var xRight = roi.x + roi.width;
 		resultSub = {
 			x: xm + subImage.xOffset,
 			xError: 0,
@@ -208,7 +209,7 @@ function runCharacterisationSub(subImage, doThresholding) {
 			leftError: 0,
 			right: xRight + subImage.xOffset,
 			rightError: 0
-		}		
+		}
 	} else {
 		IJ.run(subImage.imp, "Bin...", "x=1 y=" + subImage.imp.getHeight() + " bin=Average");
 		var statistic = ImageStatistics.getStatistics(subImage.imp.getProcessor(), Measurements.MEAN + Measurements.STD_DEV, null);
