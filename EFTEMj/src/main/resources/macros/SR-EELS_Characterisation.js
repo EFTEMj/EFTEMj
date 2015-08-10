@@ -25,6 +25,7 @@
 importClass(Packages.ij.IJ);
 importClass(Packages.ij.ImagePlus);
 importClass(Packages.ij.process.FloatProcessor);
+importClass(Packages.ij.process.ImageStatistics);
 importClass(Packages.java.lang.Runnable);
 importClass(Packages.java.lang.Runtime);
 importClass(Packages.java.lang.System);
@@ -37,6 +38,7 @@ importClass(Packages.ij.gui.GenericDialog);
 importClass(Packages.ij.gui.ProfilePlot);
 importClass(Packages.ij.plugin.Duplicator);
 importClass(Packages.ij.measure.CurveFitter);
+importClass(Packages.ij.measure.Measurements);
 importClass(Packages.ij.Prefs);
 importClass(Packages.sr_eels.SR_EELS_PrefsKeys);
 
@@ -52,7 +54,8 @@ function main() {
 		energyPosition: 0.5,
 		threshold: "Li",
 		sigmaWeight: 3,
-		polynomialOrder: 3
+		polynomialOrder: 3,
+		debug: true
 	}
 
 	try {
@@ -122,7 +125,7 @@ function runCharacterisation(settings, images) {
 		yPos = settings.energyBorderLow;
 		xOffset = 0;
 		roiWidth = image.width;
-		var max = new Array();
+		var mean = new Array();
 		while (yPos < image.height - settings.energyBorderHigh) {
 			image.imp.setRoi(new Rectangle(xOffset, yPos, roiWidth, settings.stepSize));
 			var subImage = new SubImageObject(new Duplicator().run(image.imp), xOffset, yPos);
@@ -140,21 +143,33 @@ function runCharacterisation(settings, images) {
 			roiWidth = Math.round(2 * gaussSigmaWeighted);
 			image.imp.setRoi(new Rectangle(xOffset, yPos, roiWidth, settings.stepSize));
 			subImage = new SubImageObject(new Duplicator().run(image.imp), xOffset, yPos);
-			//results[images[i]].result.push(runCharacterisation_sub(subimage));
+			if (settings.debug) {
+				var statistic = ImageStatistics.getStatistics(subImage.imp.getProcessor(), Measurements.MEAN + Measurements.STD_DEV, null);
+				mean.push({
+					mean: statistic.mean,
+					stdv: statistic.stdDev,
+					toString: function() {
+						return this.mean + "(" + this.stdv + ")";
+					}					
+				});
+			}
+			// results[images[i]].result.push(runCharacterisationSub(subImage));
 			yPos += settings.stepSize;
+		}
+		if (settings.debug) {
+			IJ.log("mean(stdv) of " + images[i] + ": " + mean.join("; "));
 		}
 	}
 	return results;
 }
 
-function openImage(path) {
-	var imageObject = {};
-
-}
-
-function runCharacterisation_sub(subimage) {
+function runCharacterisationSub(subImage, doThresholding) {
 	var result_sub;
-	// do something
+	if (doThresholding == true) {
+		// do something
+	} else {
+		
+	}	
 	return result_sub;
 }
 
