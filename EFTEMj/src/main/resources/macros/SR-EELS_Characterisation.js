@@ -35,6 +35,7 @@ importClass(Packages.java.io.File);
 importClass(Packages.java.awt.Rectangle);
 importClass(Packages.ij.io.DirectoryChooser);
 importClass(Packages.ij.gui.GenericDialog);
+importClass(Packages.ij.gui.Plot);
 importClass(Packages.ij.gui.ProfilePlot);
 importClass(Packages.ij.plugin.Duplicator);
 importClass(Packages.ij.measure.CurveFitter);
@@ -47,14 +48,15 @@ main();
 function main() {
 	var settings = {
 		path: "Q:\\Aktuell\\SR-EELS_characterisation\\",
-		stepSize: 32,
+		stepSize: 64,
 		energyBorderLow: 128,
-		energyBorderHigh: 128,
+		energyBorderHigh: 256,
 		filterRadius: Math.sqrt(this.stepSize),
 		energyPosition: 0.5,
 		threshold: "Li",
 		sigmaWeight: 3,
 		polynomialOrder: 3,
+		useThresholding: treu,
 		debug: true
 	}
 
@@ -143,34 +145,104 @@ function runCharacterisation(settings, images) {
 			roiWidth = Math.round(2 * gaussSigmaWeighted);
 			image.imp.setRoi(new Rectangle(xOffset, yPos, roiWidth, settings.stepSize));
 			subImage = new SubImageObject(new Duplicator().run(image.imp), xOffset, yPos);
-			if (settings.debug) {
-				var statistic = ImageStatistics.getStatistics(subImage.imp.getProcessor(), Measurements.MEAN + Measurements.STD_DEV, null);
-				mean.push({
-					mean: statistic.mean,
-					stdv: statistic.stdDev,
-					toString: function() {
-						return this.mean + "(" + this.stdv + ")";
-					}					
-				});
-			}
-			// results[images[i]].result.push(runCharacterisationSub(subImage));
+			subImage.parent = image;
+			subImage.xOffset = xOffset;
+			subImage.yOffset = yPos;
+			subImage.threshold = settings.threshold;
+			results[images[i]].result.push(runCharacterisationSub(subImage, settings.useThresholding));
 			yPos += settings.stepSize;
 		}
-		if (settings.debug) {
-			IJ.log("mean(stdv) of " + images[i] + ": " + mean.join("; "));
+		var res = results[images[i]].result;
+		var xValues = new Array();
+		var yValues = new Array();
+		var leftValues = new Array();
+		var rightValues = new Array();
+		var limit = new Array();
+		for (var j in res) {
+			xValues.push(res[j].y);
+			yValues.push(res[j].x);
+			leftValues.push(res[j].left);
+			rightValues.push(res[j].right);
+			limit.push(res[j].limit);
 		}
+		var plot = new Plot("JavaScript", "Spec of " + images[i] + " (" + settings.useThresholding + ")", "position x", "position y", xValues, yValues);
+		plot.add("", xValues, leftValues);
+		plot.add("", xValues, rightValues);
+		if (!settings.useThresholding) plot.add("", xValues, limit);
+		plot.setLimits(0, image.imp.getHeight() - 1, 0, image.imp.getWidth() - 1);
+		plot.show();
 	}
 	return results;
 }
 
 function runCharacterisationSub(subImage, doThresholding) {
-	var result_sub;
+	var stepSize = subImage.imp.getHeight();
 	if (doThresholding == true) {
-		// do something
+		IJ.setAutoThreshold(subImage.imp, subImage.threshold);
+		IJ.run(subImage.imp, "NaN Background", "");
+		var measurements = Measurements.MEAN + Measurements.INTEGRATED_DENSITY + Measurements.CENTER_OF_MASS;
+		var statistic = ImageStatistics.getStatistics(subImage.imp.getProcessor(), measurements, null);
+		var mean = statistic.mean;
+		var specWidth = statistic.area / subImage.imp.getHeight();
+		var xm = statistic.xCenterOfMass;
+		var ym = statistic.yCenterOfMass;
+		IJ.run(subImage.imp, "Macro...", "code=[if(isNaN(v)) v=-1000;]");
+		IJ.run(subImage.imp, "Find Edges", "");
+		IJ.run(subImage.imp, "Bin...", "x=1 y=" + subImage.imp.getHeight() + " bin=Average");
+		subImage.imp.setRoi(new Rectangle(Math.max(xm - specWidth, 0), 0, xm - Math.max(xm - specWidth, 0), subImage.imp.getHeight()));
+		IJ.run(subImage.imp, "Find Maxima...", "output=[Point Selection]");
+		var roi = subImage.imp.getRoi().getBounds();
+		var xLeft = roi.x;
+		var yLeft = roi.y;
+		subImage.imp.setRoi(new Rectangle(xm, 0, subImage.imp.getWidth() - Math.max(xm - specWidth, 0), subImage.imp.getHeight()));
+		IJ.run(subImage.imp, "Find Maxima...", "output=[Point Selection]");
+		var roi = subImage.imp.getRoi().getBounds();
+		var xRight = roi.x;
+		var yRight = roi.y;
+		resultSub = {
+			x: xm + subImage.xOffset,
+			xError: 0,
+			y: ym + subImage.yOffset,
+			yError: 0,
+			left: xLeft + subImage.xOffset,
+			leftError: 0,
+			right: xRight + subImage.xOffset,
+			rightError: 0
+		}		
 	} else {
-		
-	}	
-	return result_sub;
+		IJ.run(subImage.imp, "Bin...", "x=1 y=" + subImage.imp.getHeight() + " bin=Average");
+		var statistic = ImageStatistics.getStatistics(subImage.imp.getProcessor(), Measurements.MEAN + Measurements.STD_DEV, null);
+		var limit = statistic.mean; // statistic.stdDev
+		var left = 0;
+		var right = subImage.imp.getWidth();
+		var searchLeft = true;
+		for (var i = 0; i < subImage.imp.getWidth(); i++) {
+			if (searchLeft == true) {
+				if (subImage.imp.getProcessor().getf(i, 0) > limit) {
+					left = i;
+					searchLeft = false;
+				}
+			} else {
+				if (subImage.imp.getProcessor().getf(i, 0) < limit) {
+					right = i;
+					break;
+				}
+			}
+		}
+		resultSub = {
+			x: (left + right) / 2 + subImage.xOffset,
+			xError: 0,
+			y: stepSize / 2 + subImage.yOffset,
+			yError: 0,
+			left: left + subImage.xOffset,
+			leftError: 0,
+			right: right + subImage.xOffset,
+			rightError: 0,
+			limit: limit
+		}
+		IJ.log(resultSub.y + "; " + (resultSub.right - resultSub.left));
+	}
+	return resultSub;
 }
 
 function saveResult(result) {
