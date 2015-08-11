@@ -32,6 +32,8 @@ importClass(Packages.java.lang.System);
 importClass(Packages.java.lang.Thread);
 importClass(Packages.java.util.concurrent.atomic.AtomicInteger);
 importClass(Packages.java.io.File);
+importClass(Packages.java.io.FileWriter);
+importClass(Packages.java.io.BufferedWriter);
 importClass(Packages.java.awt.Rectangle);
 importClass(Packages.ij.io.DirectoryChooser);
 importClass(Packages.ij.gui.GenericDialog);
@@ -47,27 +49,33 @@ main();
 
 function main() {
 	var settings = {
-		path: "Q:\\Aktuell\\SR-EELS_characterisation\\",
-		stepSize: 128,
-		energyBorderLow: 128,
+		path: "/home/michael/temp/SR-EELS_Cal/",
+		stepSize: 64,
+		energyBorderLow: 256,
 		energyBorderHigh: 256,
 		energyPosition: 0.5,
 		threshold: "Li",
 		sigmaWeight: 3,
 		polynomialOrder: 3,
-		useThresholding: true,
+		useThresholding: false,
 		debug: true
 	}
 	settings.filterRadius = Math.sqrt(settings.stepSize);
 
+	var images;
 	try {
-		var images = getImages(settings);
+		images = getImages(settings);
 	} catch (e) {
 		IJ.showMessage(e.name, e.message);
 	}
 	IJ.log(images.join("\n"));
+	IJ.log("load Ok");
 	var results = runCharacterisation(settings, images);
-	IJ.log(results);
+	IJ.log("results Ok");
+	results.settings = settings;
+	results.images = images;
+	saveResults(results);
+	IJ.log("save Ok");
 	IJ.log("Finished!");
 }
 
@@ -208,7 +216,9 @@ function runCharacterisationSub(subImage, doThresholding) {
 			left: xLeft + subImage.xOffset,
 			leftError: 0,
 			right: xRight + subImage.xOffset,
-			rightError: 0
+			rightError: 0,
+			width: xRight - xLeft,
+			widthError: 0
 		}
 	} else {
 		IJ.run(subImage.imp, "Bin...", "x=1 y=" + subImage.imp.getHeight() + " bin=Average");
@@ -239,16 +249,29 @@ function runCharacterisationSub(subImage, doThresholding) {
 			leftError: 0,
 			right: right + subImage.xOffset,
 			rightError: 0,
+			width: right - left,
+			widthError: 0,
 			limit: limit
 		}
-		IJ.log(resultSub.y + "; " + (resultSub.right - resultSub.left));
 	}
 	return resultSub;
 }
 
-function saveResult(result) {
+function saveResults(results) {
 	// create different diagrams with createDiagram()
 	// create differnt text files containing numeric results using createTextFile()
+	var widthFile = new TextFile(results.settings.path + "Width.txt");
+	widthFile.appendLine("#x1-position\tx2-position\ty-values");
+	for (var i = 0; i < results.images.length; i++){
+		IJ.log(results.images[i]);
+		IJ.log(results[results.images[i]].result);
+		var result = results[results.images[i]].result;
+		for (var j = 0; j < result.length; j++) {
+			var line = result[j].y + "\t" + result[j].x + "\t" + result[j].width;
+			widthFile.appendLine(line);
+		}
+	}
+	widthFile.closeFile();
 }
 
 function createDiagram(processedResult) {
@@ -257,8 +280,16 @@ function createDiagram(processedResult) {
 	return diagram;
 }
 
-function createTextFile(path, values) {
-	var file;
+function TextFile(path) {
+	this.file = new File(path);
+	this.writer = new BufferedWriter(new FileWriter(this.file));
+	// create file;
+	this.appendLine = function (line) {
+		this.writer.write(line + "\n");
+	};
+	this.closeFile = function () {
+		this.writer.close();
+	};
 	// write all arrays from values to a new text file
 }
 
