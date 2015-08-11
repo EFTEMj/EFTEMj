@@ -57,7 +57,8 @@ function main() {
 		threshold: "Li",
 		sigmaWeight: 3,
 		polynomialOrder: 3,
-		useThresholding: false,
+		showGui: true,
+		useThresholding: true,
 		debug: true
 	}
 	settings.filterRadius = Math.sqrt(settings.stepSize);
@@ -68,7 +69,6 @@ function main() {
 	} catch (e) {
 		IJ.showMessage(e.name, e.message);
 	}
-	IJ.log(images.join("\n"));
 	IJ.log("load Ok");
 	var results = runCharacterisation(settings, images);
 	IJ.log("results Ok");
@@ -83,14 +83,23 @@ function main() {
  	var images = new Array();
  	var folder = new File(settings.path);
  	var fileList = folder.list();
- 	images = getFilteredImages(settings, fileList); // getFilteredImages(settings, fileList, true) for GUI
+ 	images = getFilteredImages(settings, fileList);
  	return images;
  }
 
- function getFilteredImages(settings, fileList, gui) {
+ function getFilteredImages(settings, fileListJava) {
+ 	/*
+ 	 * converting fileList to a JavaScript array:
+ 	 */
+	var fileList = new Array();
+	for (var i in fileListJava) {
+		fileList.push(fileListJava[i]);
+	}
+	fileList.sort();
+ 	IJ.log(fileList);
 	var filtered = new Array();
-	if (gui == true) {
-		var gd = GenericDialog("Select files");
+	if (settings.showGui == true) {
+		var gd = new GenericDialog("Select files");
 	 	var counter = 0;
 		for (var i = 0; i < fileList.length; i++) {
 			if (new File(settings.path + fileList[i]).isFile()) {
@@ -132,6 +141,9 @@ function runCharacterisation(settings, images) {
 		results[images[i]] = {};
 		results[images[i]].result = new Array();
 		var image = new ImageObject(settings.path + images[i], settings.filterRadius);
+		results[images[i]].width = image.imp.getWidth();
+		IJ.log(results[images[i]].width);
+		results[images[i]].height = image.imp.getHeight();
 		yPos = settings.energyBorderLow;
 		xOffset = 0;
 		roiWidth = image.width;
@@ -183,6 +195,12 @@ function runCharacterisation(settings, images) {
 		plot.add("", xValues, widthValues);
 		plot.setLimits(0, image.imp.getHeight() - 1, 0, image.imp.getWidth() - 1);
 		plot.show();
+		results[images[i]].leftFit = new CurveFitter(xValues, leftValues);
+		results[images[i]].leftFit.doFit(CurveFitter.POLY3);
+		results[images[i]].centreFit = new CurveFitter(xValues, yValues);
+		results[images[i]].centreFit.doFit(CurveFitter.POLY3);
+		results[images[i]].rightFit = new CurveFitter(xValues, rightValues);
+		results[images[i]].rightFit.doFit(CurveFitter.POLY3);
 	}
 	return results;
 }
@@ -261,17 +279,31 @@ function saveResults(results) {
 	// create different diagrams with createDiagram()
 	// create differnt text files containing numeric results using createTextFile()
 	var widthFile = new TextFile(results.settings.path + "Width.txt");
+	var bordersFile = new TextFile(results.settings.path + "Borders.txt");
 	widthFile.appendLine("#x1-position\tx2-position\ty-values");
+	bordersFile.appendLine("#x1-value\tx2-value\ty-value\tweight");
 	for (var i = 0; i < results.images.length; i++){
 		IJ.log(results.images[i]);
 		IJ.log(results[results.images[i]].result);
 		var result = results[results.images[i]].result;
+		var width =  results[results.images[i]].width;
+		IJ.log(results.settings.energyPosition);
+		IJ.log(width);
+		IJ.log(results.settings.energyPosition * width);
+		var fitLeft = results[results.images[i]].leftFit.f(results.settings.energyPosition * width);
+		var fitCentre = results[results.images[i]].centreFit.f(results.settings.energyPosition * width);
+		var fitRight = results[results.images[i]].rightFit.f(results.settings.energyPosition * width);
 		for (var j = 0; j < result.length; j++) {
-			var line = result[j].y + "\t" + result[j].x + "\t" + result[j].width;
-			widthFile.appendLine(line);
+			var widthLine = result[j].y + "\t" + result[j].x + "\t" + result[j].width;
+			var bordersLines = result[j].y + "\t" + fitLeft + "\t" + result[j].left + "\t" + 1 + "\n"
+				+ result[j].y + "\t" + fitCentre + "\t" + result[j].x + "\t" + 1 + "\n"
+				+ result[j].y + "\t" + fitRight + "\t" + result[j].right + "\t" + 1;
+			widthFile.appendLine(widthLine);
+			bordersFile.appendLine(bordersLines);
 		}
 	}
 	widthFile.closeFile();
+	bordersFile.closeFile();
 }
 
 function createDiagram(processedResult) {
