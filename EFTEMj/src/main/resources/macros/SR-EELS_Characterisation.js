@@ -45,63 +45,78 @@ importClass(Packages.ij.measure.Measurements);
 importClass(Packages.ij.Prefs);
 importClass(Packages.sr_eels.SR_EELS_PrefsKeys);
 
-main();
+var debug = true;
+if (debug) {
+	main();
+} else {
+	try {
+		main();
+	} catch (e) {
+		IJ.showMessage(e.name, e.message);
+	}
+}
 
 function main() {
-	var settings = {
-		path: "/home/michael/temp/SR-EELS_Cal/",
+	var settings,
+		images,
+		results = {};
+
+	settings = {
+		path: "Q:\\Aktuell\\SR-EELS_characterisation\\",
 		stepSize: 64,
+		filterRadius: 8,
 		energyBorderLow: 256,
 		energyBorderHigh: 256,
 		energyPosition: 0.5,
-		threshold: "Li",
 		sigmaWeight: 3,
 		polynomialOrder: 3,
 		showGui: true,
 		useThresholding: true,
-		debug: true
+		threshold: "Li",
+		verbose: true
 	}
-	settings.filterRadius = Math.sqrt(settings.stepSize);
-
-	var images;
-	try {
-		images = getImages(settings);
-	} catch (e) {
-		IJ.showMessage(e.name, e.message);
-	}
-	IJ.log("load Ok");
-	var results = runCharacterisation(settings, images);
-	IJ.log("results Ok");
+	
+	settings.images = getImages(settings);
 	results.settings = settings;
-	results.images = images;
+	results.timeStart = new Date();
+	runCharacterisation(results);
 	saveResults(results);
-	IJ.log("save Ok");
-	IJ.log("Finished!");
+	results.timeStop = new Date();
+	
+	if (settings.verbose) IJ.log("Finished in " + Math.round((results.timeStop - results.timeStart) / 1000) + " seconds!");
 }
 
  function getImages(settings) {
- 	var images = new Array();
- 	var folder = new File(settings.path);
- 	var fileList = folder.list();
+ 	var images = new Array(),
+ 		folder = new File(settings.path),
+ 		fileList = folder.list();
  	images = getFilteredImages(settings, fileList);
  	return images;
  }
 
  function getFilteredImages(settings, fileListJava) {
+	var fileList = new Array(),
+		filteredList = new Array(),		
+		i,
+		gd,
+		counter;
+		
  	/*
  	 * converting fileList to a JavaScript array:
  	 */
-	var fileList = new Array();
-	for (var i in fileListJava) {
+	for (i in fileListJava) {
 		fileList.push(fileListJava[i]);
 	}
 	fileList.sort();
- 	IJ.log(fileList);
-	var filtered = new Array();
+
+	if (settings.verbose) {
+		IJ.log("Files offered for selection:");
+		IJ.log(fileList.join("; "));
+	}
 	if (settings.showGui == true) {
-		var gd = new GenericDialog("Select files");
-	 	var counter = 0;
-		for (var i = 0; i < fileList.length; i++) {
+		gd = new GenericDialog("Select files");
+	 	counter = 0;
+		for (i = 0; i < fileList.length; i++) {
 			if (new File(settings.path + fileList[i]).isFile()) {
 				counter++;
 				if (fileList[i].search(".tif") >= 0 & fileList[i].search("-exclude") < 0) {
@@ -118,114 +133,161 @@ function main() {
 		if (gd.wasCanceled()) {
 			throw new Error("Canceled by user...", "The script has been canceld.");
 		}
-		for (var i = 0; i < counter; i++) {
+		for (i = 0; i < counter; i++) {
 			if (gd.getNextBoolean()) {
-				filtered.push(fileList[i]);
+				filteredList.push(fileList[i]);
 			}
 		}
 	} else {
-		for (var i = 0; i < fileList.length; i++) {
+		/*
+		 * don't show the Gui and select all tif files that are not explicitly excluded
+		 */
+		for (i = 0; i < fileList.length; i++) {
 			if (new File(settings.path + fileList[i]).isFile()) {
 				if (fileList[i].search(".tif") >= 0 & fileList[i].search("-exclude") < 0) {
-					filtered.push(fileList[i]);
+					filteredList.push(fileList[i]);
 				}
 			}
 		}
 	}
-	return filtered
+	if (settings.verbose) {
+		IJ.log("Files selected:");
+		IJ.log(filteredList.join("; "));
+	}
+	return filteredList
  }
 
-function runCharacterisation(settings, images) {
-	var results = {};
-	for (var i = 0; i < images.length; i++){
-		results[images[i]] = {};
-		results[images[i]].result = new Array();
-		var image = new ImageObject(settings.path + images[i], settings.filterRadius);
-		results[images[i]].width = image.imp.getWidth();
-		IJ.log(results[images[i]].width);
-		results[images[i]].height = image.imp.getHeight();
+function runCharacterisation(results) {
+	var settings = results.settings,
+		images = settings.images,
+		imageName,
+		i,
+		j,
+		p,
+		image,
+		imp,
+		subImage,
+		yPos,
+		xOffset,
+		roiWidth,
+		mean,
+		profile,
+		xValues,
+		yValues,
+		leftValues,
+		rightValues,
+		widthValues,
+		limit,
+		plot,
+		fit,
+		gaussCentre,
+		gaussSigma,
+		gaussSigmaWeighted,
+		result;
+	for (i = 0; i < images.length; i++){
+		imageName = images[i];
+		results[imageName] = {};
+		results[imageName].result = new Array();
+		image = new ImageObject(images[i], settings);
+		imp = image.imp;
+		results[imageName].width = imp.getWidth();
+		results[imageName].height = imp.getHeight();
 		yPos = settings.energyBorderLow;
 		xOffset = 0;
 		roiWidth = image.width;
-		var mean = new Array();
+		mean = new Array();
 		while (yPos < image.height - settings.energyBorderHigh) {
-			image.imp.setRoi(new Rectangle(xOffset, yPos, roiWidth, settings.stepSize));
-			var subImage = new SubImageObject(new Duplicator().run(image.imp), xOffset, yPos);
-			var profile = new ProfilePlot(subImage.imp);
-			var xValues = new Array();
-			for (var p = 0; p < profile.getProfile().length; p++) {
+			imp.setRoi(new Rectangle(xOffset, yPos, roiWidth, settings.stepSize));
+			subImage = new SubImageObject(new Duplicator().run(imp), xOffset, yPos);
+			profile = new ProfilePlot(subImage.imp);
+			xValues = new Array();
+			for (p = 0; p < profile.getProfile().length; p++) {
 				xValues.push(p);
 			}
-			var fit = new CurveFitter(xValues, profile.getProfile());
+			fit = new CurveFitter(xValues, profile.getProfile());
 			fit.doFit(CurveFitter.GAUSSIAN);
-			var gaussCentre = fit.getParams()[2];
-			var gaussSigma =  fit.getParams()[3];
-			var gaussSigmaWeighted = settings.sigmaWeight * gaussSigma / Math.pow(fit.getRSquared(), 2);
+			gaussCentre = fit.getParams()[2];
+			gaussSigma =  fit.getParams()[3];
+			gaussSigmaWeighted = settings.sigmaWeight * gaussSigma / Math.pow(fit.getRSquared(), 2);
 			xOffset = Math.max(xOffset + Math.round(gaussCentre - gaussSigmaWeighted), 0);
 			roiWidth = Math.round(2 * gaussSigmaWeighted);
-			image.imp.setRoi(new Rectangle(xOffset, yPos, roiWidth, settings.stepSize));
-			subImage = new SubImageObject(new Duplicator().run(image.imp), xOffset, yPos);
+			imp.setRoi(new Rectangle(xOffset, yPos, roiWidth, settings.stepSize));
+			subImage = new SubImageObject(new Duplicator().run(imp), xOffset, yPos);
 			subImage.parent = image;
 			subImage.xOffset = xOffset;
 			subImage.yOffset = yPos;
 			subImage.threshold = settings.threshold;
-			results[images[i]].result.push(runCharacterisationSub(subImage, settings.useThresholding));
+			results[imageName].result.push(runCharacterisationSub(subImage, settings.useThresholding));
 			yPos += settings.stepSize;
 		}
-		var res = results[images[i]].result;
-		var xValues = new Array();
-		var yValues = new Array();
-		var leftValues = new Array();
-		var rightValues = new Array();
-		var widthValues = new Array();
-		var limit = new Array();
-		for (var j in res) {
-			xValues.push(res[j].y);
-			yValues.push(res[j].x);
-			leftValues.push(res[j].left);
-			rightValues.push(res[j].right);
-			widthValues.push(res[j].right - res[j].left);
-			limit.push(res[j].limit);
+		result = results[imageName].result;
+		xValues = new Array();
+		yValues = new Array();
+		leftValues = new Array();
+		rightValues = new Array();
+		widthValues = new Array();
+		limit = new Array();
+		for (j in result) {
+			xValues.push(result[j].y);
+			yValues.push(result[j].x);
+			leftValues.push(result[j].left);
+			rightValues.push(result[j].right);
+			widthValues.push(result[j].right - result[j].left);
+			limit.push(result[j].limit);
 		}
-		var plot = new Plot("JavaScript", "Spec of " + images[i] + " (" + settings.useThresholding + ")", "position x", "position y", xValues, yValues);
+		plot = new Plot("JavaScript", "Spec of " +imageName + " (" + settings.useThresholding + ")", "position x", "position y", xValues, yValues);
 		plot.add("", xValues, leftValues);
 		plot.add("", xValues, rightValues);
 		if (!settings.useThresholding) plot.add("CROSS", xValues, limit);
 		plot.setColor(java.awt.Color.RED);
 		plot.add("", xValues, widthValues);
-		plot.setLimits(0, image.imp.getHeight() - 1, 0, image.imp.getWidth() - 1);
+		plot.setLimits(0, imp.getHeight() - 1, 0, imp.getWidth() - 1);
 		plot.show();
-		results[images[i]].leftFit = new CurveFitter(xValues, leftValues);
-		results[images[i]].leftFit.doFit(CurveFitter.POLY3);
-		results[images[i]].centreFit = new CurveFitter(xValues, yValues);
-		results[images[i]].centreFit.doFit(CurveFitter.POLY3);
-		results[images[i]].rightFit = new CurveFitter(xValues, rightValues);
-		results[images[i]].rightFit.doFit(CurveFitter.POLY3);
+		result.leftFit = new CurveFitter(xValues, leftValues);
+		result.leftFit.doFit(CurveFitter.POLY3);
+		result.centreFit = new CurveFitter(xValues, yValues);
+		result.centreFit.doFit(CurveFitter.POLY3);
+		result.rightFit = new CurveFitter(xValues, rightValues);
+		result.rightFit.doFit(CurveFitter.POLY3);
 	}
-	return results;
 }
 
 function runCharacterisationSub(subImage, doThresholding) {
-	var stepSize = subImage.imp.getHeight();
+	var stepSize = subImage.imp.getHeight(),
+		subImp = subImage.imp,
+		measurements,
+		statistic,
+		mean,
+		specWidth,
+		xm,
+		ym,
+		roi,
+		xLeft,
+		xRight,
+		limit,
+		left,
+		right,
+		searchLeft,
+		i;
 	if (doThresholding == true) {
-		IJ.setAutoThreshold(subImage.imp, subImage.threshold + " dark");
-		IJ.run(subImage.imp, "NaN Background", "");
-		var measurements = Measurements.MEAN + Measurements.INTEGRATED_DENSITY + Measurements.CENTER_OF_MASS;
-		var statistic = ImageStatistics.getStatistics(subImage.imp.getProcessor(), measurements, null);
-		var mean = statistic.mean;
-		var specWidth = statistic.area / subImage.imp.getHeight();
-		var xm = statistic.xCenterOfMass;
-		var ym = statistic.yCenterOfMass;
-		IJ.run(subImage.imp, "Macro...", "code=[if(isNaN(v)) v=-10000;]");
-		IJ.run(subImage.imp, "Find Edges", "");
-		subImage.imp.setRoi(new Rectangle(Math.max(xm - specWidth, 0), 0, xm - Math.max(xm - specWidth, 0), subImage.imp.getHeight()));
-		IJ.run(subImage.imp, "Find Maxima...", "output=[Point Selection] exclude");
-		var roi = subImage.imp.getRoi().getBounds();
-		var xLeft = roi.x;
-		subImage.imp.setRoi(new Rectangle(xm, 0, subImage.imp.getWidth() - Math.max(xm - specWidth, 0), subImage.imp.getHeight()));
-		IJ.run(subImage.imp, "Find Maxima...", "output=[Point Selection] exclude");
-		var roi = subImage.imp.getRoi().getBounds();
-		var xRight = roi.x + roi.width;
+		IJ.setAutoThreshold(subImp, subImage.threshold + " dark");
+		IJ.run(subImp, "NaN Background", "");
+		measurements = Measurements.MEAN + Measurements.INTEGRATED_DENSITY + Measurements.CENTER_OF_MASS;
+		statistic = ImageStatistics.getStatistics(subImp.getProcessor(), measurements, null);
+		mean = statistic.mean;
+		specWidth = statistic.area / subImp.getHeight();
+		xm = statistic.xCenterOfMass;
+		ym = statistic.yCenterOfMass;
+		IJ.run(subImp, "Macro...", "code=[if(isNaN(v)) v=-10000;]");
+		IJ.run(subImp, "Find Edges", "");
+		subImp.setRoi(new Rectangle(Math.max(xm - specWidth, 0), 0, xm - Math.max(xm - specWidth, 0), subImp.getHeight()));
+		IJ.run(subImp, "Find Maxima...", "output=[Point Selection] exclude");
+		roi = subImp.getRoi().getBounds();
+		xLeft = roi.x;
+		subImp.setRoi(new Rectangle(xm, 0, subImp.getWidth() - Math.max(xm - specWidth, 0), subImp.getHeight()));
+		IJ.run(subImp, "Find Maxima...", "output=[Point Selection] exclude");
+		roi = subImp.getRoi().getBounds();
+		xRight = roi.x + roi.width;
 		resultSub = {
 			x: xm + subImage.xOffset,
 			xError: 0,
@@ -239,20 +301,20 @@ function runCharacterisationSub(subImage, doThresholding) {
 			widthError: 0
 		}
 	} else {
-		IJ.run(subImage.imp, "Bin...", "x=1 y=" + subImage.imp.getHeight() + " bin=Average");
-		var statistic = ImageStatistics.getStatistics(subImage.imp.getProcessor(), Measurements.MEAN + Measurements.STD_DEV, null);
-		var limit = statistic.mean; // statistic.stdDev
-		var left = 0;
-		var right = subImage.imp.getWidth();
-		var searchLeft = true;
-		for (var i = 0; i < subImage.imp.getWidth(); i++) {
+		IJ.run(subImp, "Bin...", "x=1 y=" + subImp.getHeight() + " bin=Average");
+		statistic = ImageStatistics.getStatistics(subImp.getProcessor(), Measurements.MEAN + Measurements.STD_DEV, null);
+		limit = 40; //statistic.mean; // statistic.stdDev
+		left = 0;
+		right = subImp.getWidth();
+		searchLeft = true;
+		for (i = 0; i < subImp.getWidth(); i++) {
 			if (searchLeft == true) {
-				if (subImage.imp.getProcessor().getf(i, 0) > limit) {
+				if (subImp.getProcessor().getf(i, 0) > limit) {
 					left = i;
 					searchLeft = false;
 				}
 			} else {
-				if (subImage.imp.getProcessor().getf(i, 0) < limit) {
+				if (subImp.getProcessor().getf(i, 0) < limit) {
 					right = i;
 					break;
 				}
@@ -278,24 +340,30 @@ function runCharacterisationSub(subImage, doThresholding) {
 function saveResults(results) {
 	// create different diagrams with createDiagram()
 	// create differnt text files containing numeric results using createTextFile()
-	var widthFile = new TextFile(results.settings.path + "Width.txt");
-	var bordersFile = new TextFile(results.settings.path + "Borders.txt");
+	var images = results.settings.images,
+		settings = results.settings,
+		widthFile = new TextFile(results.settings.path + "Width.txt", settings.verbose),
+		bordersFile = new TextFile(results.settings.path + "Borders.txt", settings.verbose),		
+		i,
+		j,
+		result,
+		width,
+		fitLeft,
+		fitRight,
+		fitCentre,
+		widthLine,
+		bordersLine;
 	widthFile.appendLine("#x1-position\tx2-position\ty-values");
 	bordersFile.appendLine("#x1-value\tx2-value\ty-value\tweight");
-	for (var i = 0; i < results.images.length; i++){
-		IJ.log(results.images[i]);
-		IJ.log(results[results.images[i]].result);
-		var result = results[results.images[i]].result;
-		var width =  results[results.images[i]].width;
-		IJ.log(results.settings.energyPosition);
-		IJ.log(width);
-		IJ.log(results.settings.energyPosition * width);
-		var fitLeft = results[results.images[i]].leftFit.f(results.settings.energyPosition * width);
-		var fitCentre = results[results.images[i]].centreFit.f(results.settings.energyPosition * width);
-		var fitRight = results[results.images[i]].rightFit.f(results.settings.energyPosition * width);
-		for (var j = 0; j < result.length; j++) {
-			var widthLine = result[j].y + "\t" + result[j].x + "\t" + result[j].width;
-			var bordersLines = result[j].y + "\t" + fitLeft + "\t" + result[j].left + "\t" + 1 + "\n"
+	for (i = 0; i < images.length; i++){
+		result = results[images[i]].result;
+		width =  results[images[i]].width;
+		fitLeft = results[images[i]].result.leftFit.f(settings.energyPosition * width);
+		fitCentre = results[images[i]].result.centreFit.f(settings.energyPosition * width);
+		fitRight = results[images[i]].result.rightFit.f(settings.energyPosition * width);
+		for (j = 0; j < result.length; j++) {
+			widthLine = result[j].y + "\t" + result[j].x + "\t" + result[j].width;
+			bordersLines = result[j].y + "\t" + fitLeft + "\t" + result[j].left + "\t" + 1 + "\n"
 				+ result[j].y + "\t" + fitCentre + "\t" + result[j].x + "\t" + 1 + "\n"
 				+ result[j].y + "\t" + fitRight + "\t" + result[j].right + "\t" + 1;
 			widthFile.appendLine(widthLine);
@@ -312,27 +380,36 @@ function createDiagram(processedResult) {
 	return diagram;
 }
 
-function TextFile(path) {
+function TextFile(path, verbose) {
 	this.file = new File(path);
 	this.writer = new BufferedWriter(new FileWriter(this.file));
-	// create file;
+	this.verbose = verbose;
+	if (this.verbose) {
+		IJ.log("Writing results to " + path);
+	}
 	this.appendLine = function (line) {
 		this.writer.write(line + "\n");
 	};
 	this.closeFile = function () {
 		this.writer.close();
+		if (this.verbose) {
+			IJ.log("Finished writing results to " + path);
+		}
 	};
 	// write all arrays from values to a new text file
 }
 
-function ImageObject(path, filterRadius) {
-	this.path = path;
-	this.imp = IJ.openImage(path);
+function ImageObject(imageName, settings) {
+	var filterRadius = settings.filterRadius,
+		threshold;
+	this.name = imageName;
+	this.path = settings.path + imageName;
+	this.imp = IJ.openImage(this.path);
 	IJ.run(this.imp, "Rotate 90 Degrees Right", "");
 	IJ.run(this.imp, "Flip Horizontally", "");
 	this.width = this.imp.getWidth();
 	this.height = this.imp.getHeight();
-	var threshold = 2 * this.imp.getStatistics.stdv;
+	threshold = 2 * this.imp.getStatistics.stdv;
 	IJ.run(this.imp, "Remove Outliers...", "radius=" + filterRadius + " threshold=" + threshold + " which=Bright");
 	IJ.run(this.imp, "Remove Outliers...", "radius=" + filterRadius + " threshold=" + threshold + " which=Dark");
 	IJ.run(this.imp, "Median...", "radius=" + filterRadius);
