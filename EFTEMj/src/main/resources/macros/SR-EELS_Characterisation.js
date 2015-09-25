@@ -1,7 +1,7 @@
 /*
- * file:	SR-EELS_characterisation.js
+ * file:	SR-EELS_Characterisation.js
  * author:	Michael Entrup b. Epping (michael.entrup@wwu.de)
- * version:	20150805
+ * version:	20150925
  * info:	This script is used to characterise the distortions of an Zeiss in-column energy filter when using SR-EELS.
  * 			A series of special SR-EELS data sets is necessary to run the characterisation.
  * 			Place all data sets (images) at a single folder and run this script.
@@ -18,8 +18,7 @@
 
  /*
   * DRAFT - INFO
-  * The first version of this script will not contain any GUI. One has to set all parameters directly.
-  * Not before the characterisation is finished a GUI will be added.
+  * The first version of this script contains a minimal GUI. One has to set nearly all parameters directly.
   */
 
 importClass(Packages.ij.IJ);
@@ -62,7 +61,6 @@ function main() {
 		results = {};
 
 	settings = {
-		path: "Q:\\Aktuell\\SR-EELS_characterisation\\",
 		stepSize: 64,
 		filterRadius: 8,
 		energyBorderLow: 256,
@@ -75,6 +73,16 @@ function main() {
 		threshold: "Li",
 		verbose: true
 	}
+
+	/*
+	 * Use the same folder as SR-EELS_ImportCharacterisation.js.
+	 * The user has to select a data set (subfolder), but it is still possible to select any other folder.
+	 */
+	settings.path = Prefs.get(SR_EELS_PrefsKeys.characterisationDatabasePath.getValue(), null);
+	DirectoryChooser.setDefaultDirectory(settings.path);
+	var dc = new DirectoryChooser("Select folder for characterisation...");
+	settings.path = dc.getDirectory();
+	if (!settings.path) return;
 	
 	settings.images = getImages(settings);
 	results.settings = settings;
