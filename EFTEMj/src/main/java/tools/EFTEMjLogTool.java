@@ -160,6 +160,5 @@ public class EFTEMjLogTool {
 			}
 		}
 	}
-
 	// TODO Implement a Plugin that will display the global log.
 }
