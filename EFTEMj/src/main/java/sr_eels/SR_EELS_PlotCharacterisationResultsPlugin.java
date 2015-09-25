@@ -24,6 +24,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package sr_eels;
 
 import eftemj.EFTEMj;
@@ -34,20 +35,22 @@ import tools.JARTool;
 
 public class SR_EELS_PlotCharacterisationResultsPlugin implements PlugIn {
 
-    private final String filename_ijm_PlotCharacterisationResults = "SR-EELS_PlotCharacterisationResults.ijm";
+	private final String filename_ijm_PlotCharacterisationResults =
+		"SR-EELS_PlotCharacterisationResults.ijm";
 
-    @Override
-    public void run(final String arg) {
-	IJ.runMacro(new JARTool().getText(EFTEMj.PATH_SCRIPTS_AND_MACROS + filename_ijm_PlotCharacterisationResults));
-    }
+	@Override
+	public void run(final String arg) {
+		IJ.runMacro(new JARTool().getText(EFTEMj.PATH_SCRIPTS_AND_MACROS +
+			filename_ijm_PlotCharacterisationResults));
+	}
 
-    public static void main(final String[] args) {
-	// start ImageJ
-	new ImageJ();
+	public static void main(final String[] args) {
+		// start ImageJ
+		new ImageJ();
 
-	// run the plugin
-	final Class<?> clazz = SR_EELS_PlotCharacterisationResultsPlugin.class;
-	IJ.runPlugIn(clazz.getName(), "");
-    }
+		// run the plugin
+		final Class<?> clazz = SR_EELS_PlotCharacterisationResultsPlugin.class;
+		IJ.runPlugIn(clazz.getName(), "");
+	}
 
 }

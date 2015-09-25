@@ -24,23 +24,25 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package sr_eels;
 
 /**
  * This class contains constants and utility methods for the sr_eels package.
  *
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
- *
  */
 public class SR_EELS {
 
-    /**
-     * This is the name of the file that stores the data points used to describe the change of the spectrum width.
-     */
-    protected static final String FILENAME_WIDTH = "Width.txt";
+	/**
+	 * This is the name of the file that stores the data points used to describe
+	 * the change of the spectrum width.
+	 */
+	protected static final String FILENAME_WIDTH = "Width.txt";
 
-    /**
-     * This is the name of the file that stores the data points used to describe the spectrum borders.
-     */
-    public static final String FILENAME_BORDERS = "Borders.txt";
+	/**
+	 * This is the name of the file that stores the data points used to describe
+	 * the spectrum borders.
+	 */
+	public static final String FILENAME_BORDERS = "Borders.txt";
 }

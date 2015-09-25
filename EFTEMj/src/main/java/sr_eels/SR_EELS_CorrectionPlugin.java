@@ -27,17 +27,6 @@
 
 package sr_eels;
 
-import eftemj.EFTEMj;
-import gui.GenericDialogPlus;
-import ij.IJ;
-import ij.ImageJ;
-import ij.ImagePlus;
-import ij.gui.GenericDialog;
-import ij.plugin.filter.ExtendedPlugInFilter;
-import ij.plugin.filter.PlugInFilterRunner;
-import ij.process.FloatProcessor;
-import ij.process.ImageProcessor;
-
 import java.awt.Desktop;
 import java.io.BufferedReader;
 import java.io.File;
@@ -52,6 +41,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import eftemj.EFTEMj;
+import gui.GenericDialogPlus;
+import ij.IJ;
+import ij.ImageJ;
+import ij.ImagePlus;
+import ij.gui.GenericDialog;
+import ij.plugin.filter.ExtendedPlugInFilter;
+import ij.plugin.filter.PlugInFilterRunner;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
 import libs.lma.LMA;
 import tools.StringManipulator;
 
@@ -193,9 +192,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 			 * The ExecutorService is used to handle the multithreading. see
 			 * http://www.vogella.com/tutorials/JavaConcurrency/article.html#threadpools
 			 */
-			final ExecutorService executorService =
-				Executors
-					.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+			final ExecutorService executorService = Executors.newFixedThreadPool(
+				Runtime.getRuntime().availableProcessors());
 			for (int x2 = 0; x2 < outputProcessor.getHeight(); x2++) {
 				final int x2Temp = x2;
 				executorService.execute(new Runnable() {
@@ -203,8 +201,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 					@Override
 					public void run() {
 						for (int x1 = 0; x1 < outputProcessor.getWidth(); x1++) {
-							final float intensity =
-								intensityCorrection.getIntensity(x1, x2Temp);
+							final float intensity = intensityCorrection.getIntensity(x1,
+								x2Temp);
 							outputProcessor.setf(x1, x2Temp, intensity);
 						}
 						updateProgress();
@@ -235,12 +233,11 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	public ImagePlus correctImage(final ImagePlus input_image,
 		final String path_borders, final String path_width)
 	{
-		this.inputProcessor =
-			new SR_EELS_FloatProcessor((FloatProcessor) input_image.getProcessor(),
-				CameraSetup.getFullWidth() / input_image.getWidth(), CameraSetup
-					.getFullHeight() /
-					input_image.getHeight(), input_image.getWidth() / 2, input_image
-					.getHeight() / 2);
+		this.inputProcessor = new SR_EELS_FloatProcessor(
+			(FloatProcessor) input_image.getProcessor(), CameraSetup.getFullWidth() /
+				input_image.getWidth(), CameraSetup.getFullHeight() / input_image
+					.getHeight(), input_image.getWidth() / 2, input_image.getHeight() /
+						2);
 		title = StringManipulator.removeExtensionFromTitle(input_image.getTitle());
 		this.pathBorders = path_borders;
 		this.pathWidth = path_width;
@@ -347,8 +344,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 			/*
 			 * A dialog is presented to select one of the found files.
 			 */
-			final GenericDialog gd =
-				new GenericDialog(command + " - Select data set", IJ.getInstance());
+			final GenericDialog gd = new GenericDialog(command + " - Select data set",
+				IJ.getInstance());
 			if (found_poly.size() > 1) {
 				String[] files_poly = new String[found_poly.size()];
 				files_poly = found_poly.toArray(files_poly);
@@ -391,11 +388,10 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 			}
 		}
 		while (!pathWidth.contains(".txt") | !pathBorders.contains(".txt"));
-		inputProcessor =
-			new SR_EELS_FloatProcessor((FloatProcessor) imp.getProcessor(),
-				CameraSetup.getFullWidth() / imp.getWidth(), CameraSetup
-					.getFullHeight() /
-					imp.getHeight(), imp.getWidth() / 2, imp.getHeight() / 2);
+		inputProcessor = new SR_EELS_FloatProcessor((FloatProcessor) imp
+			.getProcessor(), CameraSetup.getFullWidth() / imp.getWidth(), CameraSetup
+				.getFullHeight() / imp.getHeight(), imp.getWidth() / 2, imp
+					.getHeight() / 2);
 		title = StringManipulator.removeExtensionFromTitle(imp.getTitle());
 		return FLAGS;
 	}
@@ -430,8 +426,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 	 * @return The constant <code>OK</code> or <code>CANCEL</code>.
 	 */
 	private int showParameterDialog(final String dialogTitle) {
-		final GenericDialogPlus gd =
-			new GenericDialogPlus(dialogTitle + " - set parameters", IJ.getInstance());
+		final GenericDialogPlus gd = new GenericDialogPlus(dialogTitle +
+			" - set parameters", IJ.getInstance());
 		gd.addFileField(SR_EELS.FILENAME_WIDTH, pathWidth);
 		gd.addFileField(SR_EELS.FILENAME_BORDERS, pathBorders);
 		// TODO Add drop down menu for correction method.
@@ -497,8 +493,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 
 		String baseFolder = "C:/Temp/";
 		final String os = System.getProperty("os.name").toLowerCase();
-		if (os.indexOf("nix") >= 0 || os.indexOf("nux") >= 0 ||
-			os.indexOf("aix") > 0)
+		if (os.indexOf("nix") >= 0 || os.indexOf("nux") >= 0 || os.indexOf(
+			"aix") > 0)
 		{
 			final String userHome = System.getProperty("user.home");
 			baseFolder = userHome + "/Downloads/";
@@ -508,8 +504,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 		 * Check if the test image is available. Otherwise prompt a message with the
 		 * download link.
 		 */
-		final File testImage =
-			new File(baseFolder + "20140106 SM125 -20%/SR-EELS_TestImage_small.tif");
+		final File testImage = new File(baseFolder +
+			"20140106 SM125 -20%/SR-EELS_TestImage_small.tif");
 		if (!testImage.exists()) {
 			final String url = "http://eftemj.entrup.com.de/SR-EELS_TestImage.zip";
 			/*
@@ -518,9 +514,11 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 			 * "</html>");
 			 */
 			final GenericDialog gd = new GenericDialog("Test image not found");
-			gd.addMessage("Please download the file 'SR-EELS_TestImage.zip' and extract it to '" +
-				baseFolder + "'.");
-			gd.addMessage("Copy the following link, or click Ok to open it with your default browser.");
+			gd.addMessage(
+				"Please download the file 'SR-EELS_TestImage.zip' and extract it to '" +
+					baseFolder + "'.");
+			gd.addMessage(
+				"Copy the following link, or click Ok to open it with your default browser.");
 			gd.addStringField("", url, url.length());
 			gd.showDialog();
 			if (gd.wasOKed()) {
@@ -539,9 +537,8 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 		/*
 		 * open the test image
 		 */
-		final ImagePlus image =
-			IJ.openImage(baseFolder +
-				"20140106 SM125 -20%/SR-EELS_TestImage_small.tif");
+		final ImagePlus image = IJ.openImage(baseFolder +
+			"20140106 SM125 -20%/SR-EELS_TestImage_small.tif");
 		image.show();
 
 		/*
@@ -632,20 +629,16 @@ public class SR_EELS_CorrectionPlugin implements ExtendedPlugInFilter {
 							if (readWeights == true) {
 								if (splitLine.length >= 4) {
 									isBordersTxt = true;
-									final Double[] point =
-										{ Double.valueOf(splitLine[0]),
-											Double.valueOf(splitLine[1]),
-											Double.valueOf(splitLine[2]),
-											Double.valueOf(splitLine[3]) };
+									final Double[] point = { Double.valueOf(splitLine[0]), Double
+										.valueOf(splitLine[1]), Double.valueOf(splitLine[2]), Double
+											.valueOf(splitLine[3]) };
 									values.add(point);
 								}
 							}
 							else {
 								if (splitLine.length >= 3) {
-									final Double[] point =
-										{ Double.valueOf(splitLine[0]),
-											Double.valueOf(splitLine[1]),
-											Double.valueOf(splitLine[2]) };
+									final Double[] point = { Double.valueOf(splitLine[0]), Double
+										.valueOf(splitLine[1]), Double.valueOf(splitLine[2]) };
 									values.add(point);
 								}
 							}

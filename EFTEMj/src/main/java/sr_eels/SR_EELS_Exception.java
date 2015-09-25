@@ -24,45 +24,45 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package sr_eels;
 
 /**
  * @author Michael Entrup b. Epping <entrup@arcor.de>
- *
  */
 @SuppressWarnings("serial")
 public class SR_EELS_Exception extends Exception {
 
-    /**
-     *
-     */
-    public SR_EELS_Exception() {
-	// TODO Auto-generated constructor stub
-    }
+	/**
+	 *
+	 */
+	public SR_EELS_Exception() {
+		// TODO Auto-generated constructor stub
+	}
 
-    /**
-     * @param message
-     */
-    public SR_EELS_Exception(final String message) {
-	super(message);
-	// TODO Auto-generated constructor stub
-    }
+	/**
+	 * @param message
+	 */
+	public SR_EELS_Exception(final String message) {
+		super(message);
+		// TODO Auto-generated constructor stub
+	}
 
-    /**
-     * @param cause
-     */
-    public SR_EELS_Exception(final Throwable cause) {
-	super(cause);
-	// TODO Auto-generated constructor stub
-    }
+	/**
+	 * @param cause
+	 */
+	public SR_EELS_Exception(final Throwable cause) {
+		super(cause);
+		// TODO Auto-generated constructor stub
+	}
 
-    /**
-     * @param message
-     * @param cause
-     */
-    public SR_EELS_Exception(final String message, final Throwable cause) {
-	super(message, cause);
-	// TODO Auto-generated constructor stub
-    }
+	/**
+	 * @param message
+	 * @param cause
+	 */
+	public SR_EELS_Exception(final String message, final Throwable cause) {
+		super(message, cause);
+		// TODO Auto-generated constructor stub
+	}
 
 }

@@ -24,34 +24,37 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package sr_eels.deprecated;
 
 import eftemj.EFTEMj;
-import tools.JARTool;
 import ij.IJ;
 import ij.ImageJ;
 import ij.plugin.JavaScriptEvaluator;
 import ij.plugin.PlugIn;
+import tools.JARTool;
 
 public class SR_EELS_CreateCharacterisationOverviewPlugin implements PlugIn {
 
-    private String filename_sreels_CreateCharacterisationOvervie = "SR-EELS_CreateCharacterisationOverview.js";
+	private final String filename_sreels_CreateCharacterisationOvervie =
+		"SR-EELS_CreateCharacterisationOverview.js";
 
-    @Override
-    public void run(String arg) {
-	String javaScriptCode = new JARTool().getText(EFTEMj.PATH_SCRIPTS_AND_MACROS
-		+ filename_sreels_CreateCharacterisationOvervie);
-	JavaScriptEvaluator jse = new JavaScriptEvaluator();
-	jse.run(javaScriptCode);
-    }
+	@Override
+	public void run(final String arg) {
+		final String javaScriptCode = new JARTool().getText(
+			EFTEMj.PATH_SCRIPTS_AND_MACROS +
+				filename_sreels_CreateCharacterisationOvervie);
+		final JavaScriptEvaluator jse = new JavaScriptEvaluator();
+		jse.run(javaScriptCode);
+	}
 
-    public static void main(String[] args) {
-	// start ImageJ
-	new ImageJ();
+	public static void main(final String[] args) {
+		// start ImageJ
+		new ImageJ();
 
-	// run the plugin
-	final Class<?> clazz = SR_EELS_CreateCharacterisationOverviewPlugin.class;
-	IJ.runPlugIn(clazz.getName(), "");
-    }
+		// run the plugin
+		final Class<?> clazz = SR_EELS_CreateCharacterisationOverviewPlugin.class;
+		IJ.runPlugIn(clazz.getName(), "");
+	}
 
 }

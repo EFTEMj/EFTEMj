@@ -24,54 +24,55 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package sr_eels;
 
 import eftemj.EFTEMj;
-import tools.JARTool;
 import ij.IJ;
 import ij.ImageJ;
 import ij.plugin.JavaScriptEvaluator;
 import ij.plugin.PlugIn;
+import tools.JARTool;
 
 /**
  * <p>
  * This plugin is used to create a test image for the SR-EELS correction.
  * </p>
- * 
  * <p>
- * The code is loaded from an imagej script that is written in JavaScript. This class is only used to load this code.
- * For more details on the implementation, have a look at the script file.
+ * The code is loaded from an imagej script that is written in JavaScript. This
+ * class is only used to load this code. For more details on the implementation,
+ * have a look at the script file.
  * </p>
  *
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
- *
  */
 public class SR_EELS_DEBUG_CreateTestImage implements PlugIn {
 
-    private final String filename_sreels_testimage = "SR-EELS_CreateTestImage.js";
+	private final String filename_sreels_testimage = "SR-EELS_CreateTestImage.js";
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see ij.plugin.PlugIn#run(java.lang.String)
-     */
-    @Override
-    public void run(String arg) {
-	String javaScriptCode = new JARTool().getText(EFTEMj.PATH_SCRIPTS_AND_MACROS + filename_sreels_testimage);
-	JavaScriptEvaluator jse = new JavaScriptEvaluator();
-	jse.run(javaScriptCode);
-    }
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see ij.plugin.PlugIn#run(java.lang.String)
+	 */
+	@Override
+	public void run(final String arg) {
+		final String javaScriptCode = new JARTool().getText(
+			EFTEMj.PATH_SCRIPTS_AND_MACROS + filename_sreels_testimage);
+		final JavaScriptEvaluator jse = new JavaScriptEvaluator();
+		jse.run(javaScriptCode);
+	}
 
-    /**
-     * @param args
-     */
-    public static void main(String[] args) {
-	// start ImageJ
-	new ImageJ();
+	/**
+	 * @param args
+	 */
+	public static void main(final String[] args) {
+		// start ImageJ
+		new ImageJ();
 
-	// run the plugin
-	final Class<?> clazz = SR_EELS_DEBUG_CreateTestImage.class;
-	IJ.runPlugIn(clazz.getName(), "");
-    }
+		// run the plugin
+		final Class<?> clazz = SR_EELS_DEBUG_CreateTestImage.class;
+		IJ.runPlugIn(clazz.getName(), "");
+	}
 
 }
