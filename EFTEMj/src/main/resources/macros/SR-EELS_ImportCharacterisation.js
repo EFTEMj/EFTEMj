@@ -1,7 +1,7 @@
 /*
  * file:	SR-EELS_ImportCharacterisation.js
  * author:	Michael Entrup b. Epping (michael.entrup@wwu.de)
- * version:	20150805
+ * version:	20150925
  * info:	This script is used to import characterisation images into my "database".
  * 			The "databse" is a folder structure that contains all my calibration images.
  * 			This script trises to gues the acquisition data and all parameters by processing the file path.
@@ -17,21 +17,22 @@ importClass(Packages.ij.gui.GenericDialog);
 importClass(Packages.ij.Prefs);
 importClass(Packages.sr_eels.SR_EELS_PrefsKeys);
 
-/*
- * Read path to database from IJ_Prefs.txt or ask the user to set the path.
- */
-IJ.showStatus("Loading path of database from IJ_Prefs.txt.");
-var database = Prefs.get(SR_EELS_PrefsKeys.characterisationDatabasePath.getValue(), null);
-if (!database) {
-	database = getDirectory("Set the path to the database...");
-	Prefs.set(SR_EELS_PrefsKeys.characterisationDatabasePath.getValue(), database);
-	Prefs.savePreferences();
-}
 
+var databasePath
 main();
 
 function main() {
-
+	/*
+	 * Read path to database from IJ_Prefs.txt or ask the user to set the path.
+	 */
+	IJ.showStatus("Loading path of database from IJ_Prefs.txt.");
+	databasePath = Prefs.get(SR_EELS_PrefsKeys.characterisationDatabasePath.getValue(), null);
+	if (!databasePath) {
+		databasePath = getDirectory("Set the path to the database...");
+		if (!databasePath) return;
+		Prefs.set(SR_EELS_PrefsKeys.characterisationDatabasePath.getValue(), databasePath);
+		Prefs.savePreferences();
+	}
 	/* 
 	 *  Step 1
 	 *  Select the folder to import from.
@@ -57,7 +58,8 @@ function main() {
 	 */
 	if (parameters.date != null & parameters.SM != null & parameters.QSinK7 != null) {
 		saveFiles(path, files, parameters);
-	}
+	}	
+	IJ.showStatus("Finished importing from " + path);
 }
 
 function getDirectory(title) {
