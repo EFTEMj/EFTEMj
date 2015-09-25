@@ -49,13 +49,12 @@ import ij.process.ImageProcessor;
 public class NormCrossCorrelation {
 
 	/**
-	 * <<<<<<< HEAD This static field is used to switch on the debug mode.
+	 * This static field is used to switch on the debug mode.
 	 */
 	public static boolean debug = false;
 	/**
-	 * ======= >>>>>>> Enhanced DriftDetectionPlugin: This field is used to switch
-	 * between the calculation of the normalised cross-correlation or the
-	 * normalised cross-correlation coefficient.
+	 * This field is used to switch between the calculation of the normalised
+	 * cross-correlation or the normalised cross-correlation coefficient.
 	 */
 	private boolean useCoefficient = true;
 	/**
