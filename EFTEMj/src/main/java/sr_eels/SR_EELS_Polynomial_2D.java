@@ -11,7 +11,6 @@ import eftemj.EFTEMj_Debug;
 import ij.ImagePlus;
 import ij.WindowManager;
 import ij.measure.CurveFitter;
-import ij.plugin.frame.Fitter;
 import libs.lma.implementations.Polynomial_2D;
 
 public class SR_EELS_Polynomial_2D extends Polynomial_2D {
@@ -132,7 +131,6 @@ public class SR_EELS_Polynomial_2D extends Polynomial_2D {
 			final ImagePlus imp = new ImagePlus("transform width", transformWidth);
 			imp.show();
 		}
-		Fitter.plot(fit);
 	}
 
 	public String compareWithGnuplot(final int functionType) {
