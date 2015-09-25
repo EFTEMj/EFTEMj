@@ -24,78 +24,79 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package eftemj;
 
 /**
- * This class is used to store constants of EFTEMj.
- *
- * Maybe there will be some other things this class is used for.
+ * This class is used to store constants of EFTEMj. Maybe there will be some
+ * other things this class is used for.
  *
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
- *
  */
 public class EFTEMj {
 
-    /**
-     * <code>EFTEMj.<code>
-     */
-    public static final String PREFS_PREFIX = "EFTEMj.";
+	/**
+	 * <code>EFTEMj.<code>
+	 */
+	public static final String PREFS_PREFIX = "EFTEMj.";
 
-    /**
-     * The path inside the JAR file where the macro and script files are located.
-     */
-    public static final String PATH_SCRIPTS_AND_MACROS = "/macros/";
+	/**
+	 * The path inside the JAR file where the macro and script files are located.
+	 */
+	public static final String PATH_SCRIPTS_AND_MACROS = "/macros/";
 
-    /**
-     * The path inside the JAR file where files for testing are located.
-     */
-    public static final String PATH_TESTING = "/testing/";
+	/**
+	 * The path inside the JAR file where files for testing are located.
+	 */
+	public static final String PATH_TESTING = "/testing/";
 
-    /**
-     * Disable all debugging.
-     */
-    public static final int DEBUG_NONE = 0;
-    /**
-     * Reduce the debug logging to the most essential information.
-     */
-    public static final int DEBUG_MINIMAL_LOGGING = 31;
-    /**
-     * Write all debug logs to a file.
-     */
-    public static final int DEBUG_LOGGING = 63;
-    /**
-     * Show all debug logs in the ImageJ log window.
-     */
-    public static final int DEBUG_IN_APP_LOGGING = 127;
-    /**
-     * Display images that have only debugging purpose.
-     */
-    public static final int DEBUG_SHOW_IMAGES = 191;
-    /**
-     * Don't hide any information.
-     */
-    public static final int DEBUG_FULL = 255;
+	/**
+	 * Disable all debugging.
+	 */
+	public static final int DEBUG_NONE = 0;
+	/**
+	 * Reduce the debug logging to the most essential information.
+	 */
+	public static final int DEBUG_MINIMAL_LOGGING = 31;
+	/**
+	 * Write all debug logs to a file.
+	 */
+	public static final int DEBUG_LOGGING = 63;
+	/**
+	 * Show all debug logs in the ImageJ log window.
+	 */
+	public static final int DEBUG_IN_APP_LOGGING = 127;
+	/**
+	 * Display images that have only debugging purpose.
+	 */
+	public static final int DEBUG_SHOW_IMAGES = 191;
+	/**
+	 * Don't hide any information.
+	 */
+	public static final int DEBUG_FULL = 255;
 
-    /**
-     * <p>
-     * All classes will use this field to get the current level of debugging.<br />
-     * The constants with the prefix DEBUG_ define all available levels of debugging.
-     * </p>
-     * <p>
-     * The class {@link EFTEMj_Debug} offers some static methods for debugging, that one should use.
-     * </p>
-     */
-    public static int debugLevel = 0;
+	/**
+	 * <p>
+	 * All classes will use this field to get the current level of debugging.
+	 * <br />
+	 * The constants with the prefix DEBUG_ define all available levels of
+	 * debugging.
+	 * </p>
+	 * <p>
+	 * The class {@link EFTEMj_Debug} offers some static methods for debugging,
+	 * that one should use.
+	 * </p>
+	 */
+	public static int debugLevel = 0;
 
-    /**
-     * @param classToParse
-     *            can be any {@link Object}.
-     * @return the name of the passed {@link Object} without the package prefix.
-     */
-    public static String getNameWithoutPackage(final Object classToParse) {
-	final String className = classToParse.getClass().getName()
-		.substring(classToParse.getClass().getName().indexOf(".") + 1);
-	return className;
-    }
+	/**
+	 * @param classToParse can be any {@link Object}.
+	 * @return the name of the passed {@link Object} without the package prefix.
+	 */
+	public static String getNameWithoutPackage(final Object classToParse) {
+		final String className = classToParse.getClass().getName().substring(
+			classToParse.getClass().getName().indexOf(".") + 1);
+		return className;
+	}
 
 }
