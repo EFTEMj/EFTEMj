@@ -10,17 +10,30 @@
  */
 
 importClass(Packages.ij.IJ);
+importClass(Packages.ij.Prefs);
 importClass(Packages.java.io.File);
 importClass(Packages.ij.io.DirectoryChooser);
 importClass(Packages.ij.gui.GenericDialog);
 
-var database = "Q:/Aktuell/SR-EELS Calibration measurements/"
+var databaseKey = "EFTEMj.SR-EELS.database.path";
+var databasePath;
 
 main();
 
 function main() {
+	/*
+	 * The path to the databasePath folder is stored in IJ_Prefs.txt.
+	 * If the value is not yet defined, the user is asked to set a directory.
+	 */
+	if ((databasePath = Prefs.get(databaseKey, "")) == "") {
+		if ((databasePath = getDirectory("Path to your SR-EELS database...")) != null) Prefs.set(databaseKey, databasePath);
+		else return;
+	}
 	var path;
-	if ((path = getDirectory()) == null) return;
+	/*
+	 * Select the files to import.
+	 */
+	if ((path = getDirectory("Calibration files...")) == null) return;
 	var files;
 	if ((files = selectFiles(path)) == null) return;
 	var parameters;
@@ -30,8 +43,8 @@ function main() {
 	}
 }
 
-function getDirectory() {
-	var dc = new DirectoryChooser("Calibration files...");
+function getDirectory(title) {
+	var dc = new DirectoryChooser(title);
 	return dc.getDirectory();
 }
 
@@ -101,7 +114,7 @@ function Parameters() {
 }
 
 function saveFiles(path, files, parameters) {
-	output = database + parameters.date + " SM" + parameters.SM + " " + parameters.QSinK7 + "%";
+	output = databasePath + parameters.date + " SM" + parameters.SM + " " + parameters.QSinK7 + "%";
 	if (parameters.comment != "") {
 		output += " " + parameters.comment;
 	}
