@@ -24,80 +24,84 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package elemental_map;
 
 /**
- * This is a blueprint for a power law fit method ( y(x) = a&sdot;x<sup>-r</sup> ). It is used by EFTEMj, but it can be
- * used for other tasks as well. That is why no classes from ImageJ are used.
+ * This is a blueprint for a power law fit method ( y(x) = a&sdot;x<sup>-r</sup>
+ * ). It is used by EFTEMj, but it can be used for other tasks as well. That is
+ * why no classes from ImageJ are used.
  *
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
- *
  */
 public abstract class PowerLawFit {
 
-    protected double[] xValues;
-    protected double[] yValues;
-    /**
-     * The break condition for iterative methods.
-     */
-    protected double epsilon;
-    protected double r;
-    protected double a;
-    protected int errorCode;
-    protected boolean done;
-    public final static int ERROR_NONE = 0;
-    public final static int ERROR_R_NAN = 1;
-    public final static int ERROR_R_INFINITE = 2;
-    public final static int ERROR_CONVERGE = 4;
-    public final static int ERROR_A_NAN = 8;
-    public final static int ERROR_A_INFINITE = 16;
+	protected double[] xValues;
+	protected double[] yValues;
+	/**
+	 * The break condition for iterative methods.
+	 */
+	protected double epsilon;
+	protected double r;
+	protected double a;
+	protected int errorCode;
+	protected boolean done;
+	public final static int ERROR_NONE = 0;
+	public final static int ERROR_R_NAN = 1;
+	public final static int ERROR_R_INFINITE = 2;
+	public final static int ERROR_CONVERGE = 4;
+	public final static int ERROR_A_NAN = 8;
+	public final static int ERROR_A_INFINITE = 16;
 
-    /**
-     * @return The calculated value of <strong>a</strong>. NaN if an error occurred during calculation.
-     */
-    public double getA() {
-	if (done == false) {
-	    doFit();
+	/**
+	 * @return The calculated value of <strong>a</strong>. NaN if an error
+	 *         occurred during calculation.
+	 */
+	public double getA() {
+		if (done == false) {
+			doFit();
+		}
+		return a;
 	}
-	return a;
-    }
 
-    /**
-     * @return The calculated value of <strong>r</strong>. NaN if an error occurred during calculation.
-     */
-    public double getR() {
-	if (done == false) {
-	    doFit();
+	/**
+	 * @return The calculated value of <strong>r</strong>. NaN if an error
+	 *         occurred during calculation.
+	 */
+	public double getR() {
+		if (done == false) {
+			doFit();
+		}
+		return r;
 	}
-	return r;
-    }
 
-    /**
-     * @return An int value that represents a type of error. All error codes are constants of this class.
-     */
-    public int getErrorCode() {
-	return errorCode;
-    }
+	/**
+	 * @return An int value that represents a type of error. All error codes are
+	 *         constants of this class.
+	 */
+	public int getErrorCode() {
+		return errorCode;
+	}
 
-    /**
-     * Calculate <strong>r</strong> and <strong>a</strong>.
-     */
-    public abstract void doFit();
+	/**
+	 * Calculate <strong>r</strong> and <strong>a</strong>.
+	 */
+	public abstract void doFit();
 
-    /**
-     * This will create a power law fit method. It will try to fit a power law function to the given data points.
-     *
-     * @param xValues
-     *            x-values of the data points.
-     * @param yValues
-     *            y-values of the data points.
-     * @param epsilon
-     *            The break condition for iterative methods.
-     */
-    public PowerLawFit(final double[] xValues, final double[] yValues, final double epsilon) {
-	errorCode = ERROR_NONE;
-	this.xValues = xValues;
-	this.yValues = yValues;
-	this.epsilon = epsilon;
-    }
+	/**
+	 * This will create a power law fit method. It will try to fit a power law
+	 * function to the given data points.
+	 *
+	 * @param xValues x-values of the data points.
+	 * @param yValues y-values of the data points.
+	 * @param epsilon The break condition for iterative methods.
+	 */
+	public PowerLawFit(final double[] xValues, final double[] yValues,
+		final double epsilon)
+	{
+		errorCode = ERROR_NONE;
+		this.xValues = xValues;
+		this.yValues = yValues;
+		this.epsilon = epsilon;
+	}
 }

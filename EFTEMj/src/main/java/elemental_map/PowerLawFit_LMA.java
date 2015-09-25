@@ -24,6 +24,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package elemental_map;
 
 import libs.lma.LMA;
@@ -31,53 +32,59 @@ import libs.lma.LMAFunction;
 
 /**
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
- *
  */
 public class PowerLawFit_LMA extends PowerLawFit {
 
-    private final LMA lma;
+	private final LMA lma;
 
-    public PowerLawFit_LMA(final double[] xValues, final double[] yValues, final double epsilon) {
-	super(xValues, yValues, epsilon);
-	lma = new LMA(new PowerLawFunction(), new double[] { Math.exp(18), 2 }, new double[][] { xValues, yValues });
-    }
+	public PowerLawFit_LMA(final double[] xValues, final double[] yValues,
+		final double epsilon)
+	{
+		super(xValues, yValues, epsilon);
+		lma = new LMA(new PowerLawFunction(), new double[] { Math.exp(18), 2 },
+			new double[][] { xValues, yValues });
+	}
 
-    public static class PowerLawFunction extends LMAFunction {
-	@Override
-	public double getY(final double x, final double[] a) {
-	    return a[0] * Math.pow(x, -a[1]);
+	public static class PowerLawFunction extends LMAFunction {
+
+		@Override
+		public double getY(final double x, final double[] a) {
+			return a[0] * Math.pow(x, -a[1]);
+		}
+
+		@Override
+		public double getPartialDerivate(final double x, final double[] a,
+			final int parameterIndex)
+		{
+			switch (parameterIndex) {
+				case 0:
+					return Math.pow(x, -a[1]);
+				case 1:
+					return -1 * a[0] * Math.log(a[1]) * Math.pow(x, -a[1]);
+			}
+			throw new RuntimeException("No such parameter index: " + parameterIndex);
+		}
 	}
 
 	@Override
-	public double getPartialDerivate(final double x, final double[] a, final int parameterIndex) {
-	    switch (parameterIndex) {
-	    case 0:
-		return Math.pow(x, -a[1]);
-	    case 1:
-		return -1 * a[0] * Math.log(a[1]) * Math.pow(x, -a[1]);
-	    }
-	    throw new RuntimeException("No such parameter index: " + parameterIndex);
+	public void doFit() {
+		try {
+			lma.fit();
+			if (Double.isNaN(lma.chi2)) {
+				errorCode = ERROR_CONVERGE;
+				a = Double.NaN;
+				r = Double.NaN;
+			}
+			errorCode = ERROR_NONE;
+			a = lma.parameters[0];
+			r = lma.parameters[1];
+		}
+		catch (final Exception e) {
+			errorCode = ERROR_CONVERGE;
+			a = Double.NaN;
+			r = Double.NaN;
+		}
+		done = true;
 	}
-    }
-
-    @Override
-    public void doFit() {
-	try {
-	    lma.fit();
-	    if (Double.isNaN(lma.chi2)) {
-		errorCode = ERROR_CONVERGE;
-		a = Double.NaN;
-		r = Double.NaN;
-	    }
-	    errorCode = ERROR_NONE;
-	    a = lma.parameters[0];
-	    r = lma.parameters[1];
-	} catch (final Exception e) {
-	    errorCode = ERROR_CONVERGE;
-	    a = Double.NaN;
-	    r = Double.NaN;
-	}
-	done = true;
-    }
 
 }

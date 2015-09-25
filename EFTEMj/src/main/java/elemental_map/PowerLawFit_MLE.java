@@ -24,187 +24,191 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package elemental_map;
 
 /**
- * This is an implementation of {@link PowerLawFit} that uses the <strong>Maximum Likelihood Estimation (MLE)</strong>.
- * The MLE is an iterative method to do a parameter fit.
+ * This is an implementation of {@link PowerLawFit} that uses the
+ * <strong>Maximum Likelihood Estimation (MLE)</strong>. The MLE is an iterative
+ * method to do a parameter fit.
  *
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
- *
  */
 public class PowerLawFit_MLE extends PowerLawFit {
 
-    private final static double DEFAULT_R = 4.0;
-    private final static float DEFAULT_EPSILON = 1.0E-6f;
+	private final static double DEFAULT_R = 4.0;
+	private final static float DEFAULT_EPSILON = 1.0E-6f;
 
-    /**
-     * A constructor that uses a default value for epsilon.<br />
-     * The constructor of {@link PowerLawFit} is called.
-     *
-     * @param xValues
-     * @param yValues
-     */
-    public PowerLawFit_MLE(final double[] xValues, final double[] yValues) {
-	super(xValues, yValues, DEFAULT_EPSILON);
-	r = DEFAULT_R;
-    }
-
-    /**
-     * A constructor that uses the same parameters as the constructor of {@link PowerLawFit}.
-     *
-     * @param xValues
-     * @param yValues
-     * @param epsilon
-     */
-    public PowerLawFit_MLE(final double[] xValues, final double[] yValues, final double epsilon) {
-	super(xValues, yValues, epsilon);
-	r = DEFAULT_R;
-    }
-
-    /**
-     * The constructor of {@link PowerLawFit} is called. Additionally you can define a starting value for the iterative
-     * calculation of <strong>r</strong>.
-     *
-     * @param xValues
-     * @param yValues
-     * @param epsilon
-     * @param rStart
-     */
-    public PowerLawFit_MLE(final double[] xValues, final double[] yValues, final double epsilon, final double rStart) {
-	super(xValues, yValues, epsilon);
-	r = rStart;
-    }
-
-    @Override
-    public void doFit() {
-	double rn = r;
-	double rn_prev = rn + 2 * epsilon;
-	int convergenceCounter = 0;
-	// this variable saves rn-r of the previous iteration. The initial value
-	// is a random one. To trigger no
-	// convergence error the value is such huge.
-	double diff = 10.0;
-	double num;
-	double denum;
-	// Start: Iteration to calculate r
-	while (Math.abs(rn_prev - rn) > epsilon) {
-	    rn_prev = rn;
-	    num = numerator(rn);
-	    denum = denominator(rn);
-	    rn = rn_prev - num / denum;
-	    // Check for a NaN error
-	    if (Double.isNaN(rn)) {
-		r = Double.NaN;
-		a = Double.NaN;
-		errorCode += ERROR_R_NAN;
-		return;
-	    }
-	    if (Double.isInfinite(rn)) {
-		r = Double.NaN;
-		a = Double.NaN;
-		errorCode += ERROR_R_INFINITE;
-		return;
-	    }
-	    // Checks for a convergence error. The combination of the 2. and 3.
-	    // if statement prevents an infinite number
-	    // of iterations.
-	    if (Math.abs(rn_prev - rn) == diff) {
-		r = Double.NaN;
-		a = Double.NaN;
-		errorCode += ERROR_CONVERGE;
-		return;
-	    }
-	    if (Math.abs(rn_prev - rn) > diff) {
-		convergenceCounter++;
-	    }
-	    if (convergenceCounter >= 25) {
-		r = Double.NaN;
-		a = Double.NaN;
-		errorCode += ERROR_CONVERGE;
-		return;
-	    }
-	    diff = Math.abs(rn_prev - rn);
+	/**
+	 * A constructor that uses a default value for epsilon.<br />
+	 * The constructor of {@link PowerLawFit} is called.
+	 *
+	 * @param xValues
+	 * @param yValues
+	 */
+	public PowerLawFit_MLE(final double[] xValues, final double[] yValues) {
+		super(xValues, yValues, DEFAULT_EPSILON);
+		r = DEFAULT_R;
 	}
-	a = sumCounts() / sumExp(rn, 0);
-	if (Double.isNaN(a)) {
-	    r = Double.NaN;
-	    errorCode += ERROR_A_NAN;
+
+	/**
+	 * A constructor that uses the same parameters as the constructor of
+	 * {@link PowerLawFit}.
+	 *
+	 * @param xValues
+	 * @param yValues
+	 * @param epsilon
+	 */
+	public PowerLawFit_MLE(final double[] xValues, final double[] yValues,
+		final double epsilon)
+	{
+		super(xValues, yValues, epsilon);
+		r = DEFAULT_R;
 	}
-	r = rn;
-	done = true;
-    }
 
-    /**
-     * The denominator of the equation to calculate <strong>r</strong>.
-     *
-     * @param rn
-     *            The value of <strong>r</strong> at the current iteration.
-     * @return The result of the equation at the denominator.
-     */
-    private double denominator(final double rn) {
-	final double s0 = sumExp(rn, 0);
-	final double s2 = sumExp(rn, 2);
-	return Math.pow((sumExp(rn, 1) / s0), 2) - s2 / s0;
-    }
-
-    /**
-     * The numerator of the equation to calculate <strong>r</strong>.
-     *
-     * @param rn
-     *            The value of <strong>r</strong> at the current iteration.
-     * @return The result of the equation at the numerator.
-     */
-    private double numerator(final double rn) {
-	return sumExp(rn, 1) / sumExp(rn, 0) - weight();
-    }
-
-    /**
-     * Sums the counts of all pre-edge images at the currently processed pixel position.
-     *
-     * @return Sum of the counts.
-     */
-    private double sumCounts() {
-	double value = 0;
-	for (int i = 0; i < xValues.length; i++) {
-	    value += yValues[i];
+	/**
+	 * The constructor of {@link PowerLawFit} is called. Additionally you can
+	 * define a starting value for the iterative calculation of <strong>r</strong>
+	 * .
+	 *
+	 * @param xValues
+	 * @param yValues
+	 * @param epsilon
+	 * @param rStart
+	 */
+	public PowerLawFit_MLE(final double[] xValues, final double[] yValues,
+		final double epsilon, final double rStart)
+	{
+		super(xValues, yValues, epsilon);
+		r = rStart;
 	}
-	return value;
-    }
 
-    /**
-     * Calculates the sum of E<sub>i</sub><sup>exponent</sup>.
-     *
-     * @param rn
-     *            The value of <strong>r</strong> at the current iteration.
-     * @param exponent
-     *            Can be 0, 1, or 2.
-     * @return The sum of power functions.
-     */
-    private double sumExp(final double rn, final int exponent) {
-	double value = 0;
-	for (int i = 0; i < xValues.length; i++) {
-	    value += (Math.pow(Math.log(xValues[i]), exponent)) * Math.exp(-1 * rn * Math.log(xValues[i]));
+	@Override
+	public void doFit() {
+		double rn = r;
+		double rn_prev = rn + 2 * epsilon;
+		int convergenceCounter = 0;
+		// this variable saves rn-r of the previous iteration. The initial value
+		// is a random one. To trigger no
+		// convergence error the value is such huge.
+		double diff = 10.0;
+		double num;
+		double denum;
+		// Start: Iteration to calculate r
+		while (Math.abs(rn_prev - rn) > epsilon) {
+			rn_prev = rn;
+			num = numerator(rn);
+			denum = denominator(rn);
+			rn = rn_prev - num / denum;
+			// Check for a NaN error
+			if (Double.isNaN(rn)) {
+				r = Double.NaN;
+				a = Double.NaN;
+				errorCode += ERROR_R_NAN;
+				return;
+			}
+			if (Double.isInfinite(rn)) {
+				r = Double.NaN;
+				a = Double.NaN;
+				errorCode += ERROR_R_INFINITE;
+				return;
+			}
+			// Checks for a convergence error. The combination of the 2. and 3.
+			// if statement prevents an infinite number
+			// of iterations.
+			if (Math.abs(rn_prev - rn) == diff) {
+				r = Double.NaN;
+				a = Double.NaN;
+				errorCode += ERROR_CONVERGE;
+				return;
+			}
+			if (Math.abs(rn_prev - rn) > diff) {
+				convergenceCounter++;
+			}
+			if (convergenceCounter >= 25) {
+				r = Double.NaN;
+				a = Double.NaN;
+				errorCode += ERROR_CONVERGE;
+				return;
+			}
+			diff = Math.abs(rn_prev - rn);
+		}
+		a = sumCounts() / sumExp(rn, 0);
+		if (Double.isNaN(a)) {
+			r = Double.NaN;
+			errorCode += ERROR_A_NAN;
+		}
+		r = rn;
+		done = true;
 	}
-	return value;
-    }
 
-    /**
-     * The MLE uses a weight that is calculated at this method.
-     *
-     * @return A weighted mean energy loss.
-     */
-    private double weight() {
-	double value1 = 0;
-	double value2 = 0;
-	for (int i = 0; i < xValues.length; i++) {
-	    value1 += Math.log(xValues[i]) * yValues[i];
-	    value2 += yValues[i];
+	/**
+	 * The denominator of the equation to calculate <strong>r</strong>.
+	 *
+	 * @param rn The value of <strong>r</strong> at the current iteration.
+	 * @return The result of the equation at the denominator.
+	 */
+	private double denominator(final double rn) {
+		final double s0 = sumExp(rn, 0);
+		final double s2 = sumExp(rn, 2);
+		return Math.pow((sumExp(rn, 1) / s0), 2) - s2 / s0;
 	}
-	// If true this will result in 0/1
-	if (value2 == 0)
-	    value2 = 1;
-	return value1 / value2;
-    }
+
+	/**
+	 * The numerator of the equation to calculate <strong>r</strong>.
+	 *
+	 * @param rn The value of <strong>r</strong> at the current iteration.
+	 * @return The result of the equation at the numerator.
+	 */
+	private double numerator(final double rn) {
+		return sumExp(rn, 1) / sumExp(rn, 0) - weight();
+	}
+
+	/**
+	 * Sums the counts of all pre-edge images at the currently processed pixel
+	 * position.
+	 *
+	 * @return Sum of the counts.
+	 */
+	private double sumCounts() {
+		double value = 0;
+		for (int i = 0; i < xValues.length; i++) {
+			value += yValues[i];
+		}
+		return value;
+	}
+
+	/**
+	 * Calculates the sum of E<sub>i</sub><sup>exponent</sup>.
+	 *
+	 * @param rn The value of <strong>r</strong> at the current iteration.
+	 * @param exponent Can be 0, 1, or 2.
+	 * @return The sum of power functions.
+	 */
+	private double sumExp(final double rn, final int exponent) {
+		double value = 0;
+		for (int i = 0; i < xValues.length; i++) {
+			value += (Math.pow(Math.log(xValues[i]), exponent)) * Math.exp(-1 * rn *
+				Math.log(xValues[i]));
+		}
+		return value;
+	}
+
+	/**
+	 * The MLE uses a weight that is calculated at this method.
+	 *
+	 * @return A weighted mean energy loss.
+	 */
+	private double weight() {
+		double value1 = 0;
+		double value2 = 0;
+		for (int i = 0; i < xValues.length; i++) {
+			value1 += Math.log(xValues[i]) * yValues[i];
+			value2 += yValues[i];
+		}
+		// If true this will result in 0/1
+		if (value2 == 0) value2 = 1;
+		return value1 / value2;
+	}
 
 }
