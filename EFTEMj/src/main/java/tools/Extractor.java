@@ -24,6 +24,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package tools;
 
 import java.util.regex.Matcher;
@@ -34,80 +35,85 @@ import ij.ImageStack;
 
 public abstract class Extractor {
 
-    /**
-     * This array has to be defined at the constructor of the inheriting class.
-     */
-    protected String[] pattern;
-    protected String replace;
+	/**
+	 * This array has to be defined at the constructor of the inheriting class.
+	 */
+	protected String[] pattern;
+	protected String replace;
 
-    /**
-     * This method is used to convert a string to a float value. If there is a ',' it is replaced by a '.'.
-     *
-     * @param eLossStr
-     *            A {@link String} that contains only the float.
-     * @return A float value, 0 if converting fails.
-     */
-    public float stringToFloat(final String eLossStr) {
-	eLossStr.replace(',', '.');
-	try {
-	    return new Float(eLossStr);
-	} catch (final Exception e) {
-	    return 0;
+	/**
+	 * This method is used to convert a string to a float value. If there is a ','
+	 * it is replaced by a '.'.
+	 *
+	 * @param eLossStr A {@link String} that contains only the float.
+	 * @return A float value, 0 if converting fails.
+	 */
+	public float stringToFloat(final String eLossStr) {
+		eLossStr.replace(',', '.');
+		try {
+			return new Float(eLossStr);
+		}
+		catch (final Exception e) {
+			return 0;
+		}
 	}
-    }
 
-    /**
-     * By the use of regular expressions a float is extracted from the title of an image.
-     *
-     * @param imp
-     *            is the {@link ImagePlus} contains the images.
-     * @param index
-     *            The index of the image where you want to extract the float. <code>index</code> starts at 0.
-     * @return The float that has been found. 0 is returned if the label does not contain a float.
-     */
-    public float extractFloatFromTitle(final ImagePlus imp, final int index) {
-	final ImageStack stack = imp.getStack();
-	String label;
-	if (index == 0 & stack.getSize() == 1) {
-	    label = imp.getShortTitle();
-	} else {
-	    label = stack.getShortSliceLabel(index + 1);
+	/**
+	 * By the use of regular expressions a float is extracted from the title of an
+	 * image.
+	 *
+	 * @param imp is the {@link ImagePlus} contains the images.
+	 * @param index The index of the image where you want to extract the float.
+	 *          <code>index</code> starts at 0.
+	 * @return The float that has been found. 0 is returned if the label does not
+	 *         contain a float.
+	 */
+	public float extractFloatFromTitle(final ImagePlus imp, final int index) {
+		final ImageStack stack = imp.getStack();
+		String label;
+		if (index == 0 & stack.getSize() == 1) {
+			label = imp.getShortTitle();
+		}
+		else {
+			label = stack.getShortSliceLabel(index + 1);
+		}
+		if (label == null) label = "";
+		return findFloat(label);
 	}
-	if (label == null)
-	    label = "";
-	return findFloat(label);
-    }
 
-    /**
-     * By the use of regular expressions a float is extracted from the title of an image.
-     *
-     * @param imageStack
-     *            The {@link ImageStack} that contains the image at <code>(index+1)</code>.
-     * @param index
-     *            The index of the image where you want to extract the float. <code>index</code> starts at 0.
-     * @return The float that has been found. 0 is returned if the label does not contain a float.
-     */
-    public float extractFloatFromTitle(final ImageStack imageStack, final int index) {
-	final String label = imageStack.getShortSliceLabel(index + 1);
-	return findFloat(label);
-    }
-
-    /**
-     * This method searches for the pattern defined at the inheriting classes.
-     * 
-     * @param label
-     *            is the {@link String} to search in.
-     * @return the {@link String} as a {@link Float}.
-     */
-    protected float findFloat(String label) {
-	for (int i = 0; i < pattern.length; i++) {
-	    final Matcher matcher = Pattern.compile(pattern[i]).matcher(label);
-	    if (matcher.find()) {
-		String result = matcher.replaceAll(replace);
-		return stringToFloat(result);
-	    }
+	/**
+	 * By the use of regular expressions a float is extracted from the title of an
+	 * image.
+	 *
+	 * @param imageStack The {@link ImageStack} that contains the image at
+	 *          <code>(index+1)</code>.
+	 * @param index The index of the image where you want to extract the float.
+	 *          <code>index</code> starts at 0.
+	 * @return The float that has been found. 0 is returned if the label does not
+	 *         contain a float.
+	 */
+	public float extractFloatFromTitle(final ImageStack imageStack,
+		final int index)
+	{
+		final String label = imageStack.getShortSliceLabel(index + 1);
+		return findFloat(label);
 	}
-	return 0;
-    }
+
+	/**
+	 * This method searches for the pattern defined at the inheriting classes.
+	 *
+	 * @param label is the {@link String} to search in.
+	 * @return the {@link String} as a {@link Float}.
+	 */
+	protected float findFloat(final String label) {
+		for (int i = 0; i < pattern.length; i++) {
+			final Matcher matcher = Pattern.compile(pattern[i]).matcher(label);
+			if (matcher.find()) {
+				final String result = matcher.replaceAll(replace);
+				return stringToFloat(result);
+			}
+		}
+		return 0;
+	}
 
 }

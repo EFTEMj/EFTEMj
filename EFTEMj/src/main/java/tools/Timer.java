@@ -24,88 +24,89 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package tools;
 
 /**
- * This is a small utility class to measure times in milliseconds. Each method is available as static and non-static.
+ * This is a small utility class to measure times in milliseconds. Each method
+ * is available as static and non-static.
  *
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
- *
  */
 public class Timer {
 
-    private long start = 0;
-    private long interval = 0;
-    private static long sStart = 0;
-    private static long sInterval = 0;
+	private long start = 0;
+	private long interval = 0;
+	private static long sStart = 0;
+	private static long sInterval = 0;
 
-    /**
-     * Creates a new instance of {@link Timer}.
-     */
-    public Timer() {
-	super();
-    }
-
-    /**
-     * Creates a new instance of {@link Timer} and starts it.
-     */
-    public Timer(final boolean start) {
-	super();
-	if (start) {
-	    start();
+	/**
+	 * Creates a new instance of {@link Timer}.
+	 */
+	public Timer() {
+		super();
 	}
-    }
 
-    /**
-     * Sets the current time as reference (start) point.
-     */
-    public void start() {
-	start = System.currentTimeMillis();
-	interval = start;
-    }
+	/**
+	 * Creates a new instance of {@link Timer} and starts it.
+	 */
+	public Timer(final boolean start) {
+		super();
+		if (start) {
+			start();
+		}
+	}
 
-    /**
-     * [static] Sets the current time as reference (start) point.
-     */
-    public static void sStart() {
-	sStart = System.currentTimeMillis();
-	sInterval = sStart;
-    }
+	/**
+	 * Sets the current time as reference (start) point.
+	 */
+	public void start() {
+		start = System.currentTimeMillis();
+		interval = start;
+	}
 
-    /**
-     * @return the elapsed time of the current interval
-     */
-    public long interval() {
-	final long temp = interval;
-	interval = System.currentTimeMillis();
-	return System.currentTimeMillis() - temp;
-    }
+	/**
+	 * [static] Sets the current time as reference (start) point.
+	 */
+	public static void sStart() {
+		sStart = System.currentTimeMillis();
+		sInterval = sStart;
+	}
 
-    /**
-     * [static]
-     *
-     * @return the elapsed time of the current interval
-     */
-    public static long sInterval() {
-	final long temp = sInterval;
-	sInterval = System.currentTimeMillis();
-	return System.currentTimeMillis() - temp;
-    }
+	/**
+	 * @return the elapsed time of the current interval
+	 */
+	public long interval() {
+		final long temp = interval;
+		interval = System.currentTimeMillis();
+		return System.currentTimeMillis() - temp;
+	}
 
-    /**
-     * @return the time elapsed since the call of start
-     */
-    public long stop() {
-	return System.currentTimeMillis() - start;
-    }
+	/**
+	 * [static]
+	 *
+	 * @return the elapsed time of the current interval
+	 */
+	public static long sInterval() {
+		final long temp = sInterval;
+		sInterval = System.currentTimeMillis();
+		return System.currentTimeMillis() - temp;
+	}
 
-    /**
-     * [static]
-     *
-     * @return the time elapsed since the call of start
-     */
-    public static long sStop() {
-	return System.currentTimeMillis() - sStart;
-    }
+	/**
+	 * @return the time elapsed since the call of start
+	 */
+	public long stop() {
+		return System.currentTimeMillis() - start;
+	}
+
+	/**
+	 * [static]
+	 *
+	 * @return the time elapsed since the call of start
+	 */
+	public static long sStop() {
+		return System.currentTimeMillis() - sStart;
+	}
 
 }

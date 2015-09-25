@@ -24,18 +24,18 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package tools;
 
 /**
  * @author Michael Entrup b. Epping <michael.entrup@wwu.de>
- *
  */
 public class EnergyLossExtractor extends Extractor {
 
-    public EnergyLossExtractor() {
-	pattern = new String[2];
-	pattern[0] = "^(.*\\D)*\\[(\\d{1,4}[\\.]?[,]?\\d*)eV\\].*$";
-	pattern[1] = "^(.*\\D)*(\\d{1,4}[\\.]?[,]?\\d*)eV.*$";
-	replace = "$2";
-    }
+	public EnergyLossExtractor() {
+		pattern = new String[2];
+		pattern[0] = "^(.*\\D)*\\[(\\d{1,4}[\\.]?[,]?\\d*)eV\\].*$";
+		pattern[1] = "^(.*\\D)*(\\d{1,4}[\\.]?[,]?\\d*)eV.*$";
+		replace = "$2";
+	}
 }

@@ -24,15 +24,16 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package tools;
 
 public class ExposureExtractor extends Extractor {
 
-    public ExposureExtractor() {
-	pattern = new String[2];
-	pattern[0] = "^(.*\\D)*\\[(\\d*[\\.]?[,]?\\d*)s\\].*$";
-	pattern[1] = "^(.*\\D)(\\d*[\\.]?[,]?\\d*)s.*$";
-	replace = "$2";
-    }
+	public ExposureExtractor() {
+		pattern = new String[2];
+		pattern[0] = "^(.*\\D)*\\[(\\d*[\\.]?[,]?\\d*)s\\].*$";
+		pattern[1] = "^(.*\\D)(\\d*[\\.]?[,]?\\d*)s.*$";
+		replace = "$2";
+	}
 
 }
