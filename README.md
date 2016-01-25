@@ -1,3 +1,7 @@
+# Deprecated - use [m-entrup/EFTEMj] instead!
+
+I decided to clean up EFTEMj before releasing it at an [update-site](http://sites.imagej.net/) for [ImageJ][ij]/[Fiji][fiji]. The result is the new repository [m-entrup/EFTEMj].
+
 # EFTEMj
 
 Processing of Energy Filtering TEM images with ImageJ (Fiji)
@@ -44,3 +48,4 @@ For more information you can have a look at my [presentation][slides] created wi
 [Reimer1988]: http://dx.doi.org/10.1016/0304-3991%2888%2990126-X 
 [slides]: https://eftemj.github.io
 [impress]: https://github.com/bartaz/impress.js
+[m-entrup/EFTEMj]: https://github.com/m-entrup/EFTEMj
